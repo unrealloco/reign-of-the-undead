@@ -1,0 +1,182 @@
+VERSION             "1"
+CONFIG              "C:\trees\cod3\cod3\bin\StringEd.cfg"
+FILENOTES           ""
+
+REFERENCE			STREAK
+LANG_ENGLISH		"X&&1"
+
+REFERENCE           4_PLAYERMENU
+LANG_ENGLISH        "4. Player Menu"
+
+REFERENCE           5_ADMINMENU
+LANG_ENGLISH        "5. Admin Menu"
+
+REFERENCE           SURV
+LANG_ENGLISH        "Reign of the ^1Undead^7 2.2"
+
+REFERENCE           SOLDIER
+LANG_ENGLISH        "Soldier"
+
+REFERENCE           STEALTH
+LANG_ENGLISH        "Assasin"
+
+REFERENCE           ARMORED
+LANG_ENGLISH        "Armored"
+
+REFERENCE           ENGINEER
+LANG_ENGLISH        "Engineer"
+
+REFERENCE           SCOUT
+LANG_ENGLISH        "Scout"
+
+REFERENCE           MEDIC
+LANG_ENGLISH        "Medic"
+
+REFERENCE           About
+LANG_ENGLISH        "About RotU"
+
+REFERENCE           ZOMCOUNT
+LANG_ENGLISH        "Amount of Bots:"
+
+REFERENCE           HEALTH
+LANG_ENGLISH        "Zombie health:"
+
+
+REFERENCE			AVAILABLE_SKILLPOINTS
+LANG_ENGLISH		"Skillpoints Available: &&1"
+
+REFERENCE           DIFFICULTY
+LANG_ENGLISH        "Difficulty:"
+
+REFERENCE           EASY
+LANG_ENGLISH        "Easy"
+
+REFERENCE           NORMAL
+LANG_ENGLISH        "Normal"
+
+REFERENCE           HARD
+LANG_ENGLISH        "Hard"
+
+REFERENCE           VERYHARD
+LANG_ENGLISH        "Very Hard"
+
+REFERENCE           1_FLASHLIGHT
+LANG_ENGLISH        "1. Toggle Flashlight"
+
+REFERENCE           2_THIRDPERSON
+LANG_ENGLISH        "2. Toggle Thirdperson"
+
+REFERENCE           3_RESPAWN
+LANG_ENGLISH        "3. Respawn"
+
+REFERENCE           TOGGLECONTROLS
+LANG_ENGLISH        "4. Controls"
+
+REFERENCE           TAUNTS
+LANG_ENGLISH        "Taunts"
+
+REFERENCE           PLAYERMENU
+LANG_ENGLISH        "Player Menu"
+
+REFERENCE           CONTROLS
+LANG_ENGLISH        "Zombie Controls"
+
+REFERENCE           BIND_FLASHLIGHT
+LANG_ENGLISH        "Toggle Flashlight"
+
+REFERENCE           BIND_THIRDPERSON
+LANG_ENGLISH        "Toggle Thirdperson"
+
+REFERENCE			INVENTORY
+LANG_ENGLISH        "Manage Inventory"
+
+REFERENCE			MYINVENTORY
+LANG_ENGLISH        "My Inventory"
+
+REFERENCE			WEIGHT
+LANG_ENGLISH        "^3Weight"
+
+REFERENCE			ITEMS
+LANG_ENGLISH        "Items ^3(&&1/&&2)"
+
+REFERENCE			DESCRIPTION
+LANG_ENGLISH        "Description"
+
+REFERENCE			ABILITIES
+LANG_ENGLISH        "Abilities"
+
+REFERENCE			ACCEPT
+LANG_ENGLISH        "Accept"
+
+REFERENCE			SHOW
+LANG_ENGLISH        "Show"
+
+REFERENCE			NONE
+LANG_ENGLISH        "None"
+
+REFERENCE           ATTACHMENTS
+LANG_ENGLISH        "Possible attachments:"
+
+REFERENCE           NEWWAVEIN
+LANG_ENGLISH        "New wave in:"
+
+REFERENCE           FINALWAVEIN
+LANG_ENGLISH        "Final wave in:"
+
+
+REFERENCE           NEWWAVE
+LANG_ENGLISH        "A new wave of &&1 zombies incoming!"
+
+REFERENCE           NEWSPECIALWAVE
+LANG_ENGLISH        "A special wave of &&1 incoming!"
+
+REFERENCE           BOSSWAVE
+LANG_ENGLISH        "FINAL WAVE!!!"
+
+REFERENCE           BOSS_EXPLOSIVES
+LANG_ENGLISH        "Weaken the zombie with explosives: &&1%"
+
+REFERENCE           BOSS_PRIMARY
+LANG_ENGLISH        "Weaken the zombie with your primary weapon: &&1%"
+
+REFERENCE           BOSS_SIDEARM
+LANG_ENGLISH        "Weaken the zombie with your sidearm: &&1%"
+
+REFERENCE           BOSS_KNIFE
+LANG_ENGLISH        "Quickly knife the giant zombie: &&1%"
+
+REFERENCE           INFECTED
+LANG_ENGLISH        "You have become infected! Cure yourself!"
+
+REFERENCE			DAMMOD
+LANG_ENGLISH		"^1Damage Modifier: &&1"
+
+REFERENCE           SPEND_SKILLPOINTS
+LANG_ENGLISH        "Spend Skillpoints"
+
+REFERENCE			SURV_LEFT
+LANG_ENGLISH		"Survivors Alive: &&1"
+
+REFERENCE			SURV_DOWN
+LANG_ENGLISH		"Survivors Down: &&1"
+
+REFERENCE			WAVE_NUMBER
+LANG_ENGLISH		"Wave #: &&1"
+
+REFERENCE			MEDKIT_IN
+LANG_ENGLISH		"Medkit In:"
+
+REFERENCE			AMMOBOX_IN
+LANG_ENGLISH		"Ammobox In:"
+
+REFERENCE           RANK_DEMOTED
+LANG_ENGLISH        "You've been demoted!"
+
+REFERENCE           RANK_PLAYER_WAS_DEMOTED
+LANG_ENGLISH        "&&1 was demoted to &&2!"
+
+REFERENCE           RANK_PLAYER_WAS_DEMOTED_N
+LANG_ENGLISH        "&&1 was demoted to &&2 &&3!"
+
+
+
