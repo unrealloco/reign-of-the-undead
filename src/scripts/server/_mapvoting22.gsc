@@ -101,16 +101,15 @@ blacklistedMaps()
     level.blacklistedMaps[1] = "mp_mrx_castle"; // barricade errors
     level.blacklistedMaps[2] = "mp_evil_house"; // com_bottle precache errors, and more
     level.blacklistedMaps[3] = "mp_fnrp_futurama_v3"; // crashes iw3.exe
-    level.blacklistedMaps[4] = "mp_madhouse_picnic"; // prevents server from starting
-    level.blacklistedMaps[5] = "mp_surv_aftermath"; // prevents server from starting
-    level.blacklistedMaps[6] = "mp_surv_bjelovar"; // prevents server from starting
-    level.blacklistedMaps[7] = "mp_surv_RE4village"; // prevents server from starting
-    level.blacklistedMaps[8] = "mp_surv_winter_bo"; // prevents server from starting
-    level.blacklistedMaps[9] = "mp_surv_moon"; // prevents server from starting
-    level.blacklistedMaps[10] = "mp_surv_matmata"; // prevents server from starting
-    level.blacklistedMaps[11] = "mp_surv_ddv_army"; // prevents server from starting
-    level.blacklistedMaps[12] = "mp_surv_fregata"; // fatal error: xmodel for ak47 doesn't load
-    level.blacklistedMaps[13] = "mp_surv_sir2"; // fatal error: xmodel for ak47 doesn't load
+    level.blacklistedMaps[4] = "mp_surv_aftermath"; // prevents server from starting
+    level.blacklistedMaps[5] = "mp_surv_bjelovar"; // prevents server from starting
+    level.blacklistedMaps[6] = "mp_surv_RE4village"; // prevents server from starting
+    level.blacklistedMaps[7] = "mp_surv_winter_bo"; // prevents server from starting
+    level.blacklistedMaps[8] = "mp_surv_moon"; // prevents server from starting
+    level.blacklistedMaps[9] = "mp_surv_matmata"; // prevents server from starting
+    level.blacklistedMaps[10] = "mp_surv_ddv_army"; // prevents server from starting
+    level.blacklistedMaps[11] = "mp_surv_fregata"; // fatal error: xmodel for ak47 doesn't load
+    level.blacklistedMaps[12] = "mp_surv_sir2"; // fatal error: xmodel for ak47 doesn't load
 }
 
 /**
