@@ -733,7 +733,7 @@ watchClaymores()
             claymore waitUntilExplosivesEmplaced();
             /// runtime error if claymore becomes undefined while waiting to be emplaced
             if (!isDefined(claymore)) {
-                errorPrint(self.name + " claymore became undefined while waiting to be emplaced", "val");
+                errorPrint(self.name + " claymore became undefined while waiting to be emplaced");
                 continue;
             }
             claymore thread c4Damage();
