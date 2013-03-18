@@ -123,10 +123,33 @@ placeBarrel()
         if (self attackbuttonpressed()) {
             newpos = PlayerPhysicsTrace(self.carryObj.origin, self.carryObj.origin - (0,0,1000));
 
+            // Do not let a MG+Barrel be placed too close to the shop or ammo crate
+            tooCloseToAmmoShop = false;
+            if (self.carryObj.type == 1) {
+                useObjects = level.useObjects;
+                for (i=0; i<useObjects.size; i++) {
+                    if ((!isDefined(useObjects[i])) || (!isDefined(useObjects[i].type))) {continue;}
+                    if ((useObjects[i].type == "extras") ||
+                        (useObjects[i].type == "ammobox")) {
+                        if (distance(useObjects[i].origin, self.origin) < 150) {
+                            tooCloseToAmmoShop = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            geometryOk = false;
             if ((BulletTrace(self GetEye(), newpos, false, self.carryObj)["fraction"] == 1) &&
                 (BulletTrace(self GetEye(), newpos + (0,0,48), false, self.carryObj)["fraction"] == 1) &&
                 (BulletTrace(newpos, newpos + (0,0,48), false, self.carryObj)["fraction"] == 1 ))
             {
+                geometryOk = true;
+            }
+            if ((self.carryObj.type == 1) && (tooCloseToAmmoShop)) {
+                self iprintlnbold("^1Can not place MG+Barrel that close to shop or weapons create!");
+                wait 1;
+            } else if (geometryOk) {
                 self.carryObj unlink();
                 wait 0.1;
 
