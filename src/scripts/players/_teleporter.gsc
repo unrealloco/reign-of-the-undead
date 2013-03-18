@@ -109,6 +109,11 @@ placeTele()
 
 }
 
+/**
+ * @brief Emplaces a teleporter if the location is acceptable
+ *
+ * @returns boolean True is the teleporter was emplaced, false otherwise
+ */
 deploy()
 {
     debugPrint("in _teleporter::deploy()", "fn", level.lowVerbosity);
@@ -124,11 +129,24 @@ deploy()
     right = vectorscale(anglesToRight( angles ), 10);
     back = vectorscale(anglesToForward( angles ), -6);
 
+    // Do not let a teleporter be placed too close to the shop or ammo crate
+    tooCloseToAmmoShop = false;
+    useObjects = level.useObjects;
+    for (i=0; i<useObjects.size; i++) {
+        if ((!isDefined(useObjects[i])) || (!isDefined(useObjects[i].type))) {continue;}
+        if ((useObjects[i].type == "extras") ||
+            (useObjects[i].type == "ammobox")) {
+            if (distance(useObjects[i].origin, self.origin) < 150) {
+                tooCloseToAmmoShop = true;
+                break;
+            }
+        }
+    }
+
     canPlantThere1 = BulletTracePassed( start, end, true, self);
     canPlantThere2 = BulletTracePassed( start + (0,0,-7) + left, end + left + back, true, self);
     canPlantThere3 = BulletTracePassed( start + (0,0,-7) + right , end + right + back, true, self);
-    if( !canPlantThere1 || !canPlantThere2 || !canPlantThere3 )
-    {
+    if ((!canPlantThere1) || (!canPlantThere2) || (!canPlantThere3) || (tooCloseToAmmoShop)) {
         self iPrintlnBold("Can not summon ^2portal ^7here.");
         return false;
     }
