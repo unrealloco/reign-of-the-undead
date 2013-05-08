@@ -1181,7 +1181,9 @@ spawnPlayer(preserveState)
 
     waittillframeend;
 
-    if (self.nighvision) /// @todo nightvision
+    // Enable night vision by default, at no cost
+    self.nightvision = true;
+    if (self.nightvision)
     self setActionSlot( 1, "nightvision" );
 
     // Give weapons
