@@ -179,6 +179,8 @@ ROTU Change Log
   files calling for the files raw/rumble/silencer_fire, raw/rumble/defaultweapon_melee,
   and raw/rumble/defaultweapon_fire.  Those files call the _h and _l versions of
   the rumble files.
+* Demerits issued when a sentry turrets kills burning zombies and damages another player,
+  but you shouldn't get demerits for that (grrr, and the code agrees, strange bug).
 
 
 //
@@ -190,5 +192,18 @@ ROTU Change Log
   maximum use of slots the server provider is paying for.
 * End-game stats.  Will appear before the end credits, and will not duplicate information
   shown in the scoreboard.  Likely be 'most revives', 'most revive covering',
-  'best kill/death ratio', and 'most valuable player'.
+  'best kill/death ratio', and 'most valuable player', 'best medic', 'best engineer'.
 * Replacing the scoreboard team icons with something more zombie-appropriate
+* 'Broken Arrow' feature that uses off-map support to kill most zombies when a team
+  is about to be overrun.
+* Enable TNT
+* Show zombies on large map displayed on 'esc' menu
+
+
+//
+// 2.2.1 Changes (>= r40)
+//
+* Enable night vision by default, and at no cost.
+* Note in admin_default.cfg that at least one admin must be defined for the mod to run
+* Fix teleporters and MG+Barrels so they cannot be emplaced too close to a shop or
+  weapons crate.

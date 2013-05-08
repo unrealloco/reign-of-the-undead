@@ -1183,8 +1183,9 @@ spawnPlayer(preserveState)
 
     // Enable night vision by default, at no cost
     self.nightvision = true;
-    if (self.nightvision)
-    self setActionSlot( 1, "nightvision" );
+    if (self.nightvision) {
+        self setActionSlot( 1, "nightvision" );
+    }
 
     // Give weapons
     self scripts\players\_weapons::initPlayerWeapons();
