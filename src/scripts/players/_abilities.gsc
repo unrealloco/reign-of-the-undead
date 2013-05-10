@@ -1688,6 +1688,13 @@ restoreAmmoMagazine(player)
                 return;
             }
             break;
+        case "tnt_mp":
+            if ((isDefined(player.emplacedTnt)) &&
+                (player.emplacedTnt.size + stockAmmo >= level.maxTntPerPlayer))
+            {
+                return;
+            }
+            break;
     }
 
     // Rather than use each weapon's actual magazine capacity, we just define

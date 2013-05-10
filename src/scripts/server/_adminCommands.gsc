@@ -928,6 +928,33 @@ restoreAmmoClip(player)
     stockAmmo = player getWeaponAmmoStock(weapon);
     stockMax = weaponMaxAmmo(weapon);
 
+    if (1) { /// [0|1]: Prevent players from exceeding max explosives from admin ammo box?
+        // Don't let players exceed max amount of explosives
+        switch (weapon) {
+            case "claymore_mp":
+                if ((isDefined(player.emplacedClaymores)) &&
+                    (player.emplacedClaymores.size + stockAmmo >= level.maxClaymoresPerPlayer))
+                {
+                    return;
+                }
+                break;
+            case "c4_mp":
+                if ((isDefined(player.emplacedC4)) &&
+                    (player.emplacedC4.size + stockAmmo >= level.maxC4PerPlayer))
+                {
+                    return;
+                }
+                break;
+            case "tnt_mp":
+                if ((isDefined(player.emplacedTnt)) &&
+                    (player.emplacedTnt.size + stockAmmo >= level.maxTntPerPlayer))
+                {
+                    return;
+                }
+                break;
+        }
+    }
+
     // Rather than use each weapon's actual magazine capacity, we just define
     // it to be 10% of the weapon's maximum ammunition supply
     magazineCapacity = int(stockMax/10);

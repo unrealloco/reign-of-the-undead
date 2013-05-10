@@ -198,6 +198,9 @@ ROTU Change Log
   is about to be overrun.
 * Enable TNT
 * Show zombies on large map displayed on 'esc' menu
+* Blue ball ban feature
+* Improved music system
+* Player pause feature, for 60 seconds
 
 
 //
@@ -207,3 +210,7 @@ ROTU Change Log
 * Note in admin_default.cfg that at least one admin must be defined for the mod to run
 * Fix teleporters and MG+Barrels so they cannot be emplaced too close to a shop or
   weapons crate.
+* Fix bug where 'Restore Ammo' at shop restored c4, claymores, and tnt, which permitted
+  players to exceed the per-player limits.  'Restore Ammo' now only restores bullets
+  and grenades, as intended.
+* Implement TNT.

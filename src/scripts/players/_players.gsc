@@ -1145,6 +1145,7 @@ spawnPlayer(preserveState)
     self.canUseSpecial = true;
     self.incdammod = 1;
     self.emplacedC4 = [];
+    self.emplacedTnt = [];
     self setStatusIcon("");
 
     // Getting spawn loc and spawning
@@ -1181,8 +1182,9 @@ spawnPlayer(preserveState)
 
     waittillframeend;
 
-    // Enable night vision by default, at no cost
-    self.nightvision = true;
+    /// Set up action slots
+    /// action slot 4 is reserved for class ability items, such as medkits for medics
+    self.nightvision = true;    // Enable night vision by default, at no cost
     if (self.nightvision) {
         self setActionSlot( 1, "nightvision" );
     }

@@ -162,6 +162,11 @@
         CHOICE_BUTTON_VIS_NOHI( 18, "^2Portal ("+dvarstring("ui_itemcosts6")+")", scriptMenuResponse "item16";, when( dvarint("ui_points") >= dvarint("ui_itemcosts6") + dvarint("ui_costs2") ) )
         CHOICE_DBUTTON_VIS_NOHI( 18, "^1Portal ("+dvarstring("ui_itemcosts6")+")", when( dvarint("ui_points") < dvarint("ui_itemcosts6") + dvarint("ui_costs2") ) )
 
+        CHOICE_BUTTON_BG( 19, 1 )
+        CHOICE_HIGHLIGHT( 19, 1 )
+        CHOICE_BUTTON_VIS_NOHI( 19, "^2TNT ("+dvarstring("ui_itemcosts7")+")", scriptMenuResponse "item17";, when( dvarint("ui_points") >= dvarint("ui_itemcosts7") + dvarint("ui_costs2") ) )
+        CHOICE_DBUTTON_VIS_NOHI( 19, "^1TNT ("+dvarstring("ui_itemcosts7")+")", when( dvarint("ui_points") < dvarint("ui_itemcosts7") + dvarint("ui_costs2") ) )
+
         /*CHOICE_SECTION_TITLE( 21, "Support:" )
 
         CHOICE_BUTTON_BG( 22, 1 )

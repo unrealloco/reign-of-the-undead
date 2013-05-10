@@ -84,6 +84,10 @@ init()
         }
 //         debugPrint("level.weaponIDs[i] : " + i + ":" + level.weaponIDs[i], "val");
     }
+    /// @hack: since tnt_mp isn't one of the common_weapons in statstable.csv,
+    /// append tnt_mp to weaponIDs[] array manually
+    level.weaponIDs[level.weaponIDs.size] = "tnt_mp";
+
 
     // generating weaponNames array
     level.weaponNames = [];
@@ -112,7 +116,7 @@ init()
     for ( index = 0; index < level.weaponList.size; index++ )
     {
         precacheItem(level.weaponList[index]);
-//         debugPrint("Precached weapon: " + level.weaponList[index], "val");
+        debugPrint("Precached weapon: " + level.weaponList[index], "val");
     }
 
     //precacheItem("c4_mp");
@@ -130,6 +134,7 @@ init()
     level.claymoreDetonateRadius = 192;
     level.maxClaymoresPerPlayer = getDvarInt("game_max_claymores_per_player");
     level.maxC4PerPlayer = getDvarInt("game_max_c4_per_player");
+    level.maxTntPerPlayer = getDvarInt("game_max_tnt_per_player");
 
     level.c4explodethisframe = false;
     level.C4FXid = loadfx("misc/light_c4_blink");
@@ -233,6 +238,9 @@ canRestoreAmmo(weapon)
 
     if ((weapon == "helicopter_mp") ||  // helicopter_mp is the medkit
         (weapon == "m14_reflex_mp") ||  // m14_reflex_mp is the ammo box
+        (weapon == "c4_mp") ||          // 'Restore Ammo' shouldn't restore ammo
+        (weapon == "tnt_mp") ||         // for tnt, c4, claymores--just for bullets and grenades
+        (weapon == "claymore_mp") ||
         (weapon == "none") ||
         scripts\players\_weapons::isSpecialWeap(weapon))
     {
@@ -455,24 +463,22 @@ alertTillEndFiring()
 {
     debugPrint("in _weapons::alertTillEndFiring()", "fn", level.lowVerbosity);
 
-    self endon( "death" );
-    self endon( "disconnect" );
-    self endon( "end_firing" );
+    self endon("death");
+    self endon("disconnect");
+    self endon("end_firing");
 
-    while (1)
-    {
+    while (1) {
         curWeapon = self getCurrentWeapon();
-        if (curWeapon == "none")
-        return;
+        if (curWeapon == "none") {return;}
 
-        if (weaponIsBoltAction(curWeapon))
-        scripts\bots\_bots::alertZombies(self.origin, 1024, 200, undefined);
-        else if (WeaponIsSemiAuto(curWeapon))
-        scripts\bots\_bots::alertZombies(self.origin, 1024, 100, undefined);
-        else
-        scripts\bots\_bots::alertZombies(self.origin, 1024, 100, undefined);
+        if (weaponIsBoltAction(curWeapon)) {
+            scripts\bots\_bots::alertZombies(self.origin, 1024, 200, undefined);
+        } else if (WeaponIsSemiAuto(curWeapon)) {
+            scripts\bots\_bots::alertZombies(self.origin, 1024, 100, undefined);
+        } else {
+            scripts\bots\_bots::alertZombies(self.origin, 1024, 100, undefined);
+        }
         wait .5;
-
     }
 }
 
@@ -885,16 +891,17 @@ rebuildPlayersEmplacedExplosives()
         self.emplacedClaymores = temp;
     }
 
-    /// @todo 2.2+: implement TNT
     // TNT
-//     temp = [];
-//     if (isDefined(self.tntArray)) {
-//     for (i=0; i<self.tntArray.size; i++) {
-//         if (isDefined(self.tntArray[i]))
-//             temp[temp.size] = self.tntArray[i];
-//         }
-//     }
-//     if (isDefined(self)) {self.tntArray = temp;}
+    temp = [];
+    if (isDefined(self.emplacedTnt)) {
+        for (i=0; i<self.emplacedTnt.size; i++) {
+            if (isDefined(self.emplacedTnt[i]))
+                temp[temp.size] = self.emplacedTnt[i];
+        }
+    }
+    if (isDefined(self)) {
+        self.emplacedTnt = temp;
+    }
 }
 
 
@@ -946,9 +953,11 @@ deleteExplosivesOnDisconnect()
             if (isdefined(self.emplacedClaymores[i])) {self.emplacedClaymores[i] delete();}
         }
     }
-    /*    for (i=0; i<tntArray.size; i++) {       //  TNT
-        if (isdefined(tntArray[i])) {tntArray[i] delete();}
-    }*/
+    if (isDefined(self.emplacedTnt)) {
+        for (i=0; i<self.emplacedTnt.size; i++) {  // TNT
+            if (isdefined(self.emplacedTnt[i])) {self.emplacedTnt[i] delete();}
+        }
+    }
 }
 
 
@@ -963,22 +972,32 @@ watchThrowable()
 
     self thread triggerThrowable();
 
-    while(1)
-    {
-        self waittill( "grenade_fire", c4, weapname );
-        if ( weapname == "c4" || weapname == "c4_mp" )
-        {
+    while(1) {
+        self waittill( "grenade_fire", throwable, weapname );
+        if ( weapname == "c4" || weapname == "c4_mp" ) {
             //if ( !self.emplacedC4.size )
             //  self thread watchC4AltDetonate();
 
-            self.emplacedC4[self.emplacedC4.size] = c4;
-            c4.owner = self;
-            c4.activated = false;
+            self.emplacedC4[self.emplacedC4.size] = throwable;
+            throwable.owner = self;
+            throwable.activated = false;
 
-            c4 thread maps\mp\gametypes\_shellshock::c4_earthQuake();
-            //c4 thread c4Activate();
-            c4 thread c4Damage();
-            c4 thread playC4Effects();
+            throwable thread maps\mp\gametypes\_shellshock::c4_earthQuake();
+            //throwable thread c4Activate();
+            throwable thread c4Damage();
+            throwable thread playC4Effects();
+        } else if ( weapname == "tnt" || weapname == "tnt_mp" ) {
+            //if ( !self.emplacedTnt.size )
+            //  self thread watchC4AltDetonate();
+
+            self.emplacedTnt[self.emplacedTnt.size] = throwable;
+            throwable.owner = self;
+            throwable.activated = false;
+
+            throwable thread maps\mp\gametypes\_shellshock::c4_earthQuake();
+            //throwable thread c4Activate();
+            throwable thread c4Damage();
+            throwable thread playC4Effects();
         }
     }
 }
@@ -989,22 +1008,27 @@ triggerThrowable()
 
     self endon("death");
     self endon("disconnect");
-    while (1)
-    {
-        self waittill( "detonate" );
+    while (1) {
+        self waittill("detonate");
         weap = self getCurrentWeapon();
-        if ( weap == "c4_mp" )
-        {
-            for ( i = 0; i < self.emplacedC4.size; i++ )
-            {
+        if ( weap == "c4_mp" ) {
+            for ( i = 0; i < self.emplacedC4.size; i++ ) {
                 c4 = self.emplacedC4[i];
-                if ( isdefined(self.emplacedC4[i]) )
-                {
-                        c4 thread waitAndDetonate( 0.1 );
+                if ( isdefined(self.emplacedC4[i]) ) {
+                        c4 thread waitAndDetonate(0.1);
                 }
             }
             self.emplacedC4 = [];
-            self notify ( "detonated" );
+            self notify ("detonated");
+        } else if (weap == "tnt_mp") {
+            for ( i = 0; i < self.emplacedTnt.size; i++ ) {
+                tnt = self.emplacedTnt[i];
+                if (isdefined(self.emplacedTnt[i])) {
+                    tnt thread waitAndDetonate(0.1);
+                }
+            }
+            self.emplacedTnt = [];
+            self notify ("detonated");
         }
     }
 }

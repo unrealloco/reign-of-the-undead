@@ -147,6 +147,7 @@ loadSettings()
     dvarInt(    "shop",     "defensive5_costs",     7500,   1,      250000);
     dvarInt(    "shop",     "defensive6_costs",     10000,  1,      250000);
     dvarInt(    "shop",     "defensive7_costs",     10000,  1,      250000);
+    dvarInt(    "shop",     "defensive8_costs",     10000,  1,      250000);
     dvarInt(    "shop",     "support1_costs",       2500,   1,      250000);
     dvarInt(    "shop",     "support2_costs",       15000,  1,      250000);
     dvarInt(    "shop",     "support3_costs",       20000,  1,      250000);

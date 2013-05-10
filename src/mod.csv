@@ -41,7 +41,7 @@ weapon,mp/bot_dog_idle_mp
 
 weapon,mp/at4_mp
 xanim,noweapon
-//weapon,mp/tnt_mp
+weapon,mp/tnt_mp
 weapon,mp/ak47
 weapon,mp/crossbow_mp
 

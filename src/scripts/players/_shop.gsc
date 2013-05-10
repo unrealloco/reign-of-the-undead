@@ -46,7 +46,7 @@ playerSetupShop()
         self setclientdvar("ui_costs"+i, level.dvar["shop_item"+(i+1)+"_costs"]);
         wait .05;
     }
-    for (i=0; i<7; i++) {
+    for (i=0; i<8; i++) {
         if (!isDefined(self)) {return;}
         self setclientdvar("ui_itemcosts"+i, level.dvar["shop_defensive"+(i+1)+"_costs"]);
         wait .05;
@@ -245,6 +245,23 @@ processResponse(response)
                 }
             }
         break;
+
+        case "item17":  // TNT (2,4,6-trinotrotoluene)
+            if (self.points >= level.dvar["shop_defensive8_costs"] + cureHoldback)
+            {
+                // extra check to make sure race conditions haven't made the emplaced array inaccurate
+                self scripts\players\_weapons::rebuildPlayersEmplacedExplosives();
+                if (level.maxTntPerPlayer - self.emplacedTnt.size == 0) {
+                    self iprintlnbold("Sorry! Maximum of " + level.maxTntPerPlayer + " TNT per player");
+                    return;
+                }
+                self giveweapon("tnt_mp");
+                self switchtoweapon("tnt_mp");
+                self setweaponammostock ("tnt_mp", level.maxTntPerPlayer - self.emplacedTnt.size);
+                self scripts\players\_players::incUpgradePoints(-1*level.dvar["shop_defensive8_costs"]);
+            }
+            break;
+
 
         case "item20":
             if (self.points >= level.dvar["shop_support1_costs"] + cureHoldback && self.support_level == 0)
