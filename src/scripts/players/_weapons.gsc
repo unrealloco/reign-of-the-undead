@@ -682,6 +682,7 @@ isExplosive(weapon)
     if (weapon=="tnt_mp") {return true;}
     if (weapon=="rpg_mp") {return true;}
     if (weapon=="at4_mp") {return true;}
+    if (weapon=="frag_grenade_mp") {return true;}
 
     return false;
 }

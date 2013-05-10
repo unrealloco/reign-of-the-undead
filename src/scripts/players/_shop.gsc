@@ -251,6 +251,12 @@ processResponse(response)
             {
                 // extra check to make sure race conditions haven't made the emplaced array inaccurate
                 self scripts\players\_weapons::rebuildPlayersEmplacedExplosives();
+                weapon = self getcurrentweapon();
+                stockAmmo = self GetWeaponAmmoStock(weapon);
+                if ((weapon == "tnt_mp") && (stockAmmo >= 1)) {
+                    self iprintlnbold("Sorry! You must emplace the TNT you already have before you can buy more!");
+                    return;
+                }
                 if (level.maxTntPerPlayer - self.emplacedTnt.size == 0) {
                     self iprintlnbold("Sorry! Maximum of " + level.maxTntPerPlayer + " TNT per player");
                     return;
