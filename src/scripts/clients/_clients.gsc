@@ -121,6 +121,9 @@ Callback_PlayerConnect()
                              "ui_upgradetext", "",
                              "ui_specialtext", "");
 
+        // Set the clan-specific message on the player's main menu
+        self setClientDvar("ui_main_menu_clan_text", getDvar("server_main_menu_clan_text"));
+
         lpselfnum = self getEntityNumber();
         self.guid = self getGuid();
         logPrint("J;" + self.guid + ";" + lpselfnum + ";" + self.name + "\n");

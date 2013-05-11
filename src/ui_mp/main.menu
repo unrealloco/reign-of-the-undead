@@ -136,6 +136,21 @@
             decoration
         }
 
+        // Clan/Server owner message
+        itemDef
+        {
+            // rect [left edge] [top edge] [width] [height]
+            rect            420 400 400 80 CHOICE_HORIZONTAL_ALIGN CHOICE_VERTICAL_ALIGN
+            textstyle       ITEM_TEXTSTYLE_SHADOWED
+            textscale       TEXTSIZE_SMALL
+            textalign       ITEM_ALIGN_CENTER
+            forecolor       1 1 1 0.75
+            exp             text(dvarString("ui_main_menu_clan_text"))
+            autowrapped
+            visible         1
+            decoration
+        }
+
         #define SETUP_ACTION_CREATEACLASS \
                 execnow "statset 260 1"; \
                 play "mouse_click"; \
@@ -171,8 +186,8 @@
         CHOICE_BUTTON_VIS( 9, "@ZOMBIE_ABOUT", open single_popmenu;, when( !localvarBool( ui_hideBack ) ) )
         CHOICE_BUTTON_VIS( 10, "@MENU_QUIT", open quit_popmenu;, when( !localvarBool( ui_hideBack ) ) )
 
+        // Official RotU website box
         CHOICE_FOOTNOTE_VIS( "Reign of the ^1Undead^7 Website: code.google.com/p/reign-of-the-undead/", 40, 420, when( !localvarBool( ui_hideBack ) ) )
-
     }
 
     #include "ui_mp/popupstyle.inc"

@@ -196,7 +196,6 @@ ROTU Change Log
 * Replacing the scoreboard team icons with something more zombie-appropriate
 * 'Broken Arrow' feature that uses off-map support to kill most zombies when a team
   is about to be overrun.
-* Enable TNT
 * Show zombies on large map displayed on 'esc' menu
 * Blue ball ban feature
 * Improved music system
@@ -215,3 +214,4 @@ ROTU Change Log
   and grenades, as intended.
 * Implement TNT.
 * Make frag grenades hurt final zombie on 'explosives' kill method
+* Added a clan-specific message to the main menu.  Configurable in server.cfg.
