@@ -1499,6 +1499,12 @@ revive()
     setStatusIcon("");
     self defaultHeadicon();
 
+    // Restore night vision after a player is revived
+    self.nightvision = true;
+    if (self.nightvision) {
+        self setActionSlot( 1, "nightvision" );
+    }
+
     self thread scripts\players\_usables::checkForUsableObjects();
 
     self thread scripts\players\_weapons::watchWeaponUsage();
