@@ -147,11 +147,14 @@ placeBarrel()
                 geometryOk = true;
             }
             if ((self.carryObj.type == 1) && (tooCloseToAmmoShop)) {
-                self iprintlnbold("^1Can not place MG+Barrel that close to shop or weapons create!");
+                self iprintlnbold("^1Can not place MG+Barrel that close to shop or weapons crate!");
                 wait 1;
             } else if (geometryOk) {
                 self.carryObj unlink();
-                wait 0.1;
+                /// @bug unlink() call sometimes silently fails, making it appear
+                /// that the barrel is stuck to the player.  Increase wait from 0.1 to
+                /// 0.2 to give unlink() more time.
+                wait 0.2;
 
                 self.carryObj.bar_type = 1;
                 self.carryObj.origin = newpos;
@@ -161,6 +164,11 @@ placeBarrel()
                 if (self.carryObj.type == 1) {
                     self.carryObj thread watchMGBarrel();
                 }
+                /// @bug As above.  No errors from this extraneous call to unlink(),
+                /// so we leave it and the 0.05 wait as a redundant attempt to unlink
+                /// the barrel before we undefine self.carryObj.
+                self.carryObj unlink();
+                wait 0.05;
                 self.carryObj = undefined;
 
                 iprintln( "^2"+ self.name + " ^2placed an obstacle." );
