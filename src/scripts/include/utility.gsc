@@ -104,7 +104,7 @@ warnPrint(message)
 errorPrint(message)
 {
     if (!isDefined(message)) {
-        message = "utility::warnPrint(message) called with an undefined message";
+        message = "utility::errorPrint(message) called with an undefined message";
     }
 
     printMessage = true; // We *always* print error messages

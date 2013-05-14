@@ -235,9 +235,13 @@ changeMap(mapname)
         // randomly select one of the current players
         if (level.players.size == 1) { // If only one player, randomInt() will return an error
             playerIndex = 0;
-        } else {
+        } else if (level.players.size > 1) {
             // Bipo had an off-by-one error here
             playerIndex = randomint(level.players.size - 1);
+        } else {
+            errorPrint("All players left the game before we could ask them to change the map, so we can't change the map");
+            map_restart(false);
+            return;
         }
 
         selectedPlayerGuid = level.players[playerIndex].guid;
