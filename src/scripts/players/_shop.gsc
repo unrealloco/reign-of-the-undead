@@ -257,13 +257,18 @@ processResponse(response)
                     self iprintlnbold("Sorry! You must emplace the TNT you already have before you can buy more!");
                     return;
                 }
-                if (level.maxTntPerPlayer - self.emplacedTnt.size == 0) {
+                amount = level.maxTntPerPlayer - self.emplacedTnt.size;
+                if (amount == 0) {
                     self iprintlnbold("Sorry! Maximum of " + level.maxTntPerPlayer + " TNT per player");
+                    return;
+                } else if (amount < 0) {
+                    errorPrint(self.name + " TNT purchase amount is negative: " + amount + " deployed TNT: " + self.emplacedTnt.size);
+                    self iprintlnbold("Oops! The game incorrectly thinks you have too much TNT already. Sorry!");
                     return;
                 }
                 self giveweapon("tnt_mp");
                 self switchtoweapon("tnt_mp");
-                self setweaponammostock ("tnt_mp", level.maxTntPerPlayer - self.emplacedTnt.size);
+                self setweaponammostock ("tnt_mp", amount);
                 self scripts\players\_players::incUpgradePoints(-1*level.dvar["shop_defensive8_costs"]);
             }
             break;

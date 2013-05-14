@@ -963,9 +963,9 @@ deleteExplosivesOnDisconnect()
 
 
 
-watchThrowable()
+watchC4()
 {
-    debugPrint("in _weapons::watchThrowable()", "fn", level.nonVerbose);
+    debugPrint("in _weapons::watchC4()", "fn", level.nonVerbose);
 
     self endon("death");
     self endon("disconnect");
@@ -987,7 +987,24 @@ watchThrowable()
             //throwable thread c4Activate();
             throwable thread c4Damage();
             throwable thread playC4Effects();
-        } else if ( weapname == "tnt" || weapname == "tnt_mp" ) {
+        }
+    }
+}
+
+watchTnt()
+{
+    debugPrint("in _weapons::watchTnt()", "fn", level.nonVerbose);
+
+    self endon("death");
+    self endon("disconnect");
+    self endon("spawned");      // end this instance before a respawn
+
+    /// We only need to call this once, so we just do it in watchC4
+    // self thread triggerThrowable();
+
+    while(1) {
+        self waittill( "grenade_fire", throwable, weapname );
+        if ( weapname == "tnt" || weapname == "tnt_mp" ) {
             //if ( !self.emplacedTnt.size )
             //  self thread watchC4AltDetonate();
 
@@ -1009,6 +1026,8 @@ triggerThrowable()
 
     self endon("death");
     self endon("disconnect");
+    self endon("spawned");      // end this instance before a respawn
+
     while (1) {
         self waittill("detonate");
         weap = self getCurrentWeapon();

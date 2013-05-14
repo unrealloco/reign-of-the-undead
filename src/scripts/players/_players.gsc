@@ -1204,7 +1204,8 @@ spawnPlayer(preserveState)
     self thread scripts\players\_usables::checkForUsableObjects();
     self thread scripts\players\_weapons::watchWeaponUsage();
     self thread scripts\players\_weapons::watchWeaponSwitching();
-    self thread scripts\players\_weapons::watchThrowable();
+    self thread scripts\players\_weapons::watchC4();
+    self thread scripts\players\_weapons::watchTnt();
     self thread scripts\players\_weapons::watchClaymores();
     self thread scripts\players\_weapons::deleteExplosivesOnDisconnect();
     self thread scripts\players\_abilities::watchSpecialAbility();
@@ -1509,12 +1510,12 @@ revive()
 
     self thread scripts\players\_weapons::watchWeaponUsage();
     self thread scripts\players\_weapons::watchWeaponSwitching();
-    // We call watchThrowable() here because c4 shouldn't work while down, but
-    // needs to be restarted upon revive.  We do not call watchClaymores(), because
-    // those should keep working while down.  Calling it here caused an extra instance
-    // of watchClaymores() to run every time a player was revived, causing the
-    // emplacedClaymores array to be wrong.
-    self thread scripts\players\_weapons::watchThrowable();
+    // We call watchC4() here because c4 shouldn't work while down, but
+    // needs to be restarted upon revive.  We do not call watchClaymores() or
+    // watchTnt(), because those should keep working while down.  Calling it here
+    // caused an extra instance of watchClaymores() to run every time a player
+    // was revived, causing the emplacedClaymores array to be wrong.
+    self thread scripts\players\_weapons::watchC4();
     self thread scripts\players\_weapons::deleteExplosivesOnDisconnect();
 
     wait .0001;
