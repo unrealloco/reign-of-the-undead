@@ -106,6 +106,34 @@ makeBarricade()
 }
 
 /**
+ * @brief Force-emplace a barrel when the player carrying it goes down
+ *
+ * @returns nothing
+ */
+placeBarrelOnDeath()
+{
+    debugPrint("in _barricades::placeBarrelOnDeath()", "fn", level.nonVerbose);
+
+    wait 0.1; // wait until they get teleported away from shop/ammo, as required
+    newpos = PlayerPhysicsTrace(self.carryObj.origin, self.carryObj.origin - (0,0,1000));
+    self.carryObj unlink();
+    wait 0.2;
+
+    self.carryObj.bar_type = 1;
+    self.carryObj.origin = newpos;
+    self.carryObj.angles = self.angles;
+    level.dynamic_barricades[level.dynamic_barricades.size] = self.carryObj;
+
+    if (self.carryObj.type == 1) {
+        self.carryObj thread watchMGBarrel();
+    }
+    self.carryObj = undefined;
+    self.canUse = true;
+
+    iprintln( "^2"+ self.name + " ^2placed an obstacle." );
+}
+
+/**
  * @brief Places a barrel a player is carrying in an acceptable spot in the map
  *
  * @returns nothing
@@ -114,12 +142,19 @@ placeBarrel()
 {
     debugPrint("in _barricades::placeBarrel()", "fn", level.nonVerbose);
 
-    self endon("death");
+    /// We do not end this function on "death" (i.e. down) so that we can force
+    /// the player to drop the barrel when they go down.  This prevents the player
+    /// from having a barrel they can't emplace after the get revived (or killed, if
+    /// they had become a zombie).
     self endon("disconnect");
 
     // self is player
     wait 1;
     while (1) {
+        if (self.isDown) {
+            self placeBarrelOnDeath();
+            return;
+        }
         if (self attackbuttonpressed()) {
             newpos = PlayerPhysicsTrace(self.carryObj.origin, self.carryObj.origin - (0,0,1000));
 
@@ -151,9 +186,6 @@ placeBarrel()
                 wait 1;
             } else if (geometryOk) {
                 self.carryObj unlink();
-                /// @bug unlink() call sometimes silently fails, making it appear
-                /// that the barrel is stuck to the player.  Increase wait from 0.1 to
-                /// 0.2 to give unlink() more time.
                 wait 0.2;
 
                 self.carryObj.bar_type = 1;
@@ -164,11 +196,6 @@ placeBarrel()
                 if (self.carryObj.type == 1) {
                     self.carryObj thread watchMGBarrel();
                 }
-                /// @bug As above.  No errors from this extraneous call to unlink(),
-                /// so we leave it and the 0.05 wait as a redundant attempt to unlink
-                /// the barrel before we undefine self.carryObj.
-                self.carryObj unlink();
-                wait 0.05;
                 self.carryObj = undefined;
 
                 iprintln( "^2"+ self.name + " ^2placed an obstacle." );
