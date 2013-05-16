@@ -196,7 +196,6 @@ ROTU Change Log
 * Replacing the scoreboard team icons with something more zombie-appropriate
 * 'Broken Arrow' feature that uses off-map support to kill most zombies when a team
   is about to be overrun.
-* Show zombies on large map displayed on 'esc' menu
 * Blue ball ban feature
 * Improved music system
 * Player pause feature, for 60 seconds
@@ -217,3 +216,6 @@ ROTU Change Log
 * Added a clan-specific message to the main menu.  Configurable in server.cfg.
 * Likely fix for rare bug where barrels appeared to be 'stuck' to a player after they
   tried to emplace the barrel. See Issue 6.
+* Issue where rcon password sometimes changed has been fixed.
+* Add ability to sometimes, always, or never show zombies on the minimap.  Configurable
+  in server.cfg

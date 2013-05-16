@@ -69,6 +69,7 @@ init()
     thread scripts\players\_teleporter::init();
     thread scripts\players\_rank::init();
     //thread scripts\players\_challenges::buildChallegeInfo();
+    thread uav();
 }
 
 precache()
@@ -90,6 +91,35 @@ precache()
     precacheStatusIcon( "icon_admin");
     precacheStatusIcon( "icon_spec" );
     precacheStatusIcon( "icon_dev" );
+}
+
+/**
+ * @brief Periodically shows zombies on the minimap
+ *
+ * @returns nothing
+ */
+uav()
+{
+    level endon("game_ended");
+
+    if (getDvar("ui_always_show_zombies") == "0") {
+        visibleDuration = getDvarInt("ui_show_zombies_duration");
+        hiddenDuration = getDvarInt("ui_hide_zombies_duration");
+
+        if ((visibleDuration == 0) && (hiddenDuration == 0)) {return;}
+
+        while(1) {
+            wait hiddenDuration;
+            players = level.players;
+            for ( i = 0; i < players.size; i++ ) {
+                players[i] setClientDvar("g_compassShowEnemies", 1);
+            }
+            wait visibleDuration;
+            for ( i = 0; i < players.size; i++ ) {
+                players[i] setClientDvar("g_compassShowEnemies", 0);
+            }
+        }
+    }
 }
 
 setDown(isDown)
@@ -339,6 +369,11 @@ onPlayerConnect()
     }
 
     self setclientdvars("g_scriptMainMenu", game["menu_class"], "cg_thirdperson", 0, "r_filmusetweaks", 0, "ui_class_ranks", (1 - level.dvar["game_class_ranks"]), "ui_specialrecharge", 0);
+
+    // Always show zombies on minimap if configured in server.cfg
+    if (getDvar("ui_always_show_zombies") == "1") {
+        self setClientDvar("g_compassShowEnemies", 1);
+    }
 
     // Let teammates know the player needs help
     self thread downed();
