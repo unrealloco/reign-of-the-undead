@@ -108,15 +108,14 @@ uav()
 
         if ((visibleDuration == 0) && (hiddenDuration == 0)) {return;}
 
-        while(1) {
+        while (1) {
             wait hiddenDuration;
-            players = level.players;
-            for ( i = 0; i < players.size; i++ ) {
-                players[i] setClientDvar("g_compassShowEnemies", 1);
+            for (i = 0; i < level.players.size; i++) {
+                level.players[i] setClientDvar("g_compassShowEnemies", 1);
             }
             wait visibleDuration;
-            for ( i = 0; i < players.size; i++ ) {
-                players[i] setClientDvar("g_compassShowEnemies", 0);
+            for (i = 0; i < level.players.size; i++) {
+                level.players[i] setClientDvar("g_compassShowEnemies", 0);
             }
         }
     }
