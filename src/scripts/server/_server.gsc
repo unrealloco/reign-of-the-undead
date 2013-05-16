@@ -100,9 +100,34 @@ init()
     thread scripts\players\_players::correctPlayerCounts();
     thread scripts\players\_players::onWaveIntermissionBegins();
     thread scripts\players\_players::onWaveIntermissionEnds();
-//     readLogMessages();
+    thread verifyRconPassword();
 
     runTestCode();
+}
+
+/**
+ * @brief Checks for and tries to fix an incorrect rcon password
+ *
+ * @returns nothing
+ */
+verifyRconPassword()
+{
+    debugPrint("in _server::verifyRconPassword()", "fn", level.nonVerbose);
+
+    wait 5;
+    resetCount = 0;
+    while ((getdvar("rcon_password") != getdvar("rcon_password_backup")) &&
+           (resetCount < 4))
+    {
+        warnPrint("rcon_password is incorrect.  Resetting it using the backup rcon password.");
+        setdvar("rcon_password", getdvar("rcon_password_backup"));
+        resetCount++;
+        wait 3;
+    }
+    if (getdvar("rcon_password") != getdvar("rcon_password_backup")) {
+        errorPrint("We failed to fix the incorrect rcon password.");
+        return;
+    }
 }
 
 

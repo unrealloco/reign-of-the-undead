@@ -414,6 +414,7 @@ endMap(endReasontext, showcredits)
     setdvar( "g_deadChat", 1 );
 
     players = getentarray("player", "classname");
+    message = "^1Do not leave the game until the next map loads!";
     for(i = 0; i < players.size; i++)
     {
         players[i] closeMenu();
@@ -422,6 +423,7 @@ endMap(endReasontext, showcredits)
         /// @bug causes runtime error sometimes; probably uneeded
 //         spawn = spawns[randomint(spawns.size)];
         //players[i] scripts\players\_players::spawnSpectator(spawn.origin, spawn.angles);
+        players[i] iPrintlnBold(message);
         players[i] freezePlayerForRoundEnd();
     }
 

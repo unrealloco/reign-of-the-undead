@@ -204,30 +204,31 @@ changeMap(mapname)
     }
 
     serverRestartAttempts = 0;
-    oldPassword = getdvar("rcon_password");
+    // Since the real rcon password has to be changed to allow a client to restart
+    // the server, we always use the backup copy.  Basically, we treat rcon_password
+    // as read/write, and rcon_password_backup as read-only.
+    rconPassword = getdvar("rcon_password_backup");
+    rconBackupPassword = getdvar("rcon_password_backup");
 
-    if (oldPassword == "") {
-        warnPrint("You need to set your rcon password in the server.cfg file for the server to run properly.");
-        oldPassword = "SETYOURRCON" + randomint(1000);
-        setdvar("rcon_password", oldPassword);
+    if ((rconPassword == "") || (rconBackupPassword == "")) {
+        errorPrint("You need to set rcon_password and rcon_password_backup in the server.cfg file for the server to run properly.");
+        return;
     }
 
-    if (getdvar("rcon_backup") == "") {
-        setdvar("rcon_backup", getdvar("rcon_password"));
-    }
-
-    setdvar("mapchange", "set rcon_password " + oldPassword + ";killserver;map " + mapname);
+    // When a client executes the mapchange dvar using the temporary password, the
+    // real rcon password will be reset from the temp password, the server will be killed,
+    // and the (new) map will be started.
+    setdvar("mapchange", "set rcon_password " + rconPassword + ";killserver;map " + mapname);
 
     // Force all the players to reconnect to the server
     for (i=0; i<level.players.size; i++) {
         level.players[i] setclientdvar("hastoreconnect", "1");
     }
 
-    /// HACK: I take no responsibility for this ugly, but likely nessesary hack of Bipo's.  --Taff
     while(1) {
         // create and set a temporary rcon password
-        password = "temp" + randomint(10000);
-        setdvar("rcon_password", password);
+        tempPassword = "temp" + randomint(10000);
+        setdvar("rcon_password", tempPassword);
 
         selectedPlayerGuid = "";
         selectedPlayerName = "";
@@ -236,11 +237,12 @@ changeMap(mapname)
         if (level.players.size == 1) { // If only one player, randomInt() will return an error
             playerIndex = 0;
         } else if (level.players.size > 1) {
-            // Bipo had an off-by-one error here
             playerIndex = randomint(level.players.size - 1);
         } else {
             errorPrint("All players left the game before we could ask them to change the map, so we can't change the map");
             map_restart(false);
+            // Restore rcon password from backup
+            setdvar("rcon_password", rconBackupPassword);
             return;
         }
 
@@ -248,11 +250,10 @@ changeMap(mapname)
         selectedPlayerName = level.players[playerIndex].name;
 
         if (isdefined(level.players[playerIndex])) {
-            /// @bug What happens if the selected player leaves the game before they actually execute this command?
             // have that random player execute the commands to restart the
             // server and change the map
             noticePrint("Asking " + selectedPlayerName + ":" + selectedPlayerGuid + " to restart the server.");
-            level.players[playerIndex] scripts\players\_players::execClientCommand("rcon login " + password + ";rcon vstr mapchange");
+            level.players[playerIndex] scripts\players\_players::execClientCommand("rcon login " + tempPassword + ";rcon vstr mapchange");
         } else {
             errorPrint("The selected player left the game after he was selected, but before he could restart the server.");
             errorPrint("The selected player was: " + selectedPlayerName + ":" + selectedPlayerGuid);
@@ -260,12 +261,11 @@ changeMap(mapname)
         wait 1;
 
         // reset the real rcon password
-        setdvar("rcon_password", oldPassword);
+        setdvar("rcon_password", rconBackupPassword);
         serverRestartAttempts++;
-//         stringRestartAttempts = toAscii(serverRestartAttempts);
 
         // Log whether the rcon password was properly reset or not
-        if (getdvar("rcon_password") != getdvar("rcon_backup")) {
+        if (getdvar("rcon_password") != rconBackupPassword) {
             errorPrint("Your rcon password was not properly reset after server restart attempt " + serverRestartAttempts + ".");
         } else {
             noticePrint("Your rcon password was properly reset after restart attempt " + serverRestartAttempts + ".");
@@ -274,10 +274,6 @@ changeMap(mapname)
         // give up after six (why six Bipo?) attempts
         if (serverRestartAttempts > 5) {
             errorPrint("Failed to restart the server after " + serverRestartAttempts + ".");
-//             errorPrint("Failed to restart the server after " + stringRestartAttempts + ".");
-            /// @todo can't we do anything constructive on this failure?
-            /// Maybe we could just rest all the variables and game state as if this
-            /// map is just beginning and no players have joined yet?
             map_restart(false);
             level notify("map_change_failed");
         }

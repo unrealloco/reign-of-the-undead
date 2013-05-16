@@ -215,3 +215,5 @@ ROTU Change Log
 * Implement TNT.
 * Make frag grenades hurt final zombie on 'explosives' kill method
 * Added a clan-specific message to the main menu.  Configurable in server.cfg.
+* Likely fix for rare bug where barrels appeared to be 'stuck' to a player after they
+  tried to emplace the barrel. See Issue 6.
