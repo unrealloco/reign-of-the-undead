@@ -226,3 +226,4 @@ ROTU Change Log
   one second of each other.
 * Reduce start and max ammo for the gold desert eagle from 500 to 250 rounds.
 * Deprecate and remove the 2.1 map voting system
+* Deprecate and remove _zombiescipt2.gsc and _zombiescript - kopie.gsc
