@@ -360,7 +360,10 @@ removeMgBarrel()
             self.turret.myPlayer.onTurret = false;
             self.turret.myPlayer.isFiringTurret = false;
             self.turret.myPlayer destroyProgressBar();
+            // Simulate the player on the turret pressing the 'F' key to drop the SAW
+            self.turret.myPlayer scripts\players\_players::execClientCommand("+activate");
             wait 0.05;
+            self.turret.myPlayer scripts\players\_players::execClientCommand("-activate");
             self.turret.myPlayer = undefined;
         }
     }
