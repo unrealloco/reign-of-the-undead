@@ -40,11 +40,7 @@ init()
 
     level.onChangeMap = ::blank;
     if (level.dvar["game_mapvote"] == 1) {
-        if (level.dvar["game_mapvote_style"] == "2.1") {
-            thread scripts\server\_mapvoting::init();   /// @todo deprecate old mapvoting?
-        } else if (level.dvar["game_mapvote_style"] == "2.2") {
-            thread scripts\server\_mapvoting22::init();
-        }
+        thread scripts\server\_mapvoting22::init();
     } else {
         thread scripts\server\_maprotation::init();
     }

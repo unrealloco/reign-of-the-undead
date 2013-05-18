@@ -214,8 +214,15 @@ ROTU Change Log
 * Implement TNT.
 * Make frag grenades hurt final zombie on 'explosives' kill method
 * Added a clan-specific message to the main menu.  Configurable in server.cfg.
-* Likely fix for rare bug where barrels appeared to be 'stuck' to a player after they
+* Fix for rare bug where barrels appeared to be 'stuck' to a player after they
   tried to emplace the barrel. See Issue 6.
 * Issue where rcon password sometimes changed has been fixed.
 * Add ability to sometimes, always, or never show zombies on the minimap.  Configurable
   in server.cfg
+* Force players to automatically drop a MG+Barrel turret when it runs out of ammo, so their
+  body doesn't become hidden if they don't drop the turret immediately.
+* Fix for an admin sometimes not being recognized as an admin such that they can't open the
+  admin menu.  The issue presented itself when multiple admins connected to the game within
+  one second of each other.
+* Reduce start and max ammo for the gold desert eagle from 500 to 250 rounds.
+* Deprecate and remove the 2.1 map voting system
