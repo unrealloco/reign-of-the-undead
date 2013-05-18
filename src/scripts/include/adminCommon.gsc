@@ -418,7 +418,7 @@ onPlayerConnect()
         for (i=0; i< self.admins.size; i++) {
             admin = self.admins[i];
             if (admin.guid == guid) {
-                player onAdminConnect(admin);
+                player thread onAdminConnect(admin);
             }
         }
     }
