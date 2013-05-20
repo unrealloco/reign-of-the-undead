@@ -34,6 +34,7 @@
 #include scripts\include\hud;
 #include scripts\include\entities;
 #include scripts\include\utility;
+#include maps\mp\_rozo_interface;
 
 // GENERAL SCRIPTS
 setGameMode(mode)
@@ -88,6 +89,7 @@ buildAmmoStock(targetname, loadtime)
     debugPrint("in _zombiescript::buildAmmoStock()", "fn", level.nonVerbose);
 
     ents = getentarray(targetname, "targetname");
+    noticePrint("Found " + ents.size + " of type 'ammostock', i.e. weapon upgrade");
     for (i=0; i<ents.size; i++) {
         ent = ents[i];
         ent.loadtime = loadtime;
@@ -145,6 +147,7 @@ buildWeaponUpgrade(targetname)
     debugPrint("in _zombiescript::buildWeaponUpgrade()", "fn", level.nonVerbose);
 
     ents = getentarray(targetname, "targetname");
+    noticePrint("Found " + ents.size + " of type 'weaponupgrade', i.e. shop");
     for (i=0; i<ents.size; i++) {
         ent = ents[i];
         level scripts\players\_usables::addUsable(ent, "extras", "Press [USE] to buy upgrades!", 96);
