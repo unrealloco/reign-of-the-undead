@@ -314,7 +314,7 @@ mapRotation()
 
     // Load all the sv_mapvoting[n] dvars from server.cfg
     mapDvars = [];
-    for (i=0; i<8; i++) {
+    for (i=0; i<11; i++) {
         get = getdvar("sv_mapvoting"+(i+1));
         if(get == "") {break;}
         mapDvars[i]=get;
