@@ -45,6 +45,7 @@ init()
 
     level.gametype = toLower(getDvar("g_gametype"));
     level.modversion = "RotU v2.2";
+    level.isLocalServer = getDvar("g_local_server");
 
     /**
      * Many maps try to load dust_trail_IR, but it generates errors
@@ -248,5 +249,7 @@ runTestCode()
 {
     debugPrint("in _server::runTestCode()", "fn", level.nonVerbose);
 
+//     maps\mp\_umi::devDumpEntities();
+//     maps\mp\_umi::devDumpCsvWaypointsToBtd();
+//     thread maps\mp\_umi::devDrawWaypoints(true);
 }
-

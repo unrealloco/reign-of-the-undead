@@ -406,8 +406,17 @@ onPlayerConnect()
 
         player.isAdmin = false;
 
+        // 'player getGuid()' returns the profile name, if player is the launching player
+        // using 'Start New Server'
         guid = getSubStr(player getGuid(), 24, 32);
         debugPrint("connecting guid: " + guid, "val");
+        if (level.isLocalServer == "1") {
+            name = getDvar("admin_forced_profile");
+            if (guid == name) {
+                guid = getDvar("admin_forced_guid");
+                noticePrint("Local server: Host player's guid forced to " + guid);
+            }
+        }
         if (guid == "") {
             guid = getDvar("admin_forced_guid");
             noticePrint("Host player's guid forced to " + guid);
