@@ -34,11 +34,20 @@
 #include maps\mp\_debug;
 #include scripts\include\utility;
 
+
+/**
+ * @brief Starts script processing for survivial gametypes
+ *
+ * @returns nothing
+ */
 main()
 {
     // source the settings the debug system depends on
     initializeDebugSystem();
     debugPrint("in surv::main()", "fn", level.nonVerbose);
+
+    // Used to let maps know what mod is trying to load them
+    level.modName = "rotu";
 
     if (getDvar("mapname") == "mp_background") {return;} // this isn't required...
 

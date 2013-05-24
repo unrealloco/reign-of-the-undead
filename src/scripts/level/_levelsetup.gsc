@@ -30,7 +30,7 @@
  *    Reign of the Undead must also comply with Activision/Infinity Ward's modtools
  *    EULA.
  ******************************************************************************/
-/// @file _levelsetup.gsc Catches some ROZO map calls and hands them off to _rozo_interface.gsc
+/// @file _levelsetup.gsc Catches some ROZO map calls and hands them off to _umi.gsc
 
 #include scripts\include\utility;
 

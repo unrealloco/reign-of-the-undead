@@ -30,23 +30,22 @@
  *    Reign of the Undead must also comply with Activision/Infinity Ward's modtools
  *    EULA.
  ******************************************************************************/
-/// @file _map_util.gsc Catches some ROZO map calls and hands them off to _rozo_interface.gsc
+/// @file _map_util.gsc Catches some ROZO map calls and hands them off to _umi.gsc
 
-#include maps\mp\_zombiescript;
 #include scripts\include\utility;
 
 placeShops(weapon, shop)
 {
     debugPrint("in _map_utils::placeShops()", "fn", level.lowVerbosity);
 
-    maps\mp\_rozo_interface::placeShops(weapon, shop);
+    maps\mp\_umi::placeShops(weapon, shop);
 }
 
 addDefaultZombieSpawns()
 {
     debugPrint("in _map_utils::addDefaultZombieSpawns()", "fn", level.lowVerbosity);
 
-    maps\mp\_rozo_interface::addDefaultZombieSpawns();
+    maps\mp\_umi::addDefaultZombieSpawns();
 }
 
 addDefaultPlayerSpawns()
@@ -67,7 +66,7 @@ convertWaypoints()
 {
     debugPrint("in _map_utils::convertWaypoints()", "fn", level.lowVerbosity);
 
-    maps\mp\_rozo_interface::convertWaypoints();
+    maps\mp\_umi::convertWaypoints();
 }
 
 setPlayerModels()

@@ -30,96 +30,75 @@
     Reign of the Undead must also comply with Activision/Infinity Ward's modtools
     EULA.
 ******************************************************************************/
+/**
+ * @file _zombiescript.gsc Catches legacy RotU map calls and forwards them to _umi.gsc
+ * @deprecated  However, this interface will be maintained indefinitely for backward compatibility
+ */
 
-#include scripts\include\hud;
-#include scripts\include\entities;
 #include scripts\include\utility;
-#include maps\mp\_rozo_interface;
 
-// GENERAL SCRIPTS
 setGameMode(mode)
 {
     debugPrint("in _zombiescript::setGameMode()", "fn", level.lowVerbosity);
 
-    level.gameMode = mode;
-
-    waittillframeend;
+    maps\mp\_umi::setGameMode(mode);
 }
 
 setPlayerSpawns(targetname)
 {
     debugPrint("in _zombiescript::setPlayerSpawns()", "fn", level.lowVerbosity);
 
-    level.playerspawns = targetname;
+    maps\mp\_umi::setPlayerSpawns(targetname);
 }
 
 setWorldVision(vision, transitiontime)
 {
     debugPrint("in _zombiescript::setWorldVision()", "fn", level.lowVerbosity);
 
-    visionSetNaked(vision, transitiontime);
-    level.vision = vision;
+    maps\mp\_umi::setWorldVision(vision, transitiontime);
 }
 
 buildParachutePickup(targetname)
 {
     debugPrint("in _zombiescript::buildParachutePickup()", "fn", level.lowVerbosity);
 
-    ents = getentarray(targetname, "targetname");
-    //for (i=0; i<ents.size; i++)
-    //ents[i] thread scripts\players\_parachute::parachutePickup();
+    maps\mp\_umi::buildParachutePickup(targetname);
 }
 
 buildWeaponPickup(targetname, itemtext, weapon, type)
 {
     debugPrint("in _zombiescript::buildWeaponPickup()", "fn", level.lowVerbosity);
 
-    LogPrint("In _zombiescript.gsc\n");
-    ents = getentarray(targetname, "targetname");
-    for (i=0; i<ents.size; i++) {
-        ent = ents[i];
-        ent.myWeapon = weapon;
-        ent.wep_type = type;
-        level scripts\players\_usables::addUsable(ent, "weaponpickup", "Press [USE] to pick up " + itemtext, 96);
-    }
+    maps\mp\_umi::buildWeaponPickup(targetname, itemtext, weapon, type);
 }
 
 buildAmmoStock(targetname, loadtime)
 {
     debugPrint("in _zombiescript::buildAmmoStock()", "fn", level.nonVerbose);
 
-    ents = getentarray(targetname, "targetname");
-    noticePrint("Found " + ents.size + " of type 'ammostock', i.e. weapon upgrade");
-    for (i=0; i<ents.size; i++) {
-        ent = ents[i];
-        ent.loadtime = loadtime;
-        if (level.ammoStockType == "weapon") {
-            level scripts\players\_usables::addUsable(ent, "ammobox", "Press [USE] for a weapon! (^1"+level.dvar["surv_waw_costs"]+"^7)", 96);
-            createTeamObjpoint(ent.origin+(0,0,72), "hud_weapons", 1);
-        }
-        if (level.ammoStockType == "upgrade") {
-            level scripts\players\_usables::addUsable(ent, "ammobox", "Press [USE] to upgrade your weapon!", 96);
-            createTeamObjpoint(ent.origin+(0,0,72), "hud_weapons", 1);
-        }
-        if (level.ammoStockType == "ammo") {
-            level scripts\players\_usables::addUsable(ent, "ammobox", "Hold [USE] to restock ammo", 96);
-        }
-    }
+    maps\mp\_umi::buildAmmoStock(targetname, loadtime);
+}
+
+// Weaponshop actually
+buildWeaponUpgrade(targetname)
+{
+    debugPrint("in _zombiescript::buildWeaponUpgrade()", "fn", level.nonVerbose);
+
+    maps\mp\_umi::buildWeaponUpgrade(targetname);
 }
 
 setWeaponHandling(id)
 {
     debugPrint("in _zombiescript::setWeaponHandling()", "fn", level.lowVerbosity);
 
-    level.onGiveWeapons = id;
+    maps\mp\_umi::setWeaponHandling(id);
 }
 
 setSpawnWeapons(primary, secondary)
 {
     debugPrint("in _zombiescript::setSpawnWeapons()", "fn", level.lowVerbosity);
 
-    level.spawnPrimary = primary;
-    level.spawnSecondary = secondary;
+    maps\mp\_umi::setSpawnWeapons(primary, secondary);
 }
 
 // ONSLAUGHT MODE
@@ -137,29 +116,15 @@ buildSurvSpawn(targetname, priority)
 {
     debugPrint("in _zombiescript::buildSurvSpawn()", "fn", level.nonVerbose);
 
-    scripts\gamemodes\_survival::addSpawn(targetname, priority);
+    maps\mp\_umi::buildSurvSpawn(targetname, priority);
 
-}
-
-// Weaponshop actually
-buildWeaponUpgrade(targetname)
-{
-    debugPrint("in _zombiescript::buildWeaponUpgrade()", "fn", level.nonVerbose);
-
-    ents = getentarray(targetname, "targetname");
-    noticePrint("Found " + ents.size + " of type 'weaponupgrade', i.e. shop");
-    for (i=0; i<ents.size; i++) {
-        ent = ents[i];
-        level scripts\players\_usables::addUsable(ent, "extras", "Press [USE] to buy upgrades!", 96);
-        createTeamObjpoint(ent.origin+(0,0,72), "hud_ammo", 1);
-    }
 }
 
 startSurvWaves()
 {
     debugPrint("in _zombiescript::startSurvWaves()", "fn", level.nonVerbose);
 
-    scripts\gamemodes\_survival::beginGame();
+    maps\mp\_umi::startSurvWaves();
 }
 
 //GENERAL SCRIPTS
@@ -174,43 +139,12 @@ waittillStart()
 {
     debugPrint("in _zombiescript::waittillStart()", "fn", level.nonVerbose);
 
-    wait .5;
-
-    scripts\gamemodes\_gamemodes::initGameMode();
-
-    while (level.activePlayers == 0) {
-        wait .5;
-    }
-
-    logPrint("Notice: Zombiescript: " + getdvar("mapname") + " is using _zombiescript.gsc.\n");
+    maps\mp\_umi::waittillStart();
 }
 
 buildBarricade(targetname, parts, health, deathFx, buildFx, dropAll)
 {
     debugPrint("in _zombiescript::buildBarricade()", "fn", level.lowVerbosity);
 
-    if (!isdefined(dropAll)) {dropAll = false;}
-
-    ents = getentarray(targetname, "targetname");
-    for (i=0; i<ents.size; i++) {
-        ent = ents[i];
-        level.barricades[level.barricades.size] = ent;
-        for (j=0; j<parts; j++) {
-            ent.parts[j] = ent getClosestEntity(ent.target + j);
-            /// @bug if the part isn't defined, try skipping this part
-            if (!isDefined(ent.parts[j])) {
-                logPrint("j: " + j + " jth part is not defined.\n");
-            }
-            ent.parts[j].startPosition = ent.parts[j].origin;
-//             buildBarricade("staticbarricade", 4, 400, level.barricadefx,level.barricadefx);
-        }
-        ent.hp = int(health);
-        ent.maxhp = int(health);;
-        ent.partsSize = parts;
-        ent.deathFx = deathFx;
-        ent.buildFx = buildFx;
-        ent.occupied = false;
-        ent.dropAll = dropAll;
-        ent thread scripts\players\_barricades::makeBarricade();
-    }
+    maps\mp\_umi::buildBarricade(targetname, parts, health, deathFx, buildFx, dropAll);
 }
