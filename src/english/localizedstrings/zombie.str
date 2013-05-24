@@ -178,5 +178,7 @@ LANG_ENGLISH        "&&1 was demoted to &&2!"
 REFERENCE           RANK_PLAYER_WAS_DEMOTED_N
 LANG_ENGLISH        "&&1 was demoted to &&2 &&3!"
 
+REFERENCE           DEVELOPER
+LANG_ENGLISH        "Developer Mode:"
 
-
+ENDMARKER
