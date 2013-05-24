@@ -51,6 +51,7 @@ my $rebuildSound = 0;
 my $rebuildServerCustom = 0;
 my $rebuildServerScripts = 0;
 my $rebuildCustomIwd = 0;
+my $rebuildCustomMapsIwd = 0;
 my $rebuildMod = 0;
 
 my $needToUpdateChecksums = 0;
@@ -805,6 +806,7 @@ sub clean()
     deleteFile($config{modPath}.'\2d.iwd');
     deleteFile($config{modPath}.'\rotu_svr_custom.iwd');
     deleteFile($config{modPath}.'\rotu_svr_scripts.iwd');
+    deleteFile($config{modPath}.'\rotu_svr_mapdata.iwd');
     deleteFile($config{modPath}.'\rotu_svr_scripts.debug');
     deleteFile($config{modPath}.'\sound.iwd');
     deleteFile($config{modPath}.'\weapons.iwd');
@@ -960,6 +962,15 @@ sub updateUploadFolder()
         system($cmd) / 256 <= 3 or die "system $cmd failed: $?";
         report "Copied yz_custom.iwd to $config{uploadPath}\n";
     }
+    if ($rebuildCustomMapsIwd) {
+        # Copy rotu_svr_mapdata.iwd over
+        $file = 'rotu_svr_mapdata.iwd ';
+        $cmd = $copyCmd.' "'.$config{modPath}.'" "'.$config{uploadPath}.'" '.$file.$switches;
+        $cmd =~ s!\\!\/!g;
+        # for robocopy, a byte-shifted return code of 3 or less is success
+        system($cmd) / 256 <= 3 or die "system $cmd failed: $?";
+        report "Copied rotu_svr_mapdata.iwd to $config{uploadPath}\n";
+    }
     if ($rebuildSound) {
         # Copy sound.iwd over
         $file = 'sound.iwd ';
@@ -1028,6 +1039,7 @@ sub rebuildScriptsOnly()
     $rebuildServerCustom = 1;
     $rebuildServerScripts = 1;
     $rebuildCustomIwd = 0;
+    $rebuildCustomMapsIwd = 0;
     buildIwdFiles();
 
     updateUploadFolder();
@@ -1052,6 +1064,7 @@ sub doInitialBuild()
     $rebuildServerCustom = 1;
     $rebuildServerScripts = 1;
     $rebuildCustomIwd = 1;
+    $rebuildCustomMapsIwd = 1;
     buildIwdFiles();
 
     # Build mod.ff
@@ -1229,6 +1242,17 @@ sub buildIwdFiles()
     } else {
         print "We do not need to rebuild yz_custom.iwd\n";
     }
+    if ($rebuildCustomMapsIwd) {
+        $archive = $config{modPath}.'\rotu_svr_mapdata.iwd';
+        deleteFile($archive);
+        $folders = '..\src\custom_maps\maps';
+        $cmd = $zipCmd.'"'.$archive.'" '.$folders;
+        $cmd =~ s!\\!\/!g;
+        system($cmd) == 0 or die "system $cmd failed: $?";
+        report "Rebuilt rotu_svr_mapdata.iwd\n";
+    } else {
+        print "We do not need to rebuild rotu_svr_mapdata.iwd\n";
+    }
     if ($rebuildSound) {
         $archive = $config{modPath}.'\sound.iwd';
         deleteFile($archive);
@@ -1304,6 +1328,7 @@ sub findChanges()
             # What parts do we have to rebuild?
             if (m/.*\/maps\/.*/ or m/.*\/scripts\/.*/) {
                 $rebuildServerScripts = 1;
+                $rebuildCustomMapsIwd = 1;
             } elsif (m/.*\/custom\/.*/) {
                 $rebuildCustomIwd = 1;
             } elsif (m/.*\/custom_scripts\/.*/ or m/.*\/animtrees\/.*/) {
