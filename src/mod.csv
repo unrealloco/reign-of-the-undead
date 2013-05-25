@@ -38,12 +38,13 @@ weapon,mp/bot_zombie_melee_mp
 weapon,mp/bot_dog_run_mp
 weapon,mp/bot_dog_idle_mp
 
-
-weapon,mp/at4_mp
-xanim,noweapon
 weapon,mp/tnt_mp
 weapon,mp/ak47
 weapon,mp/crossbow_mp
+weapon,mp/saw_bipod_stand_mp
+
+
+xanim,noweapon
 
 xmodel,weapon_g36
 xmodel,viewmodel_g36c
@@ -278,7 +279,6 @@ xmodel,com_barrel_metal
 xmodel,com_barrel_benzin
 xmodel,com_barrel_biohazard
 xmodel,weapon_saw_MG_setup
-weapon,mp/saw_bipod_stand_mp
 fx,weather/lightning
 fx,fire/emb_burst_a
 fx,misc/fumes
