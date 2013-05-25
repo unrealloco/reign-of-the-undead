@@ -59,8 +59,8 @@ main()
     convertToNativeWaypoints();
 
     waitUntilFirstPlayerSpawns();
-    buildWeaponShopsByTradespawns("0 2 4");
-    buildShopsByTradespawns("1 3 5");
+    buildWeaponShopsByTradespawns("0 2 4 6");
+    buildShopsByTradespawns("1 3 5 7");
 
     buildZombieSpawnsByClassname("mp_dm_spawn");
     startGame();
