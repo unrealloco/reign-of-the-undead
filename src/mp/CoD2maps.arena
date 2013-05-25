@@ -17,6 +17,12 @@
 }
 
 {
+    map "mp_carentan"
+    longname "MPUI_CARENTAN"
+    gametype "surv"
+}
+
+{
     map "mp_countdown"
     longname "MPUI_COUNTDOWN"
     gametype "surv"
@@ -25,6 +31,12 @@
 {
     map "mp_creek"
     longname "MPUI_CREEK"
+    gametype "surv"
+}
+
+{
+    map "mp_farm"
+    longname "MPUI_FARM"
     gametype "surv"
 }
 
@@ -55,5 +67,11 @@
 {
     map "mp_strike"
     longname "MPUI_STRIKE"
+    gametype "surv"
+}
+
+{
+    map "mp_cargoship"
+    longname "MPUI_CARGOSHIP"
     gametype "surv"
 }
