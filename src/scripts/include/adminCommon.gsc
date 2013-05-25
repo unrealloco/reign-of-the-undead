@@ -56,6 +56,7 @@ precache()
     precacheMenu("admin_temp_ban");
     precacheMenu("admin_warn");
     precacheMenu("admin_changemap");
+    precacheMenu("admin_dev");
 }
 
 /**

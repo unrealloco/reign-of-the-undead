@@ -37,6 +37,7 @@
  *                    not @code maps\mp\_unified_mapping_interface.gsc @endcode
  */
 
+#include scripts\include\array;
 #include scripts\include\data;
 #include scripts\include\entities;
 #include scripts\include\hud;
@@ -100,6 +101,7 @@ setNativeMapType(nativeMapType)
  * same time by other functions.
  *
  * @returns nothing
+ * @since RotU 2.2.1
  */
 devDumpCsvWaypointsToBtd()
 {
@@ -172,6 +174,7 @@ devDumpCsvWaypointsToBtd()
  * @endcode
  *
  * @returns nothing
+ * @since RotU 2.2.1
  */
 devDumpBtdWaypointsToCsv()
 {
@@ -212,6 +215,7 @@ devDumpBtdWaypointsToCsv()
  * @param labelWaypoints boolean Show each waypoint index and its linked indices?
  *
  * @returns nothing
+ * @since RotU 2.2.1
  */
 devDrawWaypoints(labelWaypoints)
 {
@@ -222,6 +226,7 @@ devDrawWaypoints(labelWaypoints)
         wait 0.5;
     }
 
+    /// @bug the line() and print3d() functions don't work
     player = scripts\include\adminCommon::getPlayerByShortGuid(getDvar("admin_forced_guid"));
     while(1)
     {
@@ -249,14 +254,311 @@ devDrawWaypoints(labelWaypoints)
  * from an admin command, or perhaps from a keybinding.
  *
  * @returns nothing
+ * @since RotU 2.2.1
  */
 devRecordWaypoint()
-{}
+{
+    debugPrint("in _umi::devRecordWaypoint()", "fn", level.nonVerbose);
+
+    x = self.origin[0];
+    y = self.origin[1];
+    z = self.origin[2];
+
+    msg = "Recorded waypoint: origin: ("+x+","+y+","+z+")";
+    noticePrint(msg);
+    iPrintLnBold(msg);
+}
+
+/**
+ * @brief UMI gives a player a weapons shop that they can emplace
+ *
+ * @returns nothing
+ * @since RotU 2.2.1
+ */
+devGiveEquipmentShop()
+{
+    debugPrint("in _umi::devGiveEquipmentShop()", "fn", level.nonVerbose);
+
+    if (!isDefined(level.devEquipmentShops)) {level.devEquipmentShops = [];}
+
+    shop = spawn("script_model", (0,0,0));
+    shop setModel("ad_sodamachine");
+    level.devEquipmentShops[level.devEquipmentShops.size] = shop;
+
+    self.carryObj = shop;
+    // we intentionally pick it up off-center so the player can see where they
+    // are going
+    self.carryObj.origin = self.origin + AnglesToForward(self.angles)*80;
+
+    self.carryObj.angles = self.angles + (0,-90,0);
+    self.carryObj.master = self;
+    self.carryObj linkto(self);
+    self.carryObj setcontents(2);
+
+    level scripts\players\_usables::addUsable(shop, "equipmentShop", "Press [use] to pickup equipment shop", 80);
+    self.canUse = false;
+    self disableweapons();
+    self thread devEmplaceEquipmentShop();
+}
+
+/**
+ * @brief UMI emplaces an equipment shop a player is carrying
+ *
+ * @returns nothing
+ * @since RotU 2.2.1
+ */
+devEmplaceEquipmentShop()
+{
+    debugPrint("in _umi::devEmplaceEquipmentShop()", "fn", level.nonVerbose);
+
+    while (1) {
+        if (self attackbuttonpressed()) {
+            self.carryObj unlink();
+            wait .05;
+            self.canUse = true;
+            self enableweapons();
+        }
+        wait 0.05;
+    }
+}
+
+/**
+ * @brief UMI emplaces a weapon shop a player is carrying
+ *
+ * @returns nothing
+ * @since RotU 2.2.1
+ */
+devEmplaceWeaponShop()
+{
+    debugPrint("in _umi::devEmplaceWeaponShop()", "fn", level.nonVerbose);
+
+    while (1) {
+        if (self attackbuttonpressed()) {
+            self.carryObj unlink();
+            wait .05;
+            self.canUse = true;
+            self enableweapons();
+        }
+        wait 0.05;
+    }
+}
+
+/**
+ * @brief UMI permits a player pick up and move am equipment shop
+ *
+ * @param shop entity The shop to pick up
+ *
+ * @returns nothing
+ * @since RotU 2.2.1
+ */
+devMoveEquipmentShop(shop)
+{
+    debugPrint("in _umi::devMoveEquipmentShop()", "fn", level.nonVerbose);
+
+    self scripts\players\_usables::removeUsable(shop);
+
+    self.carryObj = shop;
+    self.carryObj.origin = self.origin + AnglesToForward(self.angles)*48;
+    self.carryObj.angles = self.angles + (0,-90,0);
+    self.carryObj.master = self;
+    self.carryObj linkto(self);
+    self.carryObj setcontents(2);
+
+    level scripts\players\_usables::addUsable(shop, "equipmentShop", "Press [use] to pickup equipment shop", 80);
+    self.canUse = false;
+    self disableweapons();
+    self thread devEmplaceEquipmentShop();
+}
+
+/**
+ * @brief UIM permits a player pick up and move a weapon shop
+ *
+ * @param shop entity The shop to pick up
+ *
+ * @returns nothing
+ * @since RotU 2.2.1
+ */
+devMoveWeaponShop(shop)
+{
+    debugPrint("in _umi::devMoveWeaponShop()", "fn", level.nonVerbose);
+
+    self scripts\players\_usables::removeUsable(shop);
+
+    self.carryObj = shop;
+    self.carryObj.origin = self.origin + AnglesToForward(self.angles)*48;
+    self.carryObj.angles = self.angles + (0,-90,0);
+    self.carryObj.master = self;
+    self.carryObj linkto(self);
+    self.carryObj setcontents(2);
+
+    level scripts\players\_usables::addUsable(shop, "weaponsShop", "Press [use] to pickup weapon shop", 80);
+    self.canUse = false;
+    self disableweapons();
+    self thread devEmplaceWeaponShop();
+}
+
+/**
+ * @brief UMI gives a player a weapons shop that they can emplace
+ *
+ * @returns nothing
+ * @since RotU 2.2.1
+ */
+devGiveWeaponsShop()
+{
+    debugPrint("in _umi::devGiveWeaponsShop()", "fn", level.nonVerbose);
+
+    if (!isDefined(level.devWeaponShops)) {level.devWeaponShops = [];}
+
+    shop = spawn("script_model", (0,0,0));
+    shop setModel("com_plasticcase_green_big");
+    level.devWeaponShops[level.devWeaponShops.size] = shop;
+
+    self.carryObj = shop;
+    self.carryObj.origin = self.origin + AnglesToForward(self.angles)*80;
+
+    self.carryObj.angles = self.angles + (0,-90,0);
+    self.carryObj.master = self;
+    self.carryObj linkto(self);
+    self.carryObj setcontents(2);
+
+    level scripts\players\_usables::addUsable(shop, "weaponsShop", "Press [use] to pickup weapon shop", 80);
+    self.canUse = false;
+    self disableweapons();
+    self thread devEmplaceWeaponShop();
+}
+
+
+/**
+ * @brief UMI deletes the shop closest to the player
+ *
+ * @returns nothing
+ * @since RotU 2.2.1
+ */
+devDeleteClosestShop()
+{
+    debugPrint("in _umi::devDeleteClosestShop()", "fn", level.nonVerbose);
+
+    // Find closest equipment shop
+    closestEquipmentDistance = 999999;
+    closestEquipmentShopIndex = -1;
+    if (isDefined(level.devEquipmentShops)) {
+        noticePrint("Pre level.devEquipmentShops.size: " + level.devEquipmentShops.size);
+        for (i=0; i<level.devEquipmentShops.size; i++) {
+            distanceProxy = distanceSquared(self.origin, level.devEquipmentShops[i].origin);
+            if (distanceProxy < closestEquipmentDistance) {
+                closestEquipmentDistance = distanceProxy;
+                closestEquipmentShopIndex = i;
+            }
+        }
+    }
+
+    // Find closest weapon shop
+    closestWeaponDistance = 999999;
+    closestWeaponShopIndex = -1;
+    if (isDefined(level.devWeaponShops)) {
+        noticePrint("Pre level.devWeaponShops.size: " + level.devWeaponShops.size);
+        for (i=0; i<level.devWeaponShops.size; i++) {
+            distanceProxy = distanceSquared(self.origin, level.devWeaponShops[i].origin);
+            if (distanceProxy < closestWeaponDistance) {
+                closestWeaponDistance = distanceProxy;
+                closestWeaponShopIndex = i;
+            }
+        }
+    }
+
+    // Delete the closest shop
+    if (closestEquipmentDistance < closestWeaponDistance) {
+        // delete equipment shop
+        level scripts\players\_usables::removeUsable(level.devEquipmentShops[closestEquipmentShopIndex]);
+        level.devEquipmentShops[closestEquipmentShopIndex] delete();
+        level.devEquipmentShops = removeElementByIndex(level.devEquipmentShops, closestEquipmentShopIndex);
+        noticePrint("Post level.devEquipmentShops.size: " + level.devEquipmentShops.size);
+    } else {
+        // delete weapon shop
+        level scripts\players\_usables::removeUsable(level.devWeaponShops[closestWeaponShopIndex]);
+        level.devWeaponShops[closestWeaponShopIndex] delete();
+        level.devWeaponShops = removeElementByIndex(level.devWeaponShops, closestWeaponShopIndex);
+        noticePrint("Post level.devWeaponShops.size: " + level.devWeaponShops.size);
+    }
+
+}
+
+/**
+ * @brief UMI writes a tradespawn file to the server log
+ *
+ * @returns nothing
+ * @since RotU 2.2.1
+ */
+devSaveTradespawns()
+{
+    debugPrint("in _umi::devSaveTradespawns()", "fn", level.nonVerbose);
+
+    if (level.devWeaponShops.size != level.devEquipmentShops.size) {
+        msg = "Map: You must have an equal number of weapon and equipment shops!";
+        errorPrint(msg);
+        iPrintLnBold(msg);
+        return;
+    }
+
+    mapName =  tolower(getdvar("mapname"));
+    logPrint("// =============================================================================\n");
+    logPrint("// File Name = '"+mapname+"_tradespawns.gsc'\n");
+    logPrint("// Map Name = '"+mapname+"'\n");
+    logPrint("// =============================================================================\n");
+    logPrint("//\n");
+    logPrint("// This file was generated by the RotU admin development command 'Save Tradespawns'\n");
+    logPrint("//\n");
+    logPrint("// =============================================================================\n");
+    logPrint("//\n");
+    logPrint("// This file contains the tradespawns (equipment & weapon shop locations) for\n");
+    logPrint("// the map '" + mapName + "'\n");
+    logPrint("//\n");
+    logPrint("// N.B. You will need to delete the timecodes at the beginning of these lines!\n");
+    logPrint("//\n");
+
+    logPrint("load_tradespawns()\n");
+    logPrint("{\n");
+    logPrint("    level.tradespawns = [];\n");
+    logPrint("    \n");
+
+    count = level.devWeaponShops.size + level.devEquipmentShops.size;
+    shop = "";
+    type = "";
+    for (i=0; i<count; i++) {
+        modulo = i % 2;
+        if (modulo == 0) {
+            // even-numbered index, traditionally used for weapon shops
+            shop = level.devWeaponShops[int(i / 2)];
+            type = "weapon";
+        } else {
+            // odd-numbered index, traditionally used for equipment shops
+            shop = level.devEquipmentShops[int((i - 1) / 2)];
+            type = "equipment";
+        }
+
+        x = shop.origin[0];
+        y = shop.origin[1];
+        z = shop.origin[2];
+        rho = shop.angles[0];
+        phi = shop.angles[1];
+
+        logPrint("    level.tradespawns["+i+"] = spawnstruct();  // spec'd for "+type+" shop\n");
+        logPrint("    level.tradespawns["+i+"].origin = ("+x+","+y+","+z+");\n");
+        logPrint("    level.tradespawns["+i+"].angles = ("+rho+","+phi+",0);\n");
+    }
+
+    logPrint("    \n");
+    logPrint("    level.tradeSpawnCount = level.tradespawns.size;\n");
+    logPrint("}\n");
+
+    iPrintLnBold("Tradespawn data written to the server log.");
+}
 
 /**
  * @brief UMI writes entities with defined classname and/or targetname properties to the server log
  *
  * @returns nothing
+ * @since RotU 2.2.1
  */
 devDumpEntities()
 {
@@ -710,6 +1012,7 @@ setPreferBtdWaypoints(value)
  * player to be in the game.
  *
  * @returns nothing
+ * @since RotU 2.2.1
  */
 waitUntilFirstPlayerSpawns()
 {
@@ -729,6 +1032,7 @@ waitUntilFirstPlayerSpawns()
  * @brief UMI begins the actual gameplay
  *
  * @returns nothing
+ * @since RotU 2.2.1
  */
 startGame()
 {
@@ -743,6 +1047,7 @@ startGame()
  * @param classname string The value of the entities' classname property
  *
  * @returns nothing
+ * @since RotU 2.2.1
  */
 deleteEntitiesByClassname(classname)
 {
@@ -760,6 +1065,7 @@ deleteEntitiesByClassname(classname)
  * @param targetname string The value of the entities' targetname property
  *
  * @returns nothing
+ * @since RotU 2.2.1
  */
 deleteEntitiesByTargetname(targetname)
 {
@@ -777,6 +1083,7 @@ deleteEntitiesByTargetname(targetname)
  * This deletes weapon and perk pickups on CoD4 stock maps, like mp_bog
  *
  * @returns nothing
+ * @since RotU 2.2.1
  */
 deletePickupItems()
 {
@@ -812,6 +1119,7 @@ preferBtdWaypoints()
  * @brief Is this map using the unified mapping interface?
  *
  * @returns boolean true if the map uses UMI, false otherwise
+ * @since RotU 2.2.1
  */
 isUmiMap()
 {
@@ -826,6 +1134,7 @@ isUmiMap()
  * @private
  *
  * @returns string The name of the mod, or an empty string if undetermined
+ * @since RotU 2.2.1
  */
 privateGuessModName()
 {

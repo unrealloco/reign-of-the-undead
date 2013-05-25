@@ -40,8 +40,7 @@
 
         /// @depends: admin_ban.menu, admin_warn.menu, admin_kick.menu, admin_temp_ban.menu
         /// These submenus are required due to arbitrary size limits on individual menus
-        /// new menus must be noted in mod.csv, and precached in scripts\server\_adminmenu.gsc
-        /// implementation code in scripts\server\_adminmenu.gsc
+        /// new menus must be noted in mod.csv, and precached in scripts\include\adminCommon::precache()
         CHOICE_BUTTON_VIS( 1, "^2Next Player >>", scriptMenuResponse "admin_next";, 1 )
         CHOICE_BUTTON_VIS( 2, "^2Previous Player <<", scriptMenuResponse "admin_prev";, 1 )
 
@@ -74,7 +73,7 @@
         CHOICE_BUTTON_VIS( 4, "Teleport", exec "admin_page tp";, when(dvarString("admin_page")=="2") )
         CHOICE_BUTTON_VIS( 5, "Toggle Session Visibility", scriptMenuResponse "admin_session_visibility";, when(dvarString("admin_page")=="2") )
         CHOICE_BUTTON_VIS( 6, "Kill Zombies", scriptMenuResponse "admin_kill_zombies";, when(dvarString("admin_page")=="2") )
-
+        CHOICE_BUTTON_VIS( 7, "Development", open admin_dev;, when(dvarString("admin_page")=="2")  )
         /// Assist Players
         CHOICE_BUTTON_VIS( 3, "Spawn", scriptMenuResponse "admin_spawn";, when(dvarString("admin_page")=="3") )
         CHOICE_BUTTON_VIS( 4, "Cure", scriptMenuResponse "admin_cure";, when(dvarString("admin_page")=="3") )
@@ -111,7 +110,6 @@
         CHOICE_BUTTON_VIS( 3, "^2One ^7Warning", scriptMenuResponse "admin_remove_one_warning"; exec "admin_page 1";, when(dvarString("admin_page")=="rw")  )
         CHOICE_BUTTON_VIS( 4, "^2One ^7Language Warning", scriptMenuResponse "admin_remove_one_language_warning"; exec "admin_page 1";, when(dvarString("admin_page")=="rw")  )
         CHOICE_BUTTON_VIS( 5, "^2All ^7Warnings", scriptMenuResponse "admin_remove_all_warnings"; exec "admin_page 1";, when(dvarString("admin_page")=="rw")  )
-
 
         /* notify */
         itemDef
