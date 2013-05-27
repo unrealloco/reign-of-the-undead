@@ -311,8 +311,6 @@ devEmplaceEquipmentShop()
 {
     debugPrint("in _umi::devEmplaceEquipmentShop()", "fn", level.nonVerbose);
 
-    /// @bug only works right when you are generally facing uphill
-
     while (1) {
         if (self attackbuttonpressed()) {
             // self.carryObj.origin is the origin of xmodel's coord system, which
@@ -392,8 +390,22 @@ devEmplaceEquipmentShop()
             newOrigin = h + (jPrime*-31.6);
             self.carryObj.origin = newOrigin;
 
-            phi = scripts\players\_turrets::angleBetweenTwoVectors(k, kPrime); // not technically correct, but close enough
-            self.carryObj.angles = vectorToAngles(iPrime) + (0,0,phi); // phi rotates about x-axis
+            // align the soda machine's x-axis with the computed x-axis
+            phi = scripts\players\_turrets::angleBetweenTwoVectors(k, kPrime*(0,1,1));
+            self.carryObj.angles = vectorToAngles(iPrime);
+
+            // now align the crate's y-axis with the computed y-axis
+            z = anglesToUp(self.carryObj.angles);
+            phi = scripts\players\_turrets::angleBetweenTwoVectors(z, kPrime);
+            self.carryObj.angles = self.carryObj.angles + (0,0,phi); // phi rotates about x-axis
+
+            // ensure we rotated the crate properly to align the y-axis
+            y = anglesToRight(self.carryObj.angles);
+            beta = scripts\players\_turrets::angleBetweenTwoVectors(y, jPrime);
+            if (beta > phi) {
+                // phi should have been negated!
+                self.carryObj.angles = self.carryObj.angles + (0,0,-2*phi); // phi rotates about x-axis
+            }
 
             self.carryObj unlink();
             wait .05;
@@ -419,7 +431,6 @@ devDrawLaser(color, origin, direction)
 {
     debugPrint("in _turrets::primarySectorLaser()", "fn", level.lowVerbosity);
 
-    wait 0.05;
     if (color == "red") {
         playFx(level.redLaserSight, origin, direction);
     } else if (color == "green") {
@@ -451,8 +462,6 @@ devDrawLaser(color, origin, direction)
 devEmplaceWeaponShop()
 {
     debugPrint("in _umi::devEmplaceWeaponShop()", "fn", level.nonVerbose);
-
-    /// @bug only works right when you are generally facing uphill
 
     while (1) {
         if (self attackbuttonpressed()) {
@@ -488,11 +497,11 @@ devEmplaceWeaponShop()
             // we trace 50 units above to 100 units below d, e, and f, and the trace
             // position will give us the points, g, h, and l above/below d, e, and f
             // that intersect the world surface
-            result = bulletTrace(d + (0,0,100), d - (0,0,100), false, self.carryObj);
+            result = bulletTrace(d + (0,0,50), d - (0,0,100), false, self.carryObj);
             g = result["position"];
-            result = bulletTrace(e + (0,0,100), e - (0,0,100), false, self.carryObj);
+            result = bulletTrace(e + (0,0,50), e - (0,0,100), false, self.carryObj);
             h = result["position"];
-            result = bulletTrace(f + (0,0,100), f - (0,0,100), false, self.carryObj);
+            result = bulletTrace(f + (0,0,50), f - (0,0,100), false, self.carryObj);
             l = result["position"];
 
             // now g, h, and l define a plane that approximates the local world surface,
@@ -529,11 +538,24 @@ devEmplaceWeaponShop()
             newOrigin = h + (jPrime*-31.6);
             midpoint = h + ((l-h) * 0.5);
             newOrigin = midpoint + ((g-midpoint) * 0.5);
-
             self.carryObj.origin = newOrigin;
 
-            phi = scripts\players\_turrets::angleBetweenTwoVectors(k, kPrime); // not technically correct, but close enough
-            self.carryObj.angles = vectorToAngles(iPrime) + (0,0,phi); // phi rotates about x-axis
+            // align the crate's x-axis with the computed x-axis
+            phi = scripts\players\_turrets::angleBetweenTwoVectors(k, kPrime*(0,1,1));
+            self.carryObj.angles = vectorToAngles(iPrime);
+
+            // now align the crate's y-axis with the computed y-axis
+            z = anglesToUp(self.carryObj.angles);
+            phi = scripts\players\_turrets::angleBetweenTwoVectors(z, kPrime);
+            self.carryObj.angles = self.carryObj.angles + (0,0,phi); // phi rotates about x-axis
+
+            // ensure we rotated the crate properly to align the y-axis
+            y = anglesToRight(self.carryObj.angles);
+            beta = scripts\players\_turrets::angleBetweenTwoVectors(y, jPrime);
+            if (beta > phi) {
+                // phi should have been negated!
+                self.carryObj.angles = self.carryObj.angles + (0,0,-2*phi); // phi rotates about x-axis
+            }
 
             self.carryObj unlink();
             wait .05;
