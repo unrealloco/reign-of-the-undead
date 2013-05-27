@@ -311,14 +311,134 @@ devEmplaceEquipmentShop()
 {
     debugPrint("in _umi::devEmplaceEquipmentShop()", "fn", level.nonVerbose);
 
+    /// @bug only works right when you are generally facing uphill
+
     while (1) {
         if (self attackbuttonpressed()) {
+            // self.carryObj.origin is the origin of xmodel's coord system, which
+            // is the left rear base corner of the soda machine, which is about
+            // 40.4 units wide and 31.6 units deep.
+
+            // a, b, and c lie in the base plane of the model, b and c the front
+            // left and right corners, respectively, and a bisects the rear face
+            a = zeros(2,1);
+            setValue(a,1,1,20.2);  // x
+            setValue(a,2,1,0);     // y
+            b = zeros(2,1);
+            setValue(b,1,1,0);     // x
+            setValue(b,2,1,-31.6); // y
+            c = zeros(2,1);
+            setValue(c,1,1,40.4);  // x
+            setValue(c,2,1,-31.6); // y
+
+            // d, e, and f are a, b, and c, repspectively, translated into world coordinates
+            phi = self.carryObj.angles[1]; // phi is the angle the xmodel is rotated through
+
+            R = eye(2);
+            setValue(R,1,1,cos(phi));
+            setValue(R,1,2,-1*sin(phi));
+            setValue(R,2,1,sin(phi));
+            setValue(R,2,2,cos(phi));
+
+            // apply the rotation matrix
+            dM = matrixMultiply(R, a);
+            eM = matrixMultiply(R, b);
+            fM = matrixMultiply(R, c);
+            d = self.carryObj.origin + (value(dM,1,1),value(dM,2,1),0);
+            e = self.carryObj.origin + (value(eM,1,1),value(eM,2,1),0);
+            f = self.carryObj.origin + (value(fM,1,1),value(fM,2,1),0);
+
+            // we trace 50 units above to 50 units below d, e, and f, and the trace
+            // position will give us the points, g,h, and l above/below d,e, and f
+            // that intersect the world surface
+            result = bulletTrace(d + (0,0,100), d - (0,0,100), false, self.carryObj);
+            g = result["position"];
+            result = bulletTrace(e + (0,0,100), e - (0,0,100), false, self.carryObj);
+            h = result["position"];
+            result = bulletTrace(f + (0,0,100), f - (0,0,100), false, self.carryObj);
+            l = result["position"];
+
+            // now g, h, and l define a plane that approximates the local world surface,
+            // so we find the surface normal
+            hg = h - g; // h relative to g
+            lg = l - g; // l relative to g
+
+            s = zeros(3,1);
+            setValue(s,1,1,hg[0]);  // x
+            setValue(s,2,1,hg[1]);  // y
+            setValue(s,3,1,hg[2]);  // z
+            t = zeros(3,1);
+            setValue(t,1,1,lg[0]);  // x
+            setValue(t,2,1,lg[1]);  // y
+            setValue(t,3,1,lg[2]);  // z
+            normalM = matrixCross(s, t);
+
+            // standard basis vectors in world coordinate system
+            i = (1,0,0);
+            j = (0,1,0);
+            k = (0,0,1);
+
+            // [i|j|k]Prime are the basis vectors for the rotated coordinate system
+            kPrime = vectorNormalize((value(normalM,1,1), value(normalM,2,1), value(normalM,3,1)));
+            iPrime = vectorNormalize(l-h);
+            u = zeros(3,1);
+            setValue(u,1,1,iPrime[0]);  // x
+            setValue(u,2,1,iPrime[1]);  // y
+            setValue(u,3,1,iPrime[2]);  // z
+            jPrimeM = matrixCross(u, normalM);
+            jPrime = vectorNormalize((value(jPrimeM,1,1), value(jPrimeM,2,1), value(jPrimeM,3,1)));
+
+            // calculate the new origin (the left-rear corner of the re-positioned soda machine)
+            newOrigin = h + (jPrime*-31.6);
+            self.carryObj.origin = newOrigin;
+
+            phi = scripts\players\_turrets::angleBetweenTwoVectors(k, kPrime); // not technically correct, but close enough
+            self.carryObj.angles = vectorToAngles(iPrime) + (0,0,phi); // phi rotates about x-axis
+
             self.carryObj unlink();
             wait .05;
             self.canUse = true;
             self enableweapons();
+            return;
         }
-        wait 0.05;
+        wait 0.1;
+    }
+}
+
+/**
+ * @brief UMI draws a colored laser  at the location and direction specified
+ *
+ * @param color string The color of the laser: red, green, blue, white, yellow, magenta, cyan
+ * @param origin vector The location to place the laser
+ * @param direction vector the direction to shine the laser
+ *
+ * @returns nothing
+ * @since RotU 2.2.1
+ */
+devDrawLaser(color, origin, direction)
+{
+    debugPrint("in _turrets::primarySectorLaser()", "fn", level.lowVerbosity);
+
+    wait 0.05;
+    if (color == "red") {
+        playFx(level.redLaserSight, origin, direction);
+    } else if (color == "green") {
+        playFx(level.greenLaserSight, origin, direction);
+    } else if (color == "blue") {
+        playFx(level.blueLaserSight, origin, direction);
+    } else if (color == "white") {
+        playFx(level.redLaserSight, origin, direction);
+        playFx(level.greenLaserSight, origin, direction);
+        playFx(level.blueLaserSight, origin, direction);
+    } else if (color == "yellow") {
+        playFx(level.redLaserSight, origin, direction);
+        playFx(level.greenLaserSight, origin, direction);
+    } else if (color == "magenta") {
+        playFx(level.redLaserSight, origin, direction);
+        playFx(level.blueLaserSight, origin, direction);
+    } else if (color == "cyan") {
+        playFx(level.greenLaserSight, origin, direction);
+        playFx(level.blueLaserSight, origin, direction);
     }
 }
 
@@ -332,16 +452,99 @@ devEmplaceWeaponShop()
 {
     debugPrint("in _umi::devEmplaceWeaponShop()", "fn", level.nonVerbose);
 
+    /// @bug only works right when you are generally facing uphill
+
     while (1) {
         if (self attackbuttonpressed()) {
+            // a, b, and c lie in the base plane of the model, b and c the front
+            // left and right corners, respectively, and a bisects the rear face
+            a = zeros(2,1);
+            setValue(a,1,1,0);   // x
+            setValue(a,2,1,16);  // y
+            b = zeros(2,1);
+            setValue(b,1,1,-20); // x
+            setValue(b,2,1,-16); // y
+            c = zeros(2,1);
+            setValue(c,1,1,20);  // x
+            setValue(c,2,1,-16); // y
+
+            // d, e, and f are a, b, and c, repspectively, translated into world coordinates
+            phi = self.carryObj.angles[1]; // phi is the angle the xmodel is rotated through
+
+            R = eye(2);
+            setValue(R,1,1,cos(phi));
+            setValue(R,1,2,-1*sin(phi));
+            setValue(R,2,1,sin(phi));
+            setValue(R,2,2,cos(phi));
+
+            // apply the rotation matrix
+            dM = matrixMultiply(R, a);
+            eM = matrixMultiply(R, b);
+            fM = matrixMultiply(R, c);
+            d = self.carryObj.origin + (value(dM,1,1),value(dM,2,1),0);
+            e = self.carryObj.origin + (value(eM,1,1),value(eM,2,1),0);
+            f = self.carryObj.origin + (value(fM,1,1),value(fM,2,1),0);
+
+            // we trace 50 units above to 100 units below d, e, and f, and the trace
+            // position will give us the points, g, h, and l above/below d, e, and f
+            // that intersect the world surface
+            result = bulletTrace(d + (0,0,100), d - (0,0,100), false, self.carryObj);
+            g = result["position"];
+            result = bulletTrace(e + (0,0,100), e - (0,0,100), false, self.carryObj);
+            h = result["position"];
+            result = bulletTrace(f + (0,0,100), f - (0,0,100), false, self.carryObj);
+            l = result["position"];
+
+            // now g, h, and l define a plane that approximates the local world surface,
+            // so we find the surface normal
+            hg = h - g; // h relative to g
+            lg = l - g; // l relative to g
+
+            s = zeros(3,1);
+            setValue(s,1,1,hg[0]);  // x
+            setValue(s,2,1,hg[1]);  // y
+            setValue(s,3,1,hg[2]);  // z
+            t = zeros(3,1);
+            setValue(t,1,1,lg[0]);  // x
+            setValue(t,2,1,lg[1]);  // y
+            setValue(t,3,1,lg[2]);  // z
+            normalM = matrixCross(s, t);
+
+            // standard basis vectors in world coordinate system
+            i = (1,0,0);
+            j = (0,1,0);
+            k = (0,0,1);
+
+            // [i|j|k]Prime are the basis vectors for the rotated coordinate system
+            kPrime = vectorNormalize((value(normalM,1,1), value(normalM,2,1), value(normalM,3,1)));
+            iPrime = vectorNormalize(l-h);
+            u = zeros(3,1);
+            setValue(u,1,1,iPrime[0]);  // x
+            setValue(u,2,1,iPrime[1]);  // y
+            setValue(u,3,1,iPrime[2]);  // z
+            jPrimeM = matrixCross(u, normalM);
+            jPrime = vectorNormalize((value(jPrimeM,1,1), value(jPrimeM,2,1), value(jPrimeM,3,1)));
+
+            // calculate the new origin (the center of the re-positioned crate)
+            newOrigin = h + (jPrime*-31.6);
+            midpoint = h + ((l-h) * 0.5);
+            newOrigin = midpoint + ((g-midpoint) * 0.5);
+
+            self.carryObj.origin = newOrigin;
+
+            phi = scripts\players\_turrets::angleBetweenTwoVectors(k, kPrime); // not technically correct, but close enough
+            self.carryObj.angles = vectorToAngles(iPrime) + (0,0,phi); // phi rotates about x-axis
+
             self.carryObj unlink();
             wait .05;
             self.canUse = true;
             self enableweapons();
+            return;
         }
-        wait 0.05;
+        wait 0.1;
     }
 }
+
 
 /**
  * @brief UMI permits a player pick up and move am equipment shop
@@ -358,7 +561,7 @@ devMoveEquipmentShop(shop)
     self scripts\players\_usables::removeUsable(shop);
 
     self.carryObj = shop;
-    self.carryObj.origin = self.origin + AnglesToForward(self.angles)*48;
+    self.carryObj.origin = self.origin + AnglesToForward(self.angles)*80;
     self.carryObj.angles = self.angles + (0,-90,0);
     self.carryObj.master = self;
     self.carryObj linkto(self);
@@ -385,7 +588,7 @@ devMoveWeaponShop(shop)
     self scripts\players\_usables::removeUsable(shop);
 
     self.carryObj = shop;
-    self.carryObj.origin = self.origin + AnglesToForward(self.angles)*48;
+    self.carryObj.origin = self.origin + AnglesToForward(self.angles)*80;
     self.carryObj.angles = self.angles + (0,-90,0);
     self.carryObj.master = self;
     self.carryObj linkto(self);

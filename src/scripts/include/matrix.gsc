@@ -1075,6 +1075,29 @@ max(a, b)
     else {return b;}
 }
 
+/**
+ * @brief Computes the cross product of two column vectors
+ *
+ * @param A matrix The first column vector
+ * @param B matrix The second column vector
+ *
+ * @returns matrix A column vector representing A cross B
+ * @since RotU 2.2.1
+ */
+matrixCross(A, B)
+{
+    /// @internal, so indices are zero-indexed
+
+    // S is a skew-symmetric matrix of A
+    S = zeros(3,3);
+    setValue(S,2,3, -1*A.data[0][0]);
+    setValue(S,3,2,  A.data[0][0]);
+    setValue(S,3,1, -1*A.data[1][0]);
+    setValue(S,1,3,  A.data[1][0]);
+    setValue(S,1,2, -1*A.data[2][0]);
+    setValue(S,2,1,  A.data[2][0]);
+    return matrixMultiply(S, B);
+}
 
 
 /// @todo get column of inverted matrix by Ax = e_1, Ax = e_2, etc.  page 108, bottom para

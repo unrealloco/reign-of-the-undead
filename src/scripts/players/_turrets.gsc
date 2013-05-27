@@ -60,6 +60,7 @@ init()
 
     level.redLaserSight = loadFx("misc/laser_sight_red");
     level.greenLaserSight = loadFx("misc/laser_sight_green");
+    level.blueLaserSight = loadFx("misc/laser_sight_blue");
     level.test = loadFx("fire/firelp_small_pm_rotu");
 
     // Create the Mk19 Grenade turrets for this game
