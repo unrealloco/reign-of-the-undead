@@ -303,7 +303,7 @@ deleteUnusedEntitiesFromStockMaps()
             ents[j] delete();
         }
     }
-    maps\mp\_umi::devDumpEntities();
+//    maps\mp\_umi::devDumpEntities();
 }
 
 
