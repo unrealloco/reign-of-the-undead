@@ -209,43 +209,175 @@ devDumpBtdWaypointsToCsv()
 }
 
 /**
- * @brief UMI draws the waypoints on the map
+ * @brief UMI draws all possible spawnpoints on the map
+ * This is useful when placing tradespawns to ensure you don't block a spawning player
  * @threaded
- *
- * @param labelWaypoints boolean Show each waypoint index and its linked indices?
  *
  * @returns nothing
  * @since RotU 2.2.1
  */
-devDrawWaypoints(labelWaypoints)
+devDrawAllPossibleSpawnpoints()
+{
+    debugPrint("in _umi::devDrawAllPossibleSpawnpoints()", "fn", level.nonVerbose);
+
+    // mark RotU-style spawngroups by targetname
+    for (i=0; i<20; i++) {
+        targetname = "spawngroup" + i;
+        ents = getentarray(targetname, "targetname");
+        for (j=0; j<ents.size; j++) {
+            devDrawLaser("red", ents[j].origin, (0,0,1));
+        }
+    }
+    // mark RotU-style spawngroups by classname
+    for (i=0; i<20; i++) {
+        classname = "spawngroup" + i;
+        ents = getentarray(classname, "classname");
+        for (j=0; j<ents.size; j++) {
+            devDrawLaser("red", ents[j].origin, (0,0,1));
+        }
+    }
+    // mark the Cod4 stock spawnpoints
+    codSpawnpointClasses[0] = "mp_tdm_spawn";
+    codSpawnpointClasses[1] = "mp_tdm_spawn_allies_start";
+    codSpawnpointClasses[2] = "mp_tdm_spawn_axis_start";
+    codSpawnpointClasses[3] = "mp_dm_spawn";
+    codSpawnpointClasses[4] = "mp_global_intermission";
+    for (i=0; i<codSpawnpointClasses.size; i++) {
+        ents = getentarray(codSpawnpointClasses[i], "classname");
+        for (j=0; j<ents.size; j++) {
+            devDrawLaser("red", ents[j].origin, (0,0,1));
+        }
+    }
+}
+
+/**
+ * @brief UMI draws the waypoints on the map
+ * @threaded
+ *
+ * works with playMod.bat with:
+ * +set developer 1 +set developer_script 1 +set dedicated 0
+ *
+ * @returns nothing
+ * @since RotU 2.2.1
+ */
+devDrawWaypoints()
 {
     debugPrint("in _umi::devDrawWaypoints()", "fn", level.nonVerbose);
+
+    noticePrint("Map: Drawing waypoints requires +set developer 1 +set developer_script 1");
 
     // wait until someone is in the game to see the waypoints before we draw them
     while (level.activePlayers == 0) {
         wait 0.5;
     }
 
-    /// @bug the line() and print3d() functions don't work
-    player = scripts\include\adminCommon::getPlayerByShortGuid(getDvar("admin_forced_guid"));
-    while(1)
-    {
-        /#
-        location = player.origin + (50,50,100);
-        Print3D(location,"TEST!",(1,0,0),0.5,10);
-        #/
-        wait 0.05; //for 20 fps (default is \sv_fps 20)
+    for (i=0; i<level.Wp.size; i++) {
+        devDrawLaser("green", level.Wp[i].origin, (0,0,1));
     }
-//     while (1) {
-//         for (i=0; i<level.WpCount; i++) {
-//             for (j=0; j<level.Wp[i].linked.size; j++) {
-// //                 Line( <start>, <end>, <color>, <depthTest>, <duration> )
-//                 line(level.Wp[i].origin + (0,0,20), level.Wp[i].linked[j].origin + (0,0,20), (0.9, 0.7, 0.6), false, 5);
-//                 Print3d(level.Wp[i].origin + (0,0,50), "Waypoint", (1.0, 0.8, 0.5), 1, 3 );
-//             }
-//         }
-//         wait 0.25;
-//     }
+
+    player = scripts\include\adminCommon::getPlayerByShortGuid(getDvar("admin_forced_guid"));
+
+    // Set up HUD elements
+    verticalOffset = 80;
+
+    waypointIdHud = newClientHudElem(player);
+    waypointIdHud.elemType = "font";
+    waypointIdHud.font = "default";
+    waypointIdHud.fontscale = 1.4;
+    waypointIdHud.x = -16;
+    waypointIdHud.y = verticalOffset;
+    waypointIdHud.glowAlpha = 1;
+    waypointIdHud.hideWhenInMenu = true;
+    waypointIdHud.archived = false;
+    waypointIdHud.alignX = "right";
+    waypointIdHud.alignY = "middle";
+    waypointIdHud.horzAlign = "right";
+    waypointIdHud.vertAlign = "top";
+    waypointIdHud.alpha = 1;
+    waypointIdHud.glowColor = (0,0,1);
+    waypointIdHud.label = &"ZOMBIE_WAYPOINT_ID";
+    waypointIdHud setValue(0);
+
+    playerXHud = newClientHudElem(player);
+    playerXHud.elemType = "font";
+    playerXHud.font = "default";
+    playerXHud.fontscale = 1.4;
+    playerXHud.x = -16;
+    playerXHud.y = verticalOffset + 18*1;
+    playerXHud.glowAlpha = 1;
+    playerXHud.hideWhenInMenu = true;
+    playerXHud.archived = false;
+    playerXHud.alignX = "right";
+    playerXHud.alignY = "middle";
+    playerXHud.horzAlign = "right";
+    playerXHud.vertAlign = "top";
+    playerXHud.alpha = 1;
+    playerXHud.glowColor = (0,0,1);
+    playerXHud.label = &"ZOMBIE_PLAYER_X";
+    playerXHud setValue(player.origin[0]);
+
+    playerYHud = newClientHudElem(player);
+    playerYHud.elemType = "font";
+    playerYHud.font = "default";
+    playerYHud.fontscale = 1.4;
+    playerYHud.x = -16;
+    playerYHud.y = verticalOffset + 18*2;
+    playerYHud.glowAlpha = 1;
+    playerYHud.hideWhenInMenu = true;
+    playerYHud.archived = false;
+    playerYHud.alignX = "right";
+    playerYHud.alignY = "middle";
+    playerYHud.horzAlign = "right";
+    playerYHud.vertAlign = "top";
+    playerYHud.alpha = 1;
+    playerYHud.glowColor = (0,0,1);
+    playerYHud.label = &"ZOMBIE_PLAYER_Y";
+    playerYHud setValue(player.origin[1]);
+
+    playerZHud = newClientHudElem(player);
+    playerZHud.elemType = "font";
+    playerZHud.font = "default";
+    playerZHud.fontscale = 1.4;
+    playerZHud.x = -16;
+    playerZHud.y = verticalOffset + 18*3;
+    playerZHud.glowAlpha = 1;
+    playerZHud.hideWhenInMenu = true;
+    playerZHud.archived = false;
+    playerZHud.alignX = "right";
+    playerZHud.alignY = "middle";
+    playerZHud.horzAlign = "right";
+    playerZHud.vertAlign = "top";
+    playerZHud.alpha = 1;
+    playerZHud.glowColor = (0,0,1);
+    playerZHud.label = &"ZOMBIE_PLAYER_Z";
+    playerZHud setValue(player.origin[2]);
+
+    iPrintLnBold("Waypoint links are drawn 10 units above their origin for better visibility");
+    while (1) {
+        nearestWp = -1;
+        closestWp = -1;
+        nearestDistance = 9999999999;
+        for (i=0; i<level.WpCount; i++) {
+            for (j=0; j<level.Wp[i].linked.size; j++) {
+//                 Line( <start>, <end>, <color>, <depthTest>, <duration> )
+                line(level.Wp[i].origin + (0,0,10), level.Wp[i].linked[j].origin + (0,0,10), (0.9, 0.7, 0.6), false, 25);
+            }
+            distance = distancesquared(player.origin, level.Wp[i].origin);
+            if(distance < nearestDistance) {
+                nearestDistance = distance;
+                nearestWp = i;
+            }
+            if (i == (level.WpCount - 1)) {
+                closestWp = nearestWp;
+            }
+            location = player.origin + (vectorNormalize(anglesToForward(player.angles)) * 2000) - (0,0,20);
+            waypointIdHud setValue(nearestWp);
+            playerXHud setValue(player.origin[0]);
+            playerYHud setValue(player.origin[1]);
+            playerZHud setValue(player.origin[2]);
+        }
+        wait 0.05;
+    }
 }
 
 /**
@@ -429,7 +561,7 @@ devEmplaceEquipmentShop()
  */
 devDrawLaser(color, origin, direction)
 {
-    debugPrint("in _turrets::primarySectorLaser()", "fn", level.lowVerbosity);
+    debugPrint("in _umi::devDrawLaser()", "fn", level.lowVerbosity);
 
     if (color == "red") {
         playFx(level.redLaserSight, origin, direction);

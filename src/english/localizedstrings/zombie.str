@@ -148,26 +148,38 @@ LANG_ENGLISH        "Quickly knife the giant zombie: &&1%"
 REFERENCE           INFECTED
 LANG_ENGLISH        "You have become infected! Cure yourself!"
 
-REFERENCE			DAMMOD
-LANG_ENGLISH		"^1Damage Modifier: &&1"
+REFERENCE           DAMMOD
+LANG_ENGLISH        "^1Damage Modifier: &&1"
 
 REFERENCE           SPEND_SKILLPOINTS
 LANG_ENGLISH        "Spend Skillpoints"
 
-REFERENCE			SURV_LEFT
-LANG_ENGLISH		"Survivors Alive: &&1"
+REFERENCE           SURV_LEFT
+LANG_ENGLISH        "Survivors Alive: &&1"
 
-REFERENCE			SURV_DOWN
-LANG_ENGLISH		"Survivors Down: &&1"
+REFERENCE           SURV_DOWN
+LANG_ENGLISH        "Survivors Down: &&1"
 
-REFERENCE			WAVE_NUMBER
-LANG_ENGLISH		"Wave #: &&1"
+REFERENCE           WAVE_NUMBER
+LANG_ENGLISH        "Wave #: &&1"
 
-REFERENCE			MEDKIT_IN
-LANG_ENGLISH		"Medkit In:"
+REFERENCE           MEDKIT_IN
+LANG_ENGLISH        "Medkit In:"
 
-REFERENCE			AMMOBOX_IN
-LANG_ENGLISH		"Ammobox In:"
+REFERENCE           AMMOBOX_IN
+LANG_ENGLISH        "Ammobox In:"
+
+REFERENCE           WAYPOINT_ID
+LANG_ENGLISH        "Waypoint ID: &&1"
+
+REFERENCE           PLAYER_X
+LANG_ENGLISH        "Player x: &&1"
+
+REFERENCE           PLAYER_Y
+LANG_ENGLISH        "Player y: &&1"
+
+REFERENCE           PLAYER_Z
+LANG_ENGLISH        "Player z: &&1"
 
 REFERENCE           RANK_DEMOTED
 LANG_ENGLISH        "You've been demoted!"
