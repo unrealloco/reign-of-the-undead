@@ -275,10 +275,10 @@ deleteUnusedEntitiesFromStockMaps()
     codUnusedEntitesTargetnames[10] = "sd_bomb";
     codUnusedEntitesTargetnames[11] = "bombtrigger";
     codUnusedEntitesTargetnames[12] = "bombzone";
-    codUnusedEntitesTargetnames[13] = "exploder";
-    codUnusedEntitesTargetnames[14] = "sd_bomb_pickup_trig";
-    codUnusedEntitesTargetnames[15] = "ctf_flag_allies";
-    codUnusedEntitesTargetnames[16] = "ctf_flag_axis";
+    codUnusedEntitesTargetnames[13] = "sd_bomb_pickup_trig";
+    codUnusedEntitesTargetnames[14] = "ctf_flag_allies";
+    codUnusedEntitesTargetnames[15] = "ctf_flag_axis";
+    codUnusedEntitesTargetnames[16] = "exploder";
 
     for (i=0; i<codUnusedEntitesTargetnames.size; i++) {
         ents = getentarray(codUnusedEntitesTargetnames[i], "targetname");
@@ -297,10 +297,13 @@ deleteUnusedEntitiesFromStockMaps()
     for (i=0; i<codUnusedEntitesClassnames.size; i++) {
         ents = getentarray(codUnusedEntitesClassnames[i], "classname");
         for (j=0; j<ents.size; j++) {
+            // Do not delete destructibles like exploding cars from stock maps
+            if ((isDefined(ents[j].targetname)) && (ents[j].targetname == "destructible")) {continue;}
+
             ents[j] delete();
         }
     }
-//     maps\mp\_umi::devDumpEntities();
+    maps\mp\_umi::devDumpEntities();
 }
 
 
