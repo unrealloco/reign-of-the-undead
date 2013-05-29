@@ -24,8 +24,8 @@ load_tradespawns()
     level.tradespawns[2].origin = (-1797.91,51.4112,-15.875);
     level.tradespawns[2].angles = (0,180.119,0);
     level.tradespawns[3] = spawnstruct();  // spec'd for equipment shop
-    level.tradespawns[3].origin = (-2459.05,201.32,-15.875);
-    level.tradespawns[3].angles = (0,90.509,0);
+    level.tradespawns[3].origin = (-2398.8,477.829,-15.875);
+    level.tradespawns[3].angles = (0,0.395498,0);
     level.tradespawns[4] = spawnstruct();  // spec'd for weapon shop
     level.tradespawns[4].origin = (287.908,-1746.1,-4.87203);
     level.tradespawns[4].angles = (0,262.269,0);

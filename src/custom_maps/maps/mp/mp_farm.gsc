@@ -58,6 +58,8 @@ main()
     thread maps\mp\mp_farm_tradespawns::load_tradespawns();
     convertToNativeWaypoints();
 
+    deleteUnusedEntitiesFromStockMaps();
+
     waitUntilFirstPlayerSpawns();
     buildWeaponShopsByTradespawns("0 2 4 6 8");
     buildShopsByTradespawns("1 3 5 7 9");

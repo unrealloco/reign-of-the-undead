@@ -61,9 +61,11 @@ main()
     thread maps\mp\mp_killhouse_tradespawns::load_tradespawns();
     convertToNativeWaypoints();
 
+    deleteUnusedEntitiesFromStockMaps();
+
     waitUntilFirstPlayerSpawns();
-    buildWeaponShopsByTradespawns("0");
-    buildShopsByTradespawns("1 2");
+    buildWeaponShopsByTradespawns("0 2");
+    buildShopsByTradespawns("1 3");
 
     buildZombieSpawnsByClassname("mp_dm_spawn");
     startGame();
