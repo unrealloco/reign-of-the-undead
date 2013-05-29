@@ -1124,8 +1124,10 @@ convertToNativeWaypoints()
     fileName =  "waypoints/"+ tolower(getdvar("mapname")) + "_wp.csv";
     testCount = int(TableLookup(fileName, 0, 0, 1));
     if ((isDefined(testCount)) && (testCount > 0)) {
-        noticePrint("Map: Native waypoints will be loaded from the fast file, nothing to convert.");
-        return;
+        if ((isDefined(level.preferBtdWaypoints)) && (!level.preferBtdWaypoints)) {
+            noticePrint("Map: Native waypoints will be loaded from the fast file, nothing to convert.");
+            return;
+        }
     }
     if (level.waypoints.size == 0) {
         errorPrint("Map: No waypoints loaded in level.waypoints to convert.");

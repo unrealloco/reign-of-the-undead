@@ -39,6 +39,12 @@ loadWaypoints()
 {
     debugPrint("in waypoints::loadWaypoints()", "fn", level.nonVerbose);
 
+    if ((isDefined(level.Wp)) && (level.Wp.size > 0)) {
+        // waypoints were already loaded externally, so don't look for internal
+        //waypoints
+        return;
+    }
+
     level.Wp = [];
     level.WpCount = 0;
 
