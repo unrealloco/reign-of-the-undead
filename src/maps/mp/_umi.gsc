@@ -251,6 +251,60 @@ devDrawAllPossibleSpawnpoints()
 }
 
 /**
+ * @brief UMI deletes unused entities from CoD4 stock maps
+ * This function must be called before we build our own tradespawns
+ *
+ * @returns nothing
+ * @since RotU 2.2.1
+ */
+deleteUnusedEntitiesFromStockMaps()
+{
+    debugPrint("in _umi::deleteUnusedEntitiesFromStockMaps()", "fn", level.nonVerbose);
+
+    // delete the Cod4 stock unused entities by targetname
+    codUnusedEntitesTargetnames[0] = "hq_hardpoint";
+    codUnusedEntitesTargetnames[1] = "flag_primary";
+    codUnusedEntitesTargetnames[2] = "sab_bomb_axis";
+    codUnusedEntitesTargetnames[3] = "sab_bomb_allies";
+    codUnusedEntitesTargetnames[4] = "sab_bomb_defuse_allies";
+    codUnusedEntitesTargetnames[5] = "sab_bomb_defuse_axis";
+    codUnusedEntitesTargetnames[6] = "sab_bomb";
+    codUnusedEntitesTargetnames[7] = "sab_bomb_pickup_trig";
+    codUnusedEntitesTargetnames[8] = "radiotrigger";
+    codUnusedEntitesTargetnames[9] = "flag_descriptor";
+    codUnusedEntitesTargetnames[10] = "sd_bomb";
+    codUnusedEntitesTargetnames[11] = "bombtrigger";
+    codUnusedEntitesTargetnames[12] = "bombzone";
+    codUnusedEntitesTargetnames[13] = "exploder";
+    codUnusedEntitesTargetnames[14] = "sd_bomb_pickup_trig";
+    codUnusedEntitesTargetnames[15] = "ctf_flag_allies";
+    codUnusedEntitesTargetnames[16] = "ctf_flag_axis";
+
+    for (i=0; i<codUnusedEntitesTargetnames.size; i++) {
+        ents = getentarray(codUnusedEntitesTargetnames[i], "targetname");
+        for (j=0; j<ents.size; j++) {
+            ents[j] delete();
+        }
+    }
+
+    // delete the Cod4 stock unused entities by classname
+    codUnusedEntitesClassnames[0] = "script_model";
+    codUnusedEntitesClassnames[1] = "trigger_radius";
+    codUnusedEntitesClassnames[2] = "trigger_use";
+    codUnusedEntitesClassnames[3] = "script_origin";
+    codUnusedEntitesClassnames[3] = "script_brushmodel";
+
+    for (i=0; i<codUnusedEntitesClassnames.size; i++) {
+        ents = getentarray(codUnusedEntitesClassnames[i], "classname");
+        for (j=0; j<ents.size; j++) {
+            ents[j] delete();
+        }
+    }
+//     maps\mp\_umi::devDumpEntities();
+}
+
+
+/**
  * @brief UMI draws the waypoints on the map
  * @threaded
  *
