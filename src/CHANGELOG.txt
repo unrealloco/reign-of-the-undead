@@ -228,7 +228,7 @@ ROTU Change Log
 * Deprecate and remove the 2.1 map voting system
 * Deprecate and remove _zombiescipt2.gsc and _zombiescript - kopie.gsc
 * Increased sv_maptoing dvars to 10, which will allow for about 250 maps
-* Support 12 of the CoD4 built-in maps--the rest have too many xmodels and will
+* Support 12 of the CoD4 built-in maps via UMI--the rest have too many xmodels and will
   never work with RotU
 * Enable 'Start New Server' command from RotU menu.  You will need a full install
   of RotU--the files downloaded while playing on somone's server are insufficient.
@@ -241,3 +241,7 @@ ROTU Change Log
   be given, emplace, delete, and pick up weapon and equipment shops.  When they are
   satisfied with the shop locations, 'Save Tradespawns' will write a new tradespawns
   file to the server log.
+* Support three non-RotU maps via UMI: mp_prunis, mp_burgundy_bulls, and mp_arkona_osg.
+  We are not distributing these maps--just the files we wrote and the data required
+  to make them run in RotU 2.2.1.  You can get the maps from the usual places.
+
