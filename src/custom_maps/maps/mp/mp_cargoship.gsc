@@ -38,7 +38,12 @@ main()
     maps\mp\mp_cargoship_fx::main();
     maps\createart\mp_cargoship_art::main();
     maps\mp\_load::main();
+
     deletePickupItems();
+    deleteSabotageEntities();
+    deleteHqEntities();
+    deleteCtfEntities();
+    deleteUnusedSpawnpoints(true, true, true, true);
 
     maps\mp\_compass::setupMiniMap("compass_map_mp_cargoship");
 
@@ -57,8 +62,6 @@ main()
     thread maps\mp\mp_cargoship_waypoints::load_waypoints();
     thread maps\mp\mp_cargoship_tradespawns::load_tradespawns();
     convertToNativeWaypoints();
-
-    deleteUnusedEntitiesFromStockMaps();
 
     waitUntilFirstPlayerSpawns();
     buildWeaponShopsByTradespawns("0 2 4 6");

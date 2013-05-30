@@ -38,7 +38,12 @@ main()
     maps\mp\mp_bloc_fx::main();
     maps\createart\mp_bloc_art::main();
     maps\mp\_load::main();
+
     deletePickupItems();
+    deleteSabotageEntities();
+    deleteHqEntities();
+    deleteCtfEntities();
+    deleteUnusedSpawnpoints(true, true, true, true);
 
     maps\mp\_compass::setupMiniMap("compass_map_mp_bloc");
 
@@ -57,8 +62,6 @@ main()
     thread maps\mp\mp_bloc_waypoints::load_waypoints();
     thread maps\mp\mp_bloc_tradespawns::load_tradespawns();
     convertToNativeWaypoints();
-
-    deleteUnusedEntitiesFromStockMaps();
 
     waitUntilFirstPlayerSpawns();
     buildWeaponShopsByTradespawns("0 2 4 6 8 10 12");

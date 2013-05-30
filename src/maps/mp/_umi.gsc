@@ -242,6 +242,21 @@ devDrawAllPossibleSpawnpoints()
     codSpawnpointClasses[2] = "mp_tdm_spawn_axis_start";
     codSpawnpointClasses[3] = "mp_dm_spawn";
     codSpawnpointClasses[4] = "mp_global_intermission";
+    codSpawnpointClasses[5] = "mp_sab_spawn_axis_start";
+    codSpawnpointClasses[6] = "mp_sab_spawn_axis";
+    codSpawnpointClasses[7] = "mp_sab_spawn_allies_start";
+    codSpawnpointClasses[8] = "mp_sab_spawn_allies";
+    codSpawnpointClasses[9] = "mp_sd_spawn_attacker";
+    codSpawnpointClasses[10] = "mp_sd_spawn_defender";
+    codSpawnpointClasses[11] = "mp_dom_spawn_axis_start";
+    codSpawnpointClasses[12] = "mp_dom_spawn_allies_start";
+    codSpawnpointClasses[13] = "mp_dom_spawn";
+    codSpawnpointClasses[14] = "mp_ctf_spawn_allies";
+    codSpawnpointClasses[15] = "mp_ctf_spawn_allies_start";
+    codSpawnpointClasses[16] = "mp_ctf_spawn_axis_start";
+    codSpawnpointClasses[17] = "mp_ctf_spawn_axis";
+
+    /// @todo don't draw multiple lasers at almost the same spot
     for (i=0; i<codSpawnpointClasses.size; i++) {
         ents = getentarray(codSpawnpointClasses[i], "classname");
         for (j=0; j<ents.size; j++) {
@@ -251,61 +266,148 @@ devDrawAllPossibleSpawnpoints()
 }
 
 /**
- * @brief UMI deletes unused entities from CoD4 stock maps
- * This function must be called before we build our own tradespawns
+ * @brief UMI deletes from memory unused spawn entities from maps
+ *
+ * On some maps, deleting unused spawnpoints and other entities can triple or
+ * quadruple the speed of the getEntArray() and related functions.
+ *
+ * @param deleteSab boolean Delete all the sabatage spawnpoints?
+ * @param deleteSd boolean Delete all the search and destroy spawnpoints?
+ * @param deleteDom boolean Delete all the domination spawnpoints?
+ * @param deleteCtf boolean Delete all the capture the flag spawnpoints?
  *
  * @returns nothing
  * @since RotU 2.2.1
  */
-deleteUnusedEntitiesFromStockMaps()
+deleteUnusedSpawnpoints(deleteSab, deleteSd, deleteDom, deleteCtf)
 {
-    debugPrint("in _umi::deleteUnusedEntitiesFromStockMaps()", "fn", level.nonVerbose);
+    debugPrint("in _umi::deleteUnusedSpawnpoints()", "fn", level.nonVerbose);
 
-    // delete the Cod4 stock unused entities by targetname
-    codUnusedEntitesTargetnames[0] = "hq_hardpoint";
-    codUnusedEntitesTargetnames[1] = "flag_primary";
-    codUnusedEntitesTargetnames[2] = "sab_bomb_axis";
-    codUnusedEntitesTargetnames[3] = "sab_bomb_allies";
-    codUnusedEntitesTargetnames[4] = "sab_bomb_defuse_allies";
-    codUnusedEntitesTargetnames[5] = "sab_bomb_defuse_axis";
-    codUnusedEntitesTargetnames[6] = "sab_bomb";
-    codUnusedEntitesTargetnames[7] = "sab_bomb_pickup_trig";
-    codUnusedEntitesTargetnames[8] = "radiotrigger";
-    codUnusedEntitesTargetnames[9] = "flag_descriptor";
-    codUnusedEntitesTargetnames[10] = "sd_bomb";
-    codUnusedEntitesTargetnames[11] = "bombtrigger";
-    codUnusedEntitesTargetnames[12] = "bombzone";
-    codUnusedEntitesTargetnames[13] = "sd_bomb_pickup_trig";
-    codUnusedEntitesTargetnames[14] = "ctf_flag_allies";
-    codUnusedEntitesTargetnames[15] = "ctf_flag_axis";
-    codUnusedEntitesTargetnames[16] = "exploder";
+    classes = [];
 
-    for (i=0; i<codUnusedEntitesTargetnames.size; i++) {
-        ents = getentarray(codUnusedEntitesTargetnames[i], "targetname");
+    // RotU uses tdm spawns, so they are never 'unused'
+    if (deleteSab) {
+        classes[classes.size] = "mp_sab_spawn_axis_start";
+        classes[classes.size] = "mp_sab_spawn_allies_start";
+        classes[classes.size] = "mp_sab_spawn_axis";
+        classes[classes.size] = "mp_sab_spawn_allies";
+    }
+    if (deleteSd) {
+        classes[classes.size] = "mp_sd_spawn_attacker";
+        classes[classes.size] = "mp_sd_spawn_defender";
+    }
+    if (deleteDom) {
+        classes[classes.size] = "mp_dom_spawn_axis_start";
+        classes[classes.size] = "mp_dom_spawn_allies_start";
+        classes[classes.size] = "mp_dom_spawn";
+    }
+    if (deleteCtf) {
+        classes[classes.size] = "mp_ctf_spawn_allies";
+        classes[classes.size] = "mp_ctf_spawn_allies_start";
+        classes[classes.size] = "mp_ctf_spawn_axis_start";
+        classes[classes.size] = "mp_ctf_spawn_axis";
+    }
+
+    for (i=0; i<classes.size; i++) {
+        ents = getentarray(classes[i], "classname");
         for (j=0; j<ents.size; j++) {
             ents[j] delete();
         }
     }
-
-    // delete the Cod4 stock unused entities by classname
-    codUnusedEntitesClassnames[0] = "script_model";
-    codUnusedEntitesClassnames[1] = "trigger_radius";
-    codUnusedEntitesClassnames[2] = "trigger_use";
-    codUnusedEntitesClassnames[3] = "script_origin";
-    codUnusedEntitesClassnames[3] = "script_brushmodel";
-
-    for (i=0; i<codUnusedEntitesClassnames.size; i++) {
-        ents = getentarray(codUnusedEntitesClassnames[i], "classname");
-        for (j=0; j<ents.size; j++) {
-            // Do not delete destructibles like exploding cars from stock maps
-            if ((isDefined(ents[j].targetname)) && (ents[j].targetname == "destructible")) {continue;}
-
-            ents[j] delete();
-        }
-    }
-//    maps\mp\_umi::devDumpEntities();
 }
 
+
+/**
+ * @brief UMI deletes from memory unused capture the flag entities from maps
+ *
+ * On some maps, deleting unused spawnpoints and other entities can triple or
+ * quadruple the speed of the getEntArray() and related functions.
+ *
+ * @returns nothing
+ * @since RotU 2.2.1
+ */
+deleteCtfEntities()
+{
+    debugPrint("in _umi::deleteCtfEntities()", "fn", level.nonVerbose);
+
+    origins = [];
+    index = 0;
+
+    ctfEntities[0] = "ctf_flag_allies";
+    ctfEntities[1] = "ctf_flag_axis";
+    for (i=0; i<ctfEntities.size; i++) {
+        ents = getentarray(ctfEntities[i], "targetname");
+        for (j=0; j<ents.size; j++) {
+            origins[index] = ents[j].origin;
+            index++;
+        }
+    }
+    for (i=0; i<origins.size; i++) {
+        deleteNearbyEntities(origins[i], 20, 25);
+    }
+}
+
+/**
+ * @brief UMI deletes from memory unused headquarters entities from maps
+ *
+ * On some maps, deleting unused spawnpoints and other entities can triple or
+ * quadruple the speed of the getEntArray() and related functions.
+ *
+ * @returns nothing
+ * @since RotU 2.2.1
+ */
+deleteHqEntities()
+{
+    debugPrint("in _umi::deleteHqEntities()", "fn", level.nonVerbose);
+
+    origins = [];
+    index = 0;
+
+    hqEntities[0] = "hq_hardpoint";
+    for (i=0; i<hqEntities.size; i++) {
+        ents = getentarray(hqEntities[i], "targetname");
+        for (j=0; j<ents.size; j++) {
+            origins[index] = ents[j].origin;
+            index++;
+        }
+    }
+    for (i=0; i<origins.size; i++) {
+        deleteNearbyEntities(origins[i], 25, 35);
+    }
+}
+
+/**
+ * @brief UMI deletes from memory unused sabotage entities from maps
+ *
+ * On some maps, deleting unused spawnpoints and other entities can triple or
+ * quadruple the speed of the getEntArray() and related functions.
+ *
+ * @returns nothing
+ * @since RotU 2.2.1
+ */
+deleteSabotageEntities()
+{
+    debugPrint("in _umi::deleteSabotageEntities()", "fn", level.nonVerbose);
+
+    origins = [];
+    index = 0;
+
+    sabotageEntities[0] = "sab_bomb_axis";
+    sabotageEntities[1] = "sab_bomb_allies";
+    sabotageEntities[2] = "bombzone";
+    sabotageEntities[3] = "sab_bomb";
+    sabotageEntities[4] = "sd_bomb";
+    for (i=0; i<sabotageEntities.size; i++) {
+        ents = getentarray(sabotageEntities[i], "targetname");
+        for (j=0; j<ents.size; j++) {
+            origins[index] = ents[j].origin;
+            index++;
+        }
+    }
+    for (i=0; i<origins.size; i++) {
+        deleteNearbyEntities(origins[i], 5, 30);
+    }
+}
 
 /**
  * @brief UMI draws the waypoints on the map
@@ -980,12 +1082,13 @@ devDumpEntities()
 
     ents = getentarray();
     for (i=0; i<ents.size; i++) {
-        if (isDefined(ents[i].classname)) {
-            noticePrint(i + ": classname: " + ents[i].classname);
-        }
-        if (isDefined(ents[i].targetname)) {
-            noticePrint(i + ": targetname: " + ents[i].targetname);
-        }
+        classname = "";
+        targetname = "";
+        origin = "";
+        if (isDefined(ents[i].classname)) {classname = ents[i].classname;}
+        if (isDefined(ents[i].targetname)) {targetname = ents[i].targetname;}
+        if (isDefined(ents[i].origin)) {origin = ents[i].origin;}
+        noticePrint("Entity: "+i+" classname: "+classname+" targetname: "+targetname+" origin: "+origin);
     }
 }
 
@@ -1516,6 +1619,35 @@ deletePickupItems()
 // mods.  They are generally utility functions that help make the interface work
 // across various mods.
 //
+
+/**
+ * @brief UMI deletes from memory nearby entities
+ *
+ * We use separate calculations for 2D distance first, followed by vertical distance,
+ * as this is more discriminating than simply using a 3D distance.
+ *
+ * @param origin vector The location to use as a basis for comparisions
+ * @param maximumDistance2D integer The maximum xy-planar distance between the reference and entity origins
+ * @param maxDeltaHeight integer The maximum difference in z-axis position bewteen the refernce and entity origins
+ *
+ * @returns nothing
+ * @since RotU 2.2.1
+ */
+deleteNearbyEntities(origin, maximumDistance2D, maxDeltaHeight)
+{
+    debugPrint("in _umi::deleteNearbyEntities()", "fn", level.nonVerbose);
+
+    ents = getentarray();
+    for (i=0; i<ents.size; i++) {
+        if (distance2D(origin, ents[i].origin) < maximumDistance2D) {
+            delta = origin[2] - ents[i].origin[2];
+            if (delta < 0) {delta = delta * -1;}
+            if (delta < maxDeltaHeight) {
+                ents[i] delete();
+            }
+        }
+    }
+}
 
 /**
  * @brief If both BTD and CVS waypoints are available, prefer the BTD waypoints?

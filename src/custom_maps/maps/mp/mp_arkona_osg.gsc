@@ -37,11 +37,10 @@ main()
 {
     maps\mp\_load::main();
 
-    /** @bug This function is a 2 lb. sledge when I need a finishing hammer. :-(
-     * We trade the disco lights (and ???) away in favor of getting rid of all the
-     * prefabs (bombs, hq, etc.) in the map that have no business in a RotU map.
-     */
-    deleteUnusedEntitiesFromStockMaps();
+    deleteSabotageEntities();
+    deleteHqEntities();
+    deleteCtfEntities();
+    deleteUnusedSpawnpoints(true, true, true, true);
 
     maps\mp\mp_arkona_osg_structs::main();
     maps\mp\mp_arkona_osg_rotate::main();
@@ -67,7 +66,6 @@ main()
     convertToNativeWaypoints();
 
     waitUntilFirstPlayerSpawns();
-    devDrawAllPossibleSpawnpoints();
     buildWeaponShopsByTradespawns("0 2 4 6 8");
     buildShopsByTradespawns("1 3 5 7 9");
 
