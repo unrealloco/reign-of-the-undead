@@ -941,7 +941,6 @@ deleteExplosivesOnDisconnect()
 
     self waittill("disconnect");
 
-    /// @todo 2.2+: implement TNT
     wait .05;
 
     if (isDefined(self.emplacedC4)) {

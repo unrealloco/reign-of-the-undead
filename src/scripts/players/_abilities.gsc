@@ -1102,8 +1102,7 @@ watchExplosives()
         self waittill( "detonate" );
         weaponName = self getCurrentWeapon();
         // End the trance on c4 detonation
-        /// @todo 2.2+: enable TNT
-        if ((weaponName == "c4") || (weaponName == "c4_mp")) {break;}
+        if ((weaponName == "c4") || (weaponName == "c4_mp") || (weaponName == "tnt_mp")) {break;}
     }
     self notify("end_trance");
 }
