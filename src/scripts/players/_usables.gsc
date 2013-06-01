@@ -478,10 +478,13 @@ usableUse()
                 self scripts\players\_turrets::moveDefenseTurret(self.curEnt);
             break;
             case "equipmentShop":
-                self maps\mp\_umi::devMoveEquipmentShop(self.curEnt);
+                self maps\mp\_umiEditor::devMoveEquipmentShop(self.curEnt);
                 break;
             case "weaponsShop":
-                self maps\mp\_umi::devMoveWeaponShop(self.curEnt);
+                self maps\mp\_umiEditor::devMoveWeaponShop(self.curEnt);
+                break;
+            case "waypoint":
+                self maps\mp\_umiEditor::devMoveWaypoint(self.curEnt);
                 break;
         }
     }

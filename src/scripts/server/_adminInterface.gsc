@@ -406,7 +406,6 @@ watchAdminMenuResponses()
             (menu != "admin_ban") &&
             (menu != "admin_temp_ban") &&
             (menu != "admin_changemap") &&
-            (menu != "admin_dev") &&
             (menu != "admin_warn"))
         {
             debugPrint("Menu is not an admin menu.", "val"); // <debug />
@@ -574,20 +573,6 @@ watchAdminMenuResponses()
             break;
         case "admin_kill_zombies":
             killZombies();
-            break;
-
-        /** Development */
-        case "admin_give_equipment_shop":
-            maps\mp\_umi::devGiveEquipmentShop();
-            break;
-        case "admin_give_weapon_shop":
-            maps\mp\_umi::devGiveWeaponsShop();
-            break;
-        case "admin_delete_closest_tradespawn":
-            maps\mp\_umi::devDeleteClosestShop();
-            break;
-        case "admin_save_tradespawns":
-            maps\mp\_umi::devSaveTradespawns();
             break;
 
         /** Assist Players */

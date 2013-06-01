@@ -73,7 +73,8 @@
         CHOICE_BUTTON_VIS( 4, "Teleport", exec "admin_page tp";, when(dvarString("admin_page")=="2") )
         CHOICE_BUTTON_VIS( 5, "Toggle Session Visibility", scriptMenuResponse "admin_session_visibility";, when(dvarString("admin_page")=="2") )
         CHOICE_BUTTON_VIS( 6, "Kill Zombies", scriptMenuResponse "admin_kill_zombies";, when(dvarString("admin_page")=="2") )
-        CHOICE_BUTTON_VIS( 7, "Development", open admin_dev;, when(dvarString("admin_page")=="2")  )
+//         CHOICE_BUTTON_VIS( 7, "Development", open admin_dev;, when(dvarString("admin_page")=="2")  )
+
         /// Assist Players
         CHOICE_BUTTON_VIS( 3, "Spawn", scriptMenuResponse "admin_spawn";, when(dvarString("admin_page")=="3") )
         CHOICE_BUTTON_VIS( 4, "Cure", scriptMenuResponse "admin_cure";, when(dvarString("admin_page")=="3") )

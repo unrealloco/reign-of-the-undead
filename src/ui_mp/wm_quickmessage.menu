@@ -95,6 +95,22 @@
         itemDef
         {
             name            "window"
+            visible         1               /// @todo conditional visible like:: when( !localvarBool( ui_hideBack ) && dvarString( ui_mod_logo ) == "" );
+            rect            16 84 0 0
+            origin          ORIGIN_QUICKMESSAGEWINDOW
+            forecolor       1 1 1 1
+            textfont        UI_FONT_NORMAL
+            textstyle       ITEM_TEXTSTYLE_SHADOWED
+            textscale       TEXTSIZE_SMALL
+            textaligny      8
+            exp             text("5. Development Menu")
+            decoration
+        }
+        execKey "5" { close quickmessage; scriptMenuResponse "dev_menu_open_request"; }
+
+        itemDef
+        {
+            name            "window"
             visible         1
             rect            16 116 0 0
             origin          ORIGIN_QUICKMESSAGEWINDOW

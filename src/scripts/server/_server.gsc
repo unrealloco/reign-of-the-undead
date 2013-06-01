@@ -71,15 +71,12 @@ init()
     precacheModel("com_bottle3");
     precacheModel("com_bottle4");
 
-    // Used as default weapon/shop models when running ROZO maps
-    precacheModel("ad_sodamachine");
-    precacheModel("com_plasticcase_green_big");
-
     currentMap = getdvar("mapname");
     currentMapName = scripts\server\_mapvoting22::mapTextName(currentMap);
     noticePrint("Starting map " + currentMapName + ".");
 
     thread scripts\server\_settings::init();
+    thread maps\mp\_umiEditor::init();
     thread scripts\server\_ranks::init();
     thread scripts\server\_welcome::init();
     thread scripts\server\_maps::init();
@@ -251,5 +248,5 @@ runTestCode()
 
 //     maps\mp\_umi::devDumpEntities();
 //     maps\mp\_umi::devDumpCsvWaypointsToBtd();
-//     thread maps\mp\_umi::devDrawWaypoints(true);
+    //     thread maps\mp\_umiEditor::devDrawWaypoints(true);
 }

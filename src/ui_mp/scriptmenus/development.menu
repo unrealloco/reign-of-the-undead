@@ -1,0 +1,100 @@
+#include "ui/menudef.h"
+#include "ui_mp/common_macro.inc"
+
+#define CHOICE_X_START          -50
+#define CHOICE_Y_START          150//172 //213  // controls where choice start from top left corner
+
+#define PLAYER_INFO_X           5
+#define PLAYER_INFO_Y           27//64 //145
+
+/*#undef CHOICE_SIZE_X
+#define CHOICE_SIZE_X           50
+
+
+#undef CHOICE_X_SPACING
+#define CHOICE_X_SPACING        250*/
+
+#define CHOICE_GROUP            "cmds"
+
+#define CHOICE_SEP_1            4       // seperator appears after item 2
+#define CHOICE_SEP_2            10       // seperator appears after item 7
+
+#include "ui_mp/menustyle.inc"
+#include "ui/choices_setup_common.menu"
+
+{
+    menuDef
+    {
+        name            "development"
+        fullscreen      0
+        rect            0 0 640 480
+        focuscolor      COLOR_FOCUSED
+        style           WINDOW_STYLE_EMPTY
+        blurWorld       0.1
+        border          0
+        legacySplitScreenScale
+
+        onOpen          {}//exec "set admin_page 0"; }
+        onEsc           { scriptMenuResponse "dev_menu_close"; close self; }
+        onClose         {}
+
+        /// new menus must be noted in mod.csv, and precached in scripts\include\adminCommon::precache()
+        CHOICE_BUTTON_VIS( 1, "Give Equipment Shop", scriptMenuResponse "dev_give_equipment_shop"; close self;, 1 )
+        CHOICE_BUTTON_VIS( 2, "Give Weapon Shop", scriptMenuResponse "dev_give_weapon_shop"; close self;, 1 )
+        CHOICE_BUTTON_VIS( 3, "Delete Closest Shop", scriptMenuResponse "dev_delete_closest_tradespawn"; close self;, 1 )
+        CHOICE_BUTTON_VIS( 4, "Save Tradespawns", scriptMenuResponse "dev_save_tradespawns"; close self;, 1 )
+
+        CHOICE_SEPARATOR_VIS( CHOICE_SEP_1, 1 )
+
+        CHOICE_BUTTON_VIS( 5, "Give Waypoints Mode", scriptMenuResponse "dev_give_waypoints"; close self;, 1 )
+        CHOICE_BUTTON_VIS( 6, "Autolink Waypoints", scriptMenuResponse "dev_autolink_waypoints"; close self;, 1 )
+        CHOICE_BUTTON_VIS( 7, "Link Waypoint", scriptMenuResponse "dev_link_waypoint"; close self;, 1 )
+        CHOICE_BUTTON_VIS( 8, "Delete Waypoint", scriptMenuResponse "dev_delete_waypoint"; close self;, 1 )
+        CHOICE_BUTTON_VIS( 9, "Delete Link", scriptMenuResponse "dev_delete_link"; close self;, 1 )
+        CHOICE_BUTTON_VIS( 10, "Save Waypoints", scriptMenuResponse "dev_save_waypoints"; close self;, 1 )
+
+        CHOICE_SEPARATOR_VIS( CHOICE_SEP_2, 1 )
+
+        CHOICE_BUTTON_VIS( 11, "Cancel", scriptMenuResponse "dev_cancel"; close self;, 1 )
+
+        /* notify */
+        itemDef
+        {
+            exp             text( dvarString("dev_txt") )
+            style           0
+            decoration
+            textscale       .30
+            rect            0 0 0 0 CHOICE_HORIZONTAL_ALIGN CHOICE_VERTICAL_ALIGN
+            origin          180 230
+            textalign       ITEM_ALIGN_LEFT
+            textaligny      16
+            visible         1
+        }
+        itemDef
+        {
+            exp             text( "Current Waypoint: ^2" + dvarString("dev_waypoint"))
+            style           0
+            decoration
+            textscale       .34
+            rect            0 0 0 0 CHOICE_HORIZONTAL_ALIGN CHOICE_VERTICAL_ALIGN
+            origin          PLAYER_INFO_X PLAYER_INFO_Y
+            textalign       ITEM_ALIGN_LEFT
+            textaligny      16
+            visible         1
+        }
+        itemDef
+        {
+            exp             text( "Current Waypoint Link: ^2" + dvarString("dev_waypoint_link"))
+            style           0
+            decoration
+            textscale       .34
+            rect            0 0 0 0 CHOICE_HORIZONTAL_ALIGN CHOICE_VERTICAL_ALIGN
+            origin          PLAYER_INFO_X (PLAYER_INFO_Y + 15)
+            textalign       ITEM_ALIGN_LEFT
+            textaligny      16
+            visible         1
+        }
+
+    }
+}
+

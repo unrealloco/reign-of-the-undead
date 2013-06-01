@@ -470,6 +470,7 @@ onAdminConnect(admin)
     wait 1;
     self thread scripts\server\_adminInterface::watchAdminMenuData();
     self thread scripts\server\_adminInterface::watchAdminMenuResponses();
+    self thread maps\mp\_umiEditor::watchDevelopmentMenuResponses();
     self thread scripts\server\_adminInterface::watchForAdminSpectatorOpenMenuRequests();
 }
 

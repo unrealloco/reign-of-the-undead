@@ -55,6 +55,7 @@ init()
 //     game["menu_mapvoting"] = "mapvoting";
     game["menu_extras"] = "extras_shop";
     game["menu_admin"] = "admin";
+    game["menu_development"] = "development";
     precacheMenu(game["menu_callvote"]);
     precacheMenu(game["menu_muteplayer"]);
     precacheMenu(game["menu_playermenu"]);
@@ -62,6 +63,7 @@ init()
     precachemenu(game["menu_extras"]);
 //     precachemenu(game["menu_mapvoting"]);
     precachemenu(game["menu_admin"]);
+    precachemenu(game["menu_development"]);
 
     // game summary popups
     /*game["menu_eog_unlock"] = "popup_unlock";

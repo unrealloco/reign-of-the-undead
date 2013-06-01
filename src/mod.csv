@@ -21,7 +21,7 @@ menufile,ui_mp/scriptmenus/admin_ban.menu
 menufile,ui_mp/scriptmenus/admin_temp_ban.menu
 menufile,ui_mp/scriptmenus/admin_warn.menu
 menufile,ui_mp/scriptmenus/admin_changemap.menu
-menufile,ui_mp/scriptmenus/admin_dev.menu
+menufile,ui_mp/scriptmenus/development.menu
 menufile,ui_mp/scriptmenus/class.menu
 menufile,ui_mp/hud.menu
 menufile,ui_mp/main.menu
