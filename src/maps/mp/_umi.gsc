@@ -623,6 +623,22 @@ convertToNativeWaypoints()
         waypoint.origin = level.waypoints[i].origin;
         waypoint.isLinking = false;
         waypoint.ID = i;
+
+        // RotU doesn't use .type, but read it in so we can preserve the info
+        // for _umiEditor::devSaveWaypoints
+        if (isDefined(level.waypoints[i].type)) { // stand, jump, mantle
+            waypoint.type = level.waypoints[i].type;
+        }
+        // RotU doesn't use .angles, but read it in so we can preserve the info
+        // for _umiEditor::devSaveWaypoints
+        if (isDefined(level.waypoints[i].angles)) {
+            waypoint.angles = level.waypoints[i].angles;
+        }
+        // RotU doesn't use .use, but read it in so we can preserve the info
+        // for _umiEditor::devSaveWaypoints
+        if (isDefined(level.waypoints[i].use)) {
+            waypoint.use = level.waypoints[i].use;
+        }
     }
     // Now link the waypoints
     for (i=0; i<level.WpCount; i++) {

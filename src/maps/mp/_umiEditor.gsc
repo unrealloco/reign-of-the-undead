@@ -101,11 +101,11 @@ watchDevelopmentMenuResponses()
 {
     debugPrint("in _umiEditor::watchDevelopmentMenuResponses()", "fn", level.nonVerbose);
 
-    self endon( "disconnect" );
+    self endon("disconnect");
     // threaded on each admin player
 
     while (1) {
-        self waittill( "menuresponse", menu, response );
+        self waittill("menuresponse", menu, response);
         //         debugPrint("menu: " + menu + " response: " + response, "val");
 
         // menu "-1" is the main in-game popup menu bound to the 'b' key
@@ -139,7 +139,7 @@ watchDevelopmentMenuResponses()
         case "dev_give_waypoints":
             devGiveWaypoint();
             break;
-        case "dev_save_waypointss":
+        case "dev_save_waypoints":
             devSaveWaypoints();
             break;
         default:
@@ -171,8 +171,9 @@ devDrawWaypoints()
         wait 0.5;
     }
 
+    level.giveWaypointMode = false;
     devInitWaypointFlags();
-    devFindUnlinkedWaypoints();
+    devInitializeUnlinkedWaypoints();
     thread devDrawWaypointLinks();
     thread devDrawWaypointHud();
 }
@@ -181,9 +182,39 @@ devGiveWaypoint()
 {
     debugPrint("in _umiEditor::devGiveWaypoint()", "fn", level.nonVerbose);
 
-    flag = spawn("script_model", (0,0,0));
-    flag setModel("prop_flag_russian");
+    level.giveWaypointMode = true;
+    flag = devGetAvailableUnlinkedWaypointFlag();
+    if (!isDefined(flag)) {
+        iPrintLnBold("No more unlinked waypoint flags available.");
+        iPrintLnBold("Link some unlinked waypoints to recycle some flags.");
+        level.giveWaypointMode = false;
+        return;
+    }
 
+    // spawn and init a new waypoint
+    waypoint = spawnstruct();
+    waypoint.origin = (0,0,0);
+    waypoint.isLinking = false;
+    waypointId = level.Wp.size;
+    waypoint.linkedCount = 0;
+    waypoint.ID = waypointId;
+
+    // append the new waypoint to the level.Wp array
+    level.Wp[waypointId] = waypoint;
+
+    // append the new waypoint to the level.unlinkedWaypoints array
+    level.unlinkedWaypoints[level.unlinkedWaypoints.size] = waypointId;
+
+    // mark the current waypoint as having a literal flag
+    level.waypointBoolean[waypointId] = 2;
+
+    // update waypoint count
+    level.WpCount = level.Wp.size;
+
+    // link the flag with the new waypoint
+    flag.waypointId = waypointId;
+
+    flag show();
     self.carryObj = flag;
     self.carryObj.origin = self.origin + AnglesToForward(self.angles)*40;
 
@@ -197,9 +228,32 @@ devGiveWaypoint()
     self thread devEmplaceWaypoint();
 }
 
+/**
+ * @brief Gets an available flag from the collection of unlinked waypoint flags
+ *
+ * @returns struct A struct representing the flag, or undefined if no flags are available
+ */
+devGetAvailableUnlinkedWaypointFlag()
+{
+    debugPrint("in _umiEditor::devGetAvailableUnlinkedWaypointFlag()", "fn", level.nonVerbose);
+
+    for (i=0; i<level.unlinkedWaypointFlags.size; i++) {
+        if (level.unlinkedWaypointFlags[i].waypointId == -1) {
+            level.unlinkedWaypointFlags[i].waypointId = 900; ///hack
+            return level.unlinkedWaypointFlags[i];
+        }
+    }
+    // no unlinked waypoint flag is available
+    return undefined;
+}
+
 devEmplaceWaypoint()
 {
     debugPrint("in _umiEditor::devEmplaceWaypoint()", "fn", level.nonVerbose);
+
+    // make them wait 1 second between planting waypoint flags to make attackbuttonpressed
+    // be bounce-less
+    wait 1;
 
     while (1) {
         if (self attackbuttonpressed()) {
@@ -212,12 +266,31 @@ devEmplaceWaypoint()
             wait .05;
             self.canUse = true;
             self enableweapons();
-            return;
+
+            // Update the waypoint's origin
+            level.Wp[self.carryObj.waypointId].origin = self.carryObj.origin;
+            iPrintLnBold(self.carryObj.waypointId + ":"+level.Wp[self.carryObj.waypointId].origin);
+            if (!isDefined(level.Wp[self.carryObj.waypointId].linked)) {
+                // unlinked waypoint, find closest waypoint that is linked to other waypoints
+                index = devFindNearestWaypointWithLinksIndex(level.Wp[self.carryObj.waypointId].origin);
+                level.Wp[self.carryObj.waypointId].nearestWaypointWithLinks = index;
+            }
+
+            break;
         }
         wait 0.1;
     }
+
+    if (level.giveWaypointMode) {devGiveWaypoint();}
 }
 
+/**
+ * @brief Picks up a waypoint flag so it can be moved
+ *
+ * @param flag struct The flag to be picked up and moved
+ *
+ * @returns nothing
+ */
 devMoveWaypoint(flag)
 {
     debugPrint("in _umiEditor::devMoveWaypoint()", "fn", level.nonVerbose);
@@ -237,15 +310,14 @@ devMoveWaypoint(flag)
     self thread devEmplaceWaypoint();
 }
 
-devSaveWaypoints()
+/**
+ * @brief Searches for any unlinked waypoints when the map first loads
+ *
+ * @returns nothing
+ */
+devInitializeUnlinkedWaypoints()
 {
-    debugPrint("in _umiEditor::devSaveWaypoints()", "fn", level.nonVerbose);
-
-}
-
-devFindUnlinkedWaypoints()
-{
-    debugPrint("in _umiEditor::devFindUnlinkedWaypoints()", "fn", level.nonVerbose);
+    debugPrint("in _umiEditor::devInitializeUnlinkedWaypoints()", "fn", level.nonVerbose);
 
     level.unlinkedWaypoints = [];
     for (i=0; i<level.Wp.size; i++) {
@@ -253,15 +325,329 @@ devFindUnlinkedWaypoints()
             level.unlinkedWaypoints[level.unlinkedWaypoints.size] = i;
         }
     }
-    // If there are 20 or less unlinked waypoints, just flag them all
+}
+
+/**
+ * @brief Updates the local working group of waypoints and update their literal flags
+ * The local working group of waypoints will be between about 10-50 waypoints.
+ * We do most of our work with this subset to avoid the expense of operating on
+ * perhaps many hundreds of waypoints.
+ *
+ * @param nearestWp int The index of the nearest waypoint
+ *
+ * @returns nothing
+ */
+devUpdateLocalWaypoints(nearestWp)
+{
+    debugPrint("in _umiEditor::devUpdateLocalWaypoints()", "fn", level.nonVerbose);
+
+    // create a sparse array to hold a flag: should we include this waypoint?
+    if (!isDefined(level.waypointBoolean)) { // initialize
+        level.waypointBoolean = [];
+        for (i=0; i<level.Wp.size; i++) {
+            level.waypointBoolean[i] = 0;
+        }
+        level.priorWaypointBoolean = level.waypointBoolean; // fake current state
+    } else {
+        level.priorWaypointBoolean = level.waypointBoolean; // save current state
+        level.waypointBoolean = [];
+        for (i=0; i<level.Wp.size; i++) {
+            level.waypointBoolean[i] = 0;
+        }
+    }
+
+    // Flag a reasonable subset of unlinked waypoints to include in the working group
     if (level.unlinkedWaypoints.size <= 20) {
+        // just add all the unlinked waypoints to the local group
         for (i=0; i<level.unlinkedWaypoints.size; i++) {
-            devUnflagWaypoint(level.unlinkedWaypoints[i]);
-            devFlagWaypoint(level.unlinkedWaypoints[i]);
+            level.waypointBoolean[level.unlinkedWaypoints[i]] = 2;
+        }
+    } else {
+        // We should only get here when a map loads waypoints from file with lots
+        // of unlinked waypoints.
+
+        // compute the distance squared for all unlinked waypoints, and save that value
+        // if it is less than 100,000 units
+        closeWaypoints = [];
+        for (i=0; i<level.unlinkedWaypoints.size; i++) {
+            distanceProxy = distanceSquared(level.Wp[nearestWp].origin, level.Wp[level.unlinkedWaypoints[i]].origin);
+            level.Wp[level.unlinkedWaypoints[i]].distance = distanceProxy;
+            if (distanceProxy < 100000) {
+                closeWaypoints[closeWaypoints.size] = level.unlinkedWaypoints[i];
+            }
+        }
+        // if there are 20 or fewer such close unlinked waypoints, just add them all
+        if (closeWaypoints.size <= 20) {
+            // just add closeWaypoints to the local group
+            for (i=0; i<closeWaypoints.size; i++) {
+                level.waypointBoolean[closeWaypoints[i]] = 2;
+            }
+        } else {
+            // there are more than 20 nearby unlinked waypoints, so find and add
+            // the 20 closest.  We should only very rarely get here.
+            closest = devFindClosestWaypoints(level.unlinkedWaypoints, level.Wp[nearestWp].origin, 20);
+            for (i=0; i<closest.size; i++) {
+                level.waypointBoolean[closest[i]] = 2;
+            }
+        }
+    }
+
+    // ensure nearestWp is a linked waypoint
+    if (!isDefined(level.Wp[nearestWp].linked)) {
+        // nearestWp is unlinked, so we need to find the nearest linked waypoint
+        nearestUnlinkedWaypoint = nearestWp;
+        nearestWp = devFindNearestWaypointWithLinksIndex(level.Wp[nearestUnlinkedWaypoint].origin);
+    }
+
+    // flag nearest linked waypoint and three generations of children
+    level.waypointBoolean[nearestWp] = 2;
+    for (i=0; i<level.Wp[nearestWp].linkedCount; i++) {
+        // add in the id for each linked waypoint
+        child = level.Wp[nearestWp].linked[i].ID;
+        level.waypointBoolean[child] = 2;
+        for (j=0; j<level.Wp[child].linkedCount; j++) {
+            // add in the id for each linked waypoint
+            grandchild = level.Wp[child].linked[j].ID;
+            if (level.waypointBoolean[grandchild] !=2) {level.waypointBoolean[grandchild] = 1;}
+            for (k=0; k<level.Wp[grandchild].linkedCount; k++) {
+                // add in the id for each linked waypoint
+                greatgrandchild = level.Wp[grandchild].linked[k].ID;
+                if (level.waypointBoolean[greatgrandchild] !=2) {level.waypointBoolean[greatgrandchild] = 1;}
+            }
+        }
+    }
+
+    // To ensure we don't run out of available flags, we pass through
+    // level.waypointBoolean[] to load level.localWaypoints[]
+    // and remove any literal flags as required.
+    for (i=0; i<level.waypointBoolean.size; i++) {
+        if (level.waypointBoolean[i] == 1) {
+            // add waypoint to local group
+            level.localWaypoints[level.localWaypoints.size] = i;
+            if (level.priorWaypointBoolean[i] == 2) {
+                // waypoint currently has a literal flag, so we need to remove it
+                devUnflagWaypoint(i);
+            }
+        } else if (level.waypointBoolean[i] == 0) {
+            // this waypoint isn't part of the new local group
+            if (level.priorWaypointBoolean[i] == 2) {
+                // waypoint currently has a literal flag, so we need to remove it
+                devUnflagWaypoint(i);
+            }
+        } else if (level.waypointBoolean[i] == 2) {
+            // just add waypoint to local group
+            level.localWaypoints[level.localWaypoints.size] = i;
+        }
+    }
+    // Now add any literal flags to local waypoints that need them
+    for (i=0; i<level.localWaypoints.size; i++) {
+        id = level.localWaypoints[i];
+        if ((level.waypointBoolean[id] == 2) && (level.priorWaypointBoolean[id] != 2)) {
+            // waypoint doesn't already have a literal flag, but needs one
+            devFlagWaypoint(id);
         }
     }
 }
 
+/**
+ * @brief Finds a collection of the n closest waypoints
+ *
+ * @param waypoints integer[] An array containing the indices of the waypoints to consider
+ * @param origin vector The reference position
+ * @param n integer The number of waypoints to return
+ *
+ * @returns integer array An array of n waypoint indices sorted by shortest distance
+ */
+devFindClosestWaypoints(waypoints, origin, n)
+{
+    debugPrint("in _umiEditor::devFindClosestWaypoints()", "fn", level.nonVerbose);
+
+    // compute the distance proxy for each of the waypoints under consideration
+    for (i=0; i<waypoints.size; i++) {
+        distanceProxy = distanceSquared(level.Wp[waypoints[i]].origin, origin);
+        level.Wp[waypoints[i]].distance = distanceProxy;
+    }
+
+    waypoints = devQuicksortWaypoints(waypoints, 0, waypoints.size - 1, ::getDistance);
+    // waypoints is now sorted from closest to furthest, so grab the first n elements
+    closest = [];
+    for (i=0; i<n; i++) {
+        closest[i] = waypoints[i];
+    }
+    return closest;
+}
+
+/**
+ * @brief Sorts an array of waypoint indices based on ascending level.Wp[n].distance
+ * This method is best when there are many waypoints to sort.  If you only need
+ * the kth closest waypoint, @see devSelectKthClosestWaypoint()
+ *
+ * @param data integer[] The array of waypoint indices to sort
+ * @param left integer The index of the left-most element of the data
+ * @param right integer The index of the right-most element of the data
+ * @param callback function The callback function that returns the value of the waypoint struct to sort by
+ *
+ * @returns array The sorted array
+ * @recursive
+ */
+devQuicksortWaypoints(data, left, right, callback)
+{
+    debugPrint("in _umiEditor::devQuicksortWaypoints()", "fn", level.nonVerbose);
+
+    // If the list has 2 or more items
+    if (left < right) {
+        // Choose middle index as pivot index
+        pivotIndex = Int(left + (right - left) / 2);
+
+        // Get lists of bigger and smaller items and final position of pivot
+        partition = devPartition(data, left, right, pivotIndex, callback);
+        pivotNewIndex = partition.storeIndex;
+        data = partition.list;
+
+        // Recursively sort elements smaller than the pivot
+        data = devQuicksortWaypoints(data, left, pivotNewIndex - 1, callback);
+
+        // Recursively sort elements at least as big as the pivot
+        data = devQuicksortWaypoints(data, pivotNewIndex + 1, right, callback);
+    }
+    return data;
+}
+
+/**
+ * @brief Finds the kth-closest waypoint
+ * This method is best when you need a specfic kth waypoint.  If you many of the
+ * the closest waypoints, @see devQuicksortWaypoints()
+ *
+ * @param list array The array of waypoint indices to sort
+ * @param left integer The index of the left-most element of the data
+ * @param right integer The index of the right-most element of the data
+ * @param k integer Return the 1-based kth-closest waypoint
+ * @param callback function The callback function that returns the value of the waypoint struct to sort by
+ *
+ * @returns integer The index of the kth-closest waypoint
+ * @recursive
+ */
+devSelectKthClosestWaypoint(list, left, right, k, callback)
+{
+    debugPrint("in _umiEditor::devSelectKthClosestWaypoint()", "fn", level.nonVerbose);
+
+    if (left == right) {
+        return left;
+    }
+
+    // Choose middle index as pivot index
+    pivotIndex = Int(left + (right - left) / 2);
+
+    partition = devPartition(list, left, right, pivotIndex, callback);
+    pivotNewIndex = partition.storeIndex;
+    list = partition.list;
+
+    pivotDist = pivotNewIndex - left + 1;
+
+    // The pivot is in its final sorted position,
+    // so pivotDist reflects its 1-based position if list were sorted
+    if (pivotDist == k) {
+        return pivotNewIndex;
+    } else if (k < pivotDist) {
+        return devSelectKthClosestWaypoint(list, left, pivotNewIndex - 1, k, callback);
+    } else {
+        return devSelectKthClosestWaypoint(list, pivotNewIndex + 1, right, k - pivotDist, callback);
+    }
+}
+
+/**
+ * @brief Partitions an array for quicksort and select
+ *
+ * @param list array The array of waypoint indices to sort
+ * @param left integer The index of the left-most element of the data
+ * @param right integer The index of the right-most element of the data
+ * @param pivotIndex integer The index of the pivot value
+ * @param callback function The callback function that returns the value of the waypoint struct to sort by
+ *
+ * @returns struct .storeIndex contains the final position if the pivot value
+ *                 .list contains the partitioned array
+ */
+devPartition(list, left, right, pivotIndex, callback)
+{
+    debugPrint("in _umiEditor::devPartition()", "fn", level.nonVerbose);
+
+    pivotValue = [[callback]](level.Wp[list[pivotIndex]]);
+
+    // swap pivot and last element, so pivot element is at the end of the list
+    temp = list[pivotIndex];
+    list[pivotIndex] = list[right];
+    list[right] = temp;
+
+    storeIndex = left;
+    for (i=left; i<right; i++) {
+        if ([[callback]](level.Wp[list[i]]) < pivotValue) {
+            temp = list[storeIndex];
+            list[storeIndex] = list[i];
+            list[i] = temp;
+            storeIndex++;
+        }
+    }
+
+    // swap pivot into its final index
+    temp = list[right];
+    list[right] = list[storeIndex];
+    list[storeIndex] = temp;
+
+    // storeIndex now holds the final index of the pivotValue
+    partition = spawnstruct();
+    partition.storeIndex = storeIndex;
+    partition.list = list;
+    return partition;
+}
+
+/**
+ * @brief Watches a player's movement and updates data that has gone stale
+ *
+ * @param player entity The player to watch
+ *
+ * @returns nothing
+ */
+devWatchPlayer(player)
+{
+    debugPrint("in _umiEditor::devWatchPlayer()", "fn", level.nonVerbose);
+
+    // holds 2 levels of linked waypoints, plus 20 closest unlinked waypoints
+    level.localWaypoints = [];
+
+    oldNearestWp = 0;
+    while (1) {
+        nearestWp = 0;
+        nearestDistance = 9999999999;
+        for (i=0; i<level.WpCount; i++) {
+            distance = distancesquared(player.origin, level.Wp[i].origin);
+            if(distance < nearestDistance) {
+                nearestDistance = distance;
+                nearestWp = i;
+            }
+        }
+        if (nearestWp != oldNearestWp) {
+            // we have a new nearest waypoint, so update the HUD, flags, and localWaypoints
+            level.localWaypoints = [];
+            devUpdateLocalWaypoints(nearestWp);
+            iPrintLnBold(level.localWaypoints.size);
+            player setClientDvar("dev_waypoint", nearestWp);
+            player setClientDvar("dev_waypoint_link", "implement me");
+            oldNearestWp = nearestWp;
+            level.waypointIdHud setValue(nearestWp);
+        }
+        // update the player's origin on the HUD
+        level.playerXHud setValue(player.origin[0]);
+        level.playerYHud setValue(player.origin[1]);
+        level.playerZHud setValue(player.origin[2]);
+        wait 0.05;
+    }
+}
+
+/**
+ * @brief Initializes a HUD to display waypoint information
+ *
+ * @returns nothing
+ */
 devDrawWaypointHud()
 {
     debugPrint("in _umiEditor::devDrawWaypointHud()", "fn", level.nonVerbose);
@@ -271,123 +657,145 @@ devDrawWaypointHud()
     // Set up HUD elements
     verticalOffset = 80;
 
-    waypointIdHud = newClientHudElem(player);
-    waypointIdHud.elemType = "font";
-    waypointIdHud.font = "default";
-    waypointIdHud.fontscale = 1.4;
-    waypointIdHud.x = -16;
-    waypointIdHud.y = verticalOffset;
-    waypointIdHud.glowAlpha = 1;
-    waypointIdHud.hideWhenInMenu = true;
-    waypointIdHud.archived = false;
-    waypointIdHud.alignX = "right";
-    waypointIdHud.alignY = "middle";
-    waypointIdHud.horzAlign = "right";
-    waypointIdHud.vertAlign = "top";
-    waypointIdHud.alpha = 1;
-    waypointIdHud.glowColor = (0,0,1);
-    waypointIdHud.label = &"ZOMBIE_WAYPOINT_ID";
-    waypointIdHud setValue(0);
+    level.waypointIdHud = newClientHudElem(player);
+    level.waypointIdHud.elemType = "font";
+    level.waypointIdHud.font = "default";
+    level.waypointIdHud.fontscale = 1.4;
+    level.waypointIdHud.x = -16;
+    level.waypointIdHud.y = verticalOffset;
+    level.waypointIdHud.glowAlpha = 1;
+    level.waypointIdHud.hideWhenInMenu = true;
+    level.waypointIdHud.archived = false;
+    level.waypointIdHud.alignX = "right";
+    level.waypointIdHud.alignY = "middle";
+    level.waypointIdHud.horzAlign = "right";
+    level.waypointIdHud.vertAlign = "top";
+    level.waypointIdHud.alpha = 1;
+    level.waypointIdHud.glowColor = (0,0,1);
+    level.waypointIdHud.label = &"ZOMBIE_WAYPOINT_ID";
+    level.waypointIdHud setValue(0);
 
-    playerXHud = newClientHudElem(player);
-    playerXHud.elemType = "font";
-    playerXHud.font = "default";
-    playerXHud.fontscale = 1.4;
-    playerXHud.x = -16;
-    playerXHud.y = verticalOffset + 18*1;
-    playerXHud.glowAlpha = 1;
-    playerXHud.hideWhenInMenu = true;
-    playerXHud.archived = false;
-    playerXHud.alignX = "right";
-    playerXHud.alignY = "middle";
-    playerXHud.horzAlign = "right";
-    playerXHud.vertAlign = "top";
-    playerXHud.alpha = 1;
-    playerXHud.glowColor = (0,0,1);
-    playerXHud.label = &"ZOMBIE_PLAYER_X";
-    playerXHud setValue(player.origin[0]);
+    level.playerXHud = newClientHudElem(player);
+    level.playerXHud.elemType = "font";
+    level.playerXHud.font = "default";
+    level.playerXHud.fontscale = 1.4;
+    level.playerXHud.x = -16;
+    level.playerXHud.y = verticalOffset + 18*1;
+    level.playerXHud.glowAlpha = 1;
+    level.playerXHud.hideWhenInMenu = true;
+    level.playerXHud.archived = false;
+    level.playerXHud.alignX = "right";
+    level.playerXHud.alignY = "middle";
+    level.playerXHud.horzAlign = "right";
+    level.playerXHud.vertAlign = "top";
+    level.playerXHud.alpha = 1;
+    level.playerXHud.glowColor = (0,0,1);
+    level.playerXHud.label = &"ZOMBIE_PLAYER_X";
+    level.playerXHud setValue(player.origin[0]);
 
-    playerYHud = newClientHudElem(player);
-    playerYHud.elemType = "font";
-    playerYHud.font = "default";
-    playerYHud.fontscale = 1.4;
-    playerYHud.x = -16;
-    playerYHud.y = verticalOffset + 18*2;
-    playerYHud.glowAlpha = 1;
-    playerYHud.hideWhenInMenu = true;
-    playerYHud.archived = false;
-    playerYHud.alignX = "right";
-    playerYHud.alignY = "middle";
-    playerYHud.horzAlign = "right";
-    playerYHud.vertAlign = "top";
-    playerYHud.alpha = 1;
-    playerYHud.glowColor = (0,0,1);
-    playerYHud.label = &"ZOMBIE_PLAYER_Y";
-    playerYHud setValue(player.origin[1]);
+    level.playerYHud = newClientHudElem(player);
+    level.playerYHud.elemType = "font";
+    level.playerYHud.font = "default";
+    level.playerYHud.fontscale = 1.4;
+    level.playerYHud.x = -16;
+    level.playerYHud.y = verticalOffset + 18*2;
+    level.playerYHud.glowAlpha = 1;
+    level.playerYHud.hideWhenInMenu = true;
+    level.playerYHud.archived = false;
+    level.playerYHud.alignX = "right";
+    level.playerYHud.alignY = "middle";
+    level.playerYHud.horzAlign = "right";
+    level.playerYHud.vertAlign = "top";
+    level.playerYHud.alpha = 1;
+    level.playerYHud.glowColor = (0,0,1);
+    level.playerYHud.label = &"ZOMBIE_PLAYER_Y";
+    level.playerYHud setValue(player.origin[1]);
 
-    playerZHud = newClientHudElem(player);
-    playerZHud.elemType = "font";
-    playerZHud.font = "default";
-    playerZHud.fontscale = 1.4;
-    playerZHud.x = -16;
-    playerZHud.y = verticalOffset + 18*3;
-    playerZHud.glowAlpha = 1;
-    playerZHud.hideWhenInMenu = true;
-    playerZHud.archived = false;
-    playerZHud.alignX = "right";
-    playerZHud.alignY = "middle";
-    playerZHud.horzAlign = "right";
-    playerZHud.vertAlign = "top";
-    playerZHud.alpha = 1;
-    playerZHud.glowColor = (0,0,1);
-    playerZHud.label = &"ZOMBIE_PLAYER_Z";
-    playerZHud setValue(player.origin[2]);
+    level.playerZHud = newClientHudElem(player);
+    level.playerZHud.elemType = "font";
+    level.playerZHud.font = "default";
+    level.playerZHud.fontscale = 1.4;
+    level.playerZHud.x = -16;
+    level.playerZHud.y = verticalOffset + 18*3;
+    level.playerZHud.glowAlpha = 1;
+    level.playerZHud.hideWhenInMenu = true;
+    level.playerZHud.archived = false;
+    level.playerZHud.alignX = "right";
+    level.playerZHud.alignY = "middle";
+    level.playerZHud.horzAlign = "right";
+    level.playerZHud.vertAlign = "top";
+    level.playerZHud.alpha = 1;
+    level.playerZHud.glowColor = (0,0,1);
+    level.playerZHud.label = &"ZOMBIE_PLAYER_Z";
+    level.playerZHud setValue(player.origin[2]);
 
-    oldNearestWp = 0;
-    while (1) {
-        nearestWp = 0;
-        closestWp = -1;
-        nearestDistance = 9999999999;
-        for (i=0; i<level.WpCount; i++) {
-            distance = distancesquared(player.origin, level.Wp[i].origin);
-            if(distance < nearestDistance) {
-                nearestDistance = distance;
-                nearestWp = i;
-            }
-            if (i == (level.WpCount - 1)) {
-                closestWp = nearestWp;
-            }
-            //             location = player.origin + (vectorNormalize(anglesToForward(player.angles)) * 2000) - (0,0,20);
-        }
-        if (nearestWp != oldNearestWp) {
-            player setClientDvar("dev_waypoint", nearestWp);
-            player setClientDvar("dev_waypoint_link", "implement me");
-            devUpdateWaypointMarkers(nearestWp, oldNearestWp);
-            oldNearestWp = nearestWp;
-            waypointIdHud setValue(nearestWp);
-        }
-        playerXHud setValue(player.origin[0]);
-        playerYHud setValue(player.origin[1]);
-        playerZHud setValue(player.origin[2]);
-        wait 0.05;
-    }
+    thread devWatchPlayer(player);
 }
 
-devUpdateWaypointMarkers(currentWaypointId, formerWaypointId)
+getOrigin(struct) {return struct.origin;} /// callback
+getDistance(struct) {return struct.distance;} /// callback
+
+
+/**
+ * @brief Finds the index of the nearest waypoint out of all of the waypoints
+ *
+ * Since we need to compute distanceSquared anyway, this is faster than using
+ * devSelectKthClosestWaypoint(), which depends on that info already existing.
+ *
+ * @param origin vector The position to measure distances with respect to
+ *
+ * @returns integer The index of the nearest waypoint
+ */
+devFindNearestWaypointIndex(origin)
 {
-    debugPrint("in _umiEditor::devUpdateWaypointMarkers()", "fn", level.nonVerbose);
+    debugPrint("in _umiEditor::devFindNearestWaypoint()", "fn", level.nonVerbose);
 
-    devUnflagWaypoint(formerWaypointId);
-    for (i=0; i<level.Wp[formerWaypointId].linkedCount; i++) {
-        devUnflagWaypoint(level.Wp[formerWaypointId].linked[i].ID);
+    nearestWp = 0;
+    nearestDistance = 9999999999;
+    for (i=0; i<level.WpCount; i++) {
+        distance = distancesquared(origin, level.Wp[i].origin);
+        if(distance < nearestDistance) {
+            nearestDistance = distance;
+            nearestWp = i;
+        }
     }
-
-    devFlagWaypoint(currentWaypointId);
-    for (i=0; i<level.Wp[currentWaypointId].linkedCount; i++) {
-        devFlagWaypoint(level.Wp[currentWaypointId].linked[i].ID);
-    }
+    return nearestWp;
 }
 
+/**
+ * @brief Finds the index of the nearest waypoint out of all of the waypoints that have links
+ *
+ * Since we need to compute distanceSquared anyway, this is faster than using
+ * devSelectKthClosestWaypoint(), which depends on that info already existing.
+ *
+ * @param origin vector The position to measure distances with respect to
+ *
+ * @returns integer The index of the nearest waypoint that has a link
+ */
+devFindNearestWaypointWithLinksIndex(origin)
+{
+    debugPrint("in _umiEditor::devFindNearestWaypointWithLinksIndex()", "fn", level.nonVerbose);
+
+    nearestWp = 0;
+    nearestDistance = 9999999999;
+    for (i=0; i<level.WpCount; i++) {
+        if (!isDefined(level.Wp[i].linked)) {continue;} // skip unlinked waypoints
+        distance = distancesquared(origin, level.Wp[i].origin);
+        if(distance < nearestDistance) {
+            nearestDistance = distance;
+            nearestWp = i;
+        }
+    }
+    return nearestWp;
+}
+
+/**
+ * @brief Puts a literal flag of the right type on the given waypoint
+ *
+ * @param waypointId integer The index of the waypoint to flag
+ *
+ * @returns nothing
+ */
 devFlagWaypoint(waypointId)
 {
     debugPrint("in _umiEditor::devFlagWaypoint()", "fn", level.nonVerbose);
@@ -415,6 +823,13 @@ devFlagWaypoint(waypointId)
     }
 }
 
+/**
+ * @brief Removes a literal flag of the right type on the given waypoint
+ *
+ * @param waypointId integer The index of the waypoint to unflag
+ *
+ * @returns nothing
+ */
 devUnflagWaypoint(waypointId)
 {
     debugPrint("in _umiEditor::devUnflagWaypoint()", "fn", level.nonVerbose);
@@ -442,6 +857,14 @@ devUnflagWaypoint(waypointId)
     }
 }
 
+/**
+ * @brief Initializes array of flag entities to be used to mark waypoints
+ *
+ * To limit resources used, we use and recycle 10 flags for linked waypoints,
+ * and 20 flags for unlinked waypoints.
+ *
+ * @returns nothing
+ */
 devInitWaypointFlags()
 {
     debugPrint("in _umiEditor::devInitWaypointFlags()", "fn", level.nonVerbose);
@@ -464,6 +887,11 @@ devInitWaypointFlags()
     }
 }
 
+/**
+ * @brief Draws and updates the lines representing the links between linked waypoints
+ *
+ * @returns nothing
+ */
 devDrawWaypointLinks()
 {
     debugPrint("in _umiEditor::devDrawWaypointLinks()", "fn", level.nonVerbose);
@@ -474,22 +902,22 @@ devDrawWaypointLinks()
     // a different color, so we just cycle through the colors--this seems to work
     // better than picking colors pseudo-randomly
     colors = [];
-    colors[0] = decimalRgbToColor(255,0,0); // red
-    colors[1] = decimalRgbToColor(255,128,0); // orange
-    colors[2] = decimalRgbToColor(255,255,0); // yellow
-    colors[3] = decimalRgbToColor(0,102,0); // forest green
-    colors[4] = decimalRgbToColor(0,255,255); // cyan
-    colors[5] = decimalRgbToColor(0,0,255); // blue
-    colors[6] = decimalRgbToColor(128,0,255); // purple
-    colors[7] = decimalRgbToColor(255,0,255); // fuschia
-    colors[8] = decimalRgbToColor(255,0,128); // hot pink
-    colors[9] = decimalRgbToColor(128,128,128); // grey
-    colors[10] = decimalRgbToColor(102,51,0); // brown
-    colors[11] = decimalRgbToColor(255,255,255); // white
-    colors[12] = decimalRgbToColor(0,0,0); // black
-    colors[13] = decimalRgbToColor(229,255,204); // pale green
-    colors[14] = decimalRgbToColor(128,255,0); // bright green
-    colors[15] = decimalRgbToColor(0,255,128); // aquamarine
+    colors[0] = decimalRgbToColor(255,0,0);         // red
+    colors[1] = decimalRgbToColor(255,128,0);       // orange
+    colors[2] = decimalRgbToColor(255,255,0);       // yellow
+    colors[3] = decimalRgbToColor(0,102,0);         // forest green
+    colors[4] = decimalRgbToColor(0,255,255);       // cyan
+    colors[5] = decimalRgbToColor(0,0,255);         // blue
+    colors[6] = decimalRgbToColor(128,0,255);       // purple
+    colors[7] = decimalRgbToColor(255,0,255);       // fuschia
+    colors[8] = decimalRgbToColor(255,0,128);       // hot pink
+    colors[9] = decimalRgbToColor(128,128,128);     // grey
+    colors[10] = decimalRgbToColor(102,51,0);       // brown
+    colors[11] = decimalRgbToColor(255,255,255);    // white
+    colors[12] = decimalRgbToColor(0,0,0);          // black
+    colors[13] = decimalRgbToColor(229,255,204);    // pale green
+    colors[14] = decimalRgbToColor(128,255,0);      // bright green
+    colors[15] = decimalRgbToColor(0,255,128);      // aquamarine
 
     // Waypoints are doubly-linked; we only need to draw each link once, so build
     // an array of unique links
@@ -1051,6 +1479,82 @@ devSaveTradespawns()
 
     iPrintLnBold("Tradespawn data written to the server log.");
 }
+
+/**
+ * @brief UMI writes a waypoint file to the server log
+ *
+ * @returns nothing
+ * @since RotU 2.2.2
+ */
+devSaveWaypoints()
+{
+    debugPrint("in _umiEditor::devSaveWaypoints()", "fn", level.nonVerbose);
+
+    mapName =  tolower(getdvar("mapname"));
+    logPrint("// =============================================================================\n");
+    logPrint("// File Name = '"+mapname+"_waypoints.gsc'\n");
+    logPrint("// Map Name = '"+mapname+"'\n");
+    logPrint("// =============================================================================\n");
+    logPrint("//\n");
+    logPrint("// This file was generated by the RotU admin development command 'Save Waypoints'\n");
+    logPrint("//\n");
+    logPrint("// =============================================================================\n");
+    logPrint("//\n");
+    logPrint("// This file contains the waypoints for the map '" + mapName + "'\n");
+    logPrint("//\n");
+    logPrint("// N.B. You will need to delete the timecodes at the beginning of these lines!\n");
+    logPrint("//\n");
+
+    logPrint("load_waypoints()\n");
+    logPrint("{\n");
+    logPrint("    level.waypoints = [];\n");
+    logPrint("    \n");
+
+    for (i=0; i<level.Wp.size; i++) {
+        x = level.Wp[i].origin[0];
+        y = level.Wp[i].origin[1];
+        z = level.Wp[i].origin[2];
+
+        logPrint("    level.waypoints["+i+"] = spawnstruct();\n");
+        logPrint("    level.waypoints["+i+"].origin = ("+x+","+y+","+z+");\n");
+
+        // .type isn't used by RotU, but we will endeavor to preserve that info
+        if (isDefined(level.Wp[i].type)) {
+            logPrint("    level.waypoints["+i+"].type = \""+level.Wp[i].type+"\";\n");
+        }
+
+        if (level.Wp[i].linkedCount == 0) {
+            comment = "                /// @bug This waypoint is unlinked!";
+        } else {comment = "";}
+        logPrint("    level.waypoints["+i+"].childCount = "+level.Wp[i].linkedCount+";"+comment+"\n");
+
+        for (j=0; j<level.Wp[i].linkedCount; j++) {
+            logPrint("    level.waypoints["+i+"].children["+j+"] = "+level.Wp[i].linked[j].ID+";\n");
+        }
+
+        // .angles isn't used by RotU, but we will endeavor to preserve that info
+        if (isDefined(level.Wp[i].angles)) {
+            rho = level.Wp[i].angles[0];
+            phi = level.Wp[i].angles[1];
+
+            logPrint("    level.waypoints["+i+"].angles = ("+rho+","+phi+",0);\n");
+        }
+
+        // .use isn't used by RotU, but we will endeavor to preserve that info
+        if (isDefined(level.Wp[i].use)) {
+            if (level.Wp[i].use) {value = "true";}
+            else {value = "false";}
+            logPrint("    level.waypoints["+i+"].use = "+value+";\n");
+        }
+    }
+
+    logPrint("    \n");
+    logPrint("    level.waypointCount = level.waypoints.size;\n");
+    logPrint("}\n");
+
+    iPrintLnBold("Waypoints data written to the server log.");
+}
+
 
 /**
 * @brief UMI writes entities with defined classname and/or targetname properties to the server log
