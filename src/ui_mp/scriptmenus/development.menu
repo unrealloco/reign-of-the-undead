@@ -46,7 +46,7 @@
 
         CHOICE_SEPARATOR_VIS( CHOICE_SEP_1, 1 )
 
-        CHOICE_BUTTON_VIS( 5, "Give Waypoints Mode", scriptMenuResponse "dev_give_waypoints"; close self;, 1 )
+        CHOICE_BUTTON_VIS( 5, "Toggle Give Waypoints", scriptMenuResponse "dev_toggle_waypoints_mode"; close self;, 1 )
         CHOICE_BUTTON_VIS( 6, "Autolink Waypoints", scriptMenuResponse "dev_autolink_waypoints"; close self;, 1 )
         CHOICE_BUTTON_VIS( 7, "Link Waypoint", scriptMenuResponse "dev_link_waypoint"; close self;, 1 )
         CHOICE_BUTTON_VIS( 8, "Delete Waypoint", scriptMenuResponse "dev_delete_waypoint"; close self;, 1 )

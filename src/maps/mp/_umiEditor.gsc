@@ -136,8 +136,11 @@ watchDevelopmentMenuResponses()
         case "dev_save_tradespawns":
             devSaveTradespawns();
             break;
-        case "dev_give_waypoints":
-            devGiveWaypoint();
+        case "dev_toggle_waypoints_mode":
+            devToggleGiveWaypointsMode();
+            break;
+        case "dev_delete_waypoint":
+            devUiDeleteWaypoint();
             break;
         case "dev_save_waypoints":
             devSaveWaypoints();
@@ -172,17 +175,41 @@ devDrawWaypoints()
     }
 
     level.giveWaypointMode = false;
+    level.waypointModeTurnedOff = false;
     devInitWaypointFlags();
     devInitializeUnlinkedWaypoints();
-    thread devDrawWaypointLinks();
+    iPrintLnBold("Waypoint links are drawn 10 units above their origin for better visibility");
+    level thread devDrawWaypointLinks();
     thread devDrawWaypointHud();
+}
+
+devToggleGiveWaypointsMode()
+{
+    debugPrint("in _umiEditor::devToggleGiveWaypointsMode()", "fn", level.nonVerbose);
+
+    // intialize
+    if (!isDefined(level.giveWaypointMode)) {
+        level.waypointModeTurnedOff = false;
+        level.giveWaypointMode = true;
+        devGiveWaypoint();
+        return;
+    }
+
+    // start or stop give waypoints mode
+    if (level.giveWaypointMode) {
+        level.giveWaypointMode = false;
+        level.waypointModeTurnedOff = true;
+        // stop giving new waypoints, and take away any waypoint the player is carrying
+    } else {
+        level.giveWaypointMode = true;
+        devGiveWaypoint();
+    }
 }
 
 devGiveWaypoint()
 {
     debugPrint("in _umiEditor::devGiveWaypoint()", "fn", level.nonVerbose);
 
-    level.giveWaypointMode = true;
     flag = devGetAvailableUnlinkedWaypointFlag();
     if (!isDefined(flag)) {
         iPrintLnBold("No more unlinked waypoint flags available.");
@@ -247,6 +274,137 @@ devGetAvailableUnlinkedWaypointFlag()
     return undefined;
 }
 
+/**
+ * @brief Unflags, unlinks, and deletes the nearest waypoint
+ *
+ * @returns nothing
+ */
+devUiDeleteWaypoint()
+{
+    debugPrint("in _umiEditor::devUiDeleteWaypoint()", "fn", level.nonVerbose);
+
+    waypointId = level.currentWaypoint;
+    devUnflagWaypoint(waypointId);
+    devDeleteWaypoint(waypointId);
+}
+
+/**
+ * @brief Unlinks and deletes the waypoint from memory
+ *
+ * @param waypointId integer The index of the waypoint to delete
+ *
+ * @returns nothing
+ */
+devDeleteWaypoint(waypointId)
+{
+    debugPrint("in _umiEditor::devDeleteWaypoint()", "fn", level.nonVerbose);
+
+    // Deleting a waypoint from the middle of the array is very expensive, while
+    // deleting it from the end of the array is O(1), so first we ensure the waypoint
+    // to be deleted is the last waypoint in the array.
+    if (waypointId != level.Wp.size - 1) {
+        devSwapWaypoints(waypointId, level.Wp.size - 1, false);
+    }
+
+    // unlink and delete the last waypoint
+    devUnlinkWaypoint(level.Wp.size - 1);
+    level.Wp[level.Wp.size - 1] = undefined;
+
+    // update waypoint count
+    level.WpCount = level.Wp.size;
+
+    // refresh the waypoint links
+    level notify("waypoint_links_dirty");
+    wait 0.05;
+    level thread devDrawWaypointLinks();
+}
+
+/**
+ * @brief Swaps the position of two waypoints in the waypoints array
+ *
+ * @param waypointA integer The index of the first waypoint
+ * @param waypointB integer The index of the second waypoint
+ * @param redrawWaypointLinks boolean Should we update the waypoints links array?
+ * This parameter allows us to defer the expense of destroying and recreating the
+ * unique waypoint links array.  If it is false, don't forget to manually update
+ * the array when the current changeset is finished.  Defaults to true.
+ *
+ * @returns nothing
+ */
+devSwapWaypoints(waypointA, waypointB, redrawWaypointLinks)
+{
+    debugPrint("in _umiEditor::devSwapWaypoints()", "fn", level.nonVerbose);
+
+    if (!isDefined(redrawWaypointLinks)) {redrawWaypointLinks = true;}
+
+    // update the references
+    devUpdateWaypointReferences(waypointA, waypointB);
+    devUpdateWaypointReferences(waypointB, waypointA);
+
+    // swap the actual waypoints and their .ID properties
+    temp = level.Wp[waypointA];
+    level.Wp[waypointA] = level.Wp[waypointB];
+    level.Wp[waypointA].ID = waypointA;
+    level.Wp[waypointB] = temp;
+    level.Wp[waypointB].ID = waypointB;
+
+    if (redrawWaypointLinks) {
+        // refresh the waypoint links
+        level notify("waypoint_links_dirty");
+        wait 0.05;
+        level thread devDrawWaypointLinks();
+    }
+}
+
+/**
+ * @brief Updates linked waypoints to point to this waypoint's new position
+ *
+ * @param newWaypointId integer The new (or future) index of the waypoint in the array
+ * @param oldWaypointId integer The old (or current) index of the waypoint in the array
+ *
+ * @returns nothing
+ */
+devUpdateWaypointReferences(newWaypointId, oldWaypointId)
+{
+    debugPrint("in _umiEditor::devUpdateWaypointReferences()", "fn", level.nonVerbose);
+
+    // for all of the waypoints linked to this one
+    for (i=0; i<level.Wp[oldWaypointId].linkedCount; i++) {
+        linkedWaypoint = level.Wp[oldWaypointId].linked[i];
+        temp = [];
+        // find the reference to this waypoint, then point it to the new waypoint
+        for (j=0; j<linkedWaypoint.linked.size; j++) {
+            if (linkedWaypoint.linked[j].ID == oldwaypointId) {
+                linkedWaypoint.linked[j] = level.Wp[newWaypointId];
+                break;
+            }
+        }
+    }
+}
+
+devUnlinkWaypoint(waypointId)
+{
+    debugPrint("in _umiEditor::devUnlinkWaypoint()", "fn", level.nonVerbose);
+
+    // for all of the waypoints linked to this one, remove the references to this one
+    for (i=0; i<level.Wp[waypointId].linkedCount; i++) {
+        linkedWaypoint = level.Wp[waypointId].linked[i];
+        temp = [];
+        for (j=0; j<linkedWaypoint.linked.size; j++) {
+            if (linkedWaypoint.linked[j].ID != waypointId) {
+                temp[temp.size] = linkedWaypoint.linked[j]; // keep this waypoint
+            }
+        }
+        linkedWaypoint.linked = temp;
+        linkedWaypoint.linkedCount = linkedWaypoint.linked.size;
+        if (linkedWaypoint.linkedCount == 0) {linkedWaypoint.isLinking = false;}
+    }
+    // now remove this waypoint's references to other waypoints
+    level.Wp[waypointId].linkedCount = 0;
+    level.Wp[waypointId].linked = undefined;
+    level.Wp[waypointId].isLinking = false;
+}
+
 devEmplaceWaypoint()
 {
     debugPrint("in _umiEditor::devEmplaceWaypoint()", "fn", level.nonVerbose);
@@ -256,6 +414,24 @@ devEmplaceWaypoint()
     wait 1;
 
     while (1) {
+        if ((level.waypointModeTurnedOff) && (!isDefined(level.Wp[self.carryObj.waypointId].linked))) {
+            // player turned off give waypoints mode while carrying a unlinked flag
+            self.carryObj unlink();
+            waypointId = self.carryObj.waypointId;
+            devUnflagWaypoint(waypointId);
+
+            // delete waypoint from the level.unlinkedWaypoints array
+            level.unlinkedWaypoints[level.unlinkedWaypoints.size - 1] = undefined;
+
+            // delete the new waypoint
+            devDeleteWaypoint(waypointId);
+            level.waypointModeTurnedOff = false;
+
+            wait .05;
+            self.canUse = true;
+            self enableweapons();
+            return;
+        }
         if (self attackbuttonpressed()) {
             // ensure flagpole bottom is on the ground
             a = self.carryObj.origin;
@@ -628,6 +804,7 @@ devWatchPlayer(player)
         if (nearestWp != oldNearestWp) {
             // we have a new nearest waypoint, so update the HUD, flags, and localWaypoints
             level.localWaypoints = [];
+            level.currentWaypoint = nearestWp;
             devUpdateLocalWaypoints(nearestWp);
             iPrintLnBold(level.localWaypoints.size);
             player setClientDvar("dev_waypoint", nearestWp);
@@ -896,7 +1073,7 @@ devDrawWaypointLinks()
 {
     debugPrint("in _umiEditor::devDrawWaypointLinks()", "fn", level.nonVerbose);
 
-    iPrintLnBold("Waypoint links are drawn 10 units above their origin for better visibility");
+    level endon("waypoint_links_dirty");
 
     // There aren't enough usable colors to ensure that every connected link is
     // a different color, so we just cycle through the colors--this seems to work
@@ -936,7 +1113,7 @@ devDrawWaypointLinks()
             }
         }
     }
-    iPrintLnBold("Found " + level.waypointLinks.size + " unique waypoint links");
+    debugPrint("Found " + level.waypointLinks.size + " unique waypoint links", "val");
 
     while (1) {
         for (i=0; i<level.waypointLinks.size; i++) {
