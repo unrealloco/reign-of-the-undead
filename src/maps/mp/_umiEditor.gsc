@@ -50,6 +50,7 @@ init()
     precacheModel("com_plasticcase_green_big");
     precacheModel("prop_flag_american"); // used for linked waypoints
     precacheModel("prop_flag_russian");  // used for unlinked waypoints
+    precacheModel("prop_flag_brit");     // used for linking waypoints
 }
 
 /**
@@ -62,18 +63,9 @@ onOpenDevMenu()
     debugPrint("in _umiEditor::onOpenDevMenu()", "fn", level.nonVerbose);
 
     if (scripts\server\_adminInterface::isAdmin(self)) {
-//         self.admin.adminMenuOpen = true;
-//         debugPrint("Enabling god mode for admin: " + self.admin.playerName, "val");
-//         self.isGod = true;
-//         self.god = true;
-//         self.isTargetable = false;
-//         showPlayerInfo();
+        // Do nothing
     } else {
-//         self closeMenu();
-//         self closeInGameMenu();
-//         warnPrint(self.name + " opened the admin menu, but we forced it closed.");
-//         self thread ACPNotify( "You don't have permission to access this menu.", 3 );
-//         return;
+        // Do nothing
     }
 }
 
@@ -106,7 +98,6 @@ watchDevelopmentMenuResponses()
 
     while (1) {
         self waittill("menuresponse", menu, response);
-        //         debugPrint("menu: " + menu + " response: " + response, "val");
 
         // menu "-1" is the main in-game popup menu bound to the 'b' key
         if ((menu == "-1") && (response == "dev_menu_open_request")) {
@@ -120,7 +111,6 @@ watchDevelopmentMenuResponses()
             continue;
         }
 
-        //         debugPrint("menu repsonse is: " + response, "val");
         switch(response)
         {
         /** Development */
@@ -139,8 +129,14 @@ watchDevelopmentMenuResponses()
         case "dev_toggle_waypoints_mode":
             devToggleGiveWaypointsMode();
             break;
+        case "dev_link_waypoint":
+            devLinkWaypoint();
+            break;
         case "dev_delete_waypoint":
             devUiDeleteWaypoint();
+            break;
+        case "dev_delete_link":
+            devDeleteLink();
             break;
         case "dev_save_waypoints":
             devSaveWaypoints();
@@ -169,20 +165,43 @@ devDrawWaypoints()
 
     noticePrint("Map: Drawing waypoints requires +set developer 1 +set developer_script 1");
 
+    initEditor();
+}
+
+initEditor()
+{
+    debugPrint("in _umiEditor::initEditor()", "fn", level.nonVerbose);
+
     // wait until someone is in the game to see the waypoints before we draw them
     while (level.activePlayers == 0) {
         wait 0.5;
     }
 
+    // the admin player that will be doing the editing
+    level.devPlayer = scripts\include\adminCommon::getPlayerByShortGuid(getDvar("admin_forced_guid"));
+
     level.giveWaypointMode = false;
     level.waypointModeTurnedOff = false;
+    // holds 2 levels of linked waypoints, plus 20 closest unlinked waypoints
+    level.localWaypoints = [];
+    level.currentWaypoint = 0;
+    level.currentWaypointLink = 0;
+
     devInitWaypointFlags();
     devInitializeUnlinkedWaypoints();
     iPrintLnBold("Waypoint links are drawn 10 units above their origin for better visibility");
+    thread devInitWaypointHud();
+    thread devWatchPlayer();
+    wait 0.05;
     level thread devDrawWaypointLinks();
-    thread devDrawWaypointHud();
 }
 
+/**
+ * @brief Toggles 'Give Waypoint' mode
+ *
+ * @returns nothing
+ * @since RotU 2.2.2
+ */
 devToggleGiveWaypointsMode()
 {
     debugPrint("in _umiEditor::devToggleGiveWaypointsMode()", "fn", level.nonVerbose);
@@ -206,6 +225,158 @@ devToggleGiveWaypointsMode()
     }
 }
 
+/**
+ * @brief Begins to link the current waypoint to another waypoint
+ *
+ * @returns nothing
+ * @since RotU 2.2.2
+ */
+devLinkWaypoint()
+{
+    debugPrint("in _umiEditor::devLinkWaypoint()", "fn", level.nonVerbose);
+
+    level.linkingFlag.waypointId = level.currentWaypoint;
+
+    level.linkingFlag show();
+    self.carryObj = level.linkingFlag;
+    self.carryObj.origin = self.origin + AnglesToForward(self.angles)*40;
+
+    self.carryObj.master = self;
+    self.carryObj linkto(self);
+    self.carryObj setcontents(2);
+
+    iPrintLnBold("Drop flag near other waypoint to complete the link");
+    self.canUse = false;
+    self disableweapons();
+    self thread devFinishLink();
+}
+
+/**
+ * @brief Finishes linking two waypoints
+ *
+ * @returns nothing
+ * @since RotU 2.2.2
+ */
+devFinishLink()
+{
+    debugPrint("in _umiEditor::devFinishLink()", "fn", level.nonVerbose);
+
+    from = level.Wp[self.carryObj.waypointId].origin + (0,0,10);
+    color = decimalRgbToColor(255,0,0);
+
+    while (1) {
+        if (self attackbuttonpressed()) {
+            if (self.carryObj.waypointId == level.currentWaypoint) {
+                iPrintLnBold("Cannot link a waypoint to itself!");
+                continue;
+            }
+
+            // create a link between  self.carryObj.waypointId and level.currentWaypoint
+            waypointA = self.carryObj.waypointId;
+            waypointB = level.currentWaypoint;
+            devLinkTwoWaypoints(waypointA, waypointB);
+
+            self.carryObj unlink();
+            wait .05;
+
+            // recycle the flag
+            level.linkingFlag hide();
+            level.linkingFlag.origin = (0,0,-9999);
+            level.linkingFlag.waypointId = -1;
+
+            self.canUse = true;
+            self enableweapons();
+
+            return;
+        }
+        // draw rubber band link between first waypoint and the flag
+        a = self.carryObj.origin;
+        result = bulletTrace(a + (0,0,50), a - (0,0,50), false, self.carryObj);
+        to = result["position"] + (0,0,10);
+        line(from, to, color, false, 25);
+        wait 0.1;
+    }
+}
+
+/**
+ * @brief Creates a link between two waypoints in memory
+ *
+ * @param waypointA integer The index of the first waypoint
+ * @param waypointB integer The index of the second waypoint
+ *
+ * @returns nothing
+ * @since RotU 2.2.2
+ */
+devLinkTwoWaypoints(waypointA, waypointB)
+{
+    debugPrint("in _umiEditor::devLinkTwoWaypoints()", "fn", level.nonVerbose);
+
+    // link waypointA to waypointB
+    if (!isDefined(level.Wp[waypointA].linked)) {
+        // this is an unlinked waypoint
+        devUnflagWaypoint(waypointA);
+        // remove the waypoint from the unlinkedWaypoints array
+        for (i=0; i<level.unlinkedWaypoints.size; i++) {
+            if (level.unlinkedWaypoints[i] == waypointA) {
+                level.unlinkedWaypoints[i] = level.unlinkedWaypoints[level.unlinkedWaypoints.size - 1];
+                level.unlinkedWaypoints[level.unlinkedWaypoints.size - 1] = undefined;
+                break;
+            }
+        }
+        // add the new link
+        level.Wp[waypointA].linked[0] = level.Wp[waypointB];
+        level.waypointBoolean[waypointA] = 0;
+    } else {
+        // do an ordered insert
+        i = level.Wp[waypointA].linked.size;
+        while ((i > 0) && (waypointB < level.Wp[waypointA].linked[i-1].ID)) {
+            level.Wp[waypointA].linked[i] = level.Wp[waypointA].linked[i-1];
+            i--;
+        }
+        level.Wp[waypointA].linked[i] = level.Wp[waypointB];
+    }
+    level.Wp[waypointA].linkedCount = level.Wp[waypointA].linked.size;
+
+    // link waypointB to waypointA
+    if (!isDefined(level.Wp[waypointB].linked)) {
+        // this is an unlinked waypoint
+        devUnflagWaypoint(waypointB);
+        // remove the waypoint from the unlinkedWaypoints array
+        for (i=0; i<level.unlinkedWaypoints.size; i++) {
+            if (level.unlinkedWaypoints[i] == waypointB) {
+                level.unlinkedWaypoints[i] = level.unlinkedWaypoints[level.unlinkedWaypoints.size - 1];
+                level.unlinkedWaypoints[level.unlinkedWaypoints.size - 1] = undefined;
+                break;
+            }
+        }
+        // add the new link
+        level.Wp[waypointB].linked[0] = level.Wp[waypointA];
+        level.waypointBoolean[waypointB] = 0;
+    } else {
+        // do an ordered insert
+        i = level.Wp[waypointB].linked.size;
+        while ((i > 0) && (waypointA < level.Wp[waypointB].linked[i-1].ID)) {
+            level.Wp[waypointB].linked[i] = level.Wp[waypointB].linked[i-1];
+            i--;
+        }
+        level.Wp[waypointB].linked[i] = level.Wp[waypointA];
+    }
+    level.Wp[waypointB].linkedCount = level.Wp[waypointB].linked.size;
+
+    // refresh the waypoint links
+    level notify("waypoint_links_dirty");
+    wait 0.05;
+    level thread devDrawWaypointLinks();
+
+    devUpdateLocalWaypoints(level.currentWaypoint);
+}
+
+/**
+ * @brief Gives waypoints until give waypoints mode is toggled off
+ *
+ * @returns nothing
+ * @since RotU 2.2.2
+ */
 devGiveWaypoint()
 {
     debugPrint("in _umiEditor::devGiveWaypoint()", "fn", level.nonVerbose);
@@ -259,6 +430,7 @@ devGiveWaypoint()
  * @brief Gets an available flag from the collection of unlinked waypoint flags
  *
  * @returns struct A struct representing the flag, or undefined if no flags are available
+ * @since RotU 2.2.2
  */
 devGetAvailableUnlinkedWaypointFlag()
 {
@@ -278,6 +450,7 @@ devGetAvailableUnlinkedWaypointFlag()
  * @brief Unflags, unlinks, and deletes the nearest waypoint
  *
  * @returns nothing
+ * @since RotU 2.2.2
  */
 devUiDeleteWaypoint()
 {
@@ -294,6 +467,7 @@ devUiDeleteWaypoint()
  * @param waypointId integer The index of the waypoint to delete
  *
  * @returns nothing
+ * @since RotU 2.2.2
  */
 devDeleteWaypoint(waypointId)
 {
@@ -330,6 +504,7 @@ devDeleteWaypoint(waypointId)
  * the array when the current changeset is finished.  Defaults to true.
  *
  * @returns nothing
+ * @since RotU 2.2.2
  */
 devSwapWaypoints(waypointA, waypointB, redrawWaypointLinks)
 {
@@ -363,6 +538,7 @@ devSwapWaypoints(waypointA, waypointB, redrawWaypointLinks)
  * @param oldWaypointId integer The old (or current) index of the waypoint in the array
  *
  * @returns nothing
+ * @since RotU 2.2.2
  */
 devUpdateWaypointReferences(newWaypointId, oldWaypointId)
 {
@@ -382,6 +558,59 @@ devUpdateWaypointReferences(newWaypointId, oldWaypointId)
     }
 }
 
+/**
+ * @brief Deletes the current waypoint link
+ *
+ * @returns nothing
+ * @since RotU 2.2.2
+ */
+devDeleteLink()
+{
+    debugPrint("in _umiEditor::devDeleteLink()", "fn", level.nonVerbose);
+
+    linkId = level.currentWaypointLink;
+    waypointA = level.waypointLinks[linkId].fromId;
+    waypointB = level.waypointLinks[linkId].toId;
+
+    // remove references to waypointB from waypointA
+    temp = [];
+    for (i=0; i<level.Wp[waypointA].linked.size; i++) {
+        if (level.Wp[waypointA].linked[i].ID != waypointB) {
+            temp[temp.size] = level.Wp[waypointA].linked[i]; // keep this waypoint
+        }
+    }
+    level.Wp[waypointA].linked = temp;
+    level.Wp[waypointA].linkedCount = level.Wp[waypointA].linked.size;
+    if (level.Wp[waypointA].linkedCount == 0) {level.Wp[waypointA].isLinking = false;}
+
+    // remove references to waypointA from waypointB
+    temp = [];
+    for (i=0; i<level.Wp[waypointB].linked.size; i++) {
+        if (level.Wp[waypointB].linked[i].ID != waypointA) {
+            temp[temp.size] = level.Wp[waypointB].linked[i]; // keep this waypoint
+        }
+    }
+    level.Wp[waypointB].linked = temp;
+    level.Wp[waypointB].linkedCount = level.Wp[waypointB].linked.size;
+    if (level.Wp[waypointB].linkedCount == 0) {level.Wp[waypointB].isLinking = false;}
+
+    // refresh the waypoint links
+    level notify("waypoint_links_dirty");
+    wait 0.05;
+    level thread devDrawWaypointLinks();
+
+    nearestWp = devFindNearestWaypointIndex(level.devPlayer.origin);
+    devUpdateLocalWaypoints(nearestWp);
+}
+
+/**
+ * @brief Removes all links from a waypoint
+ *
+ * @param waypointId integer The index of the waypoint to unlink
+ *
+ * @returns nothing
+ * @since RotU 2.2.2
+ */
 devUnlinkWaypoint(waypointId)
 {
     debugPrint("in _umiEditor::devUnlinkWaypoint()", "fn", level.nonVerbose);
@@ -405,6 +634,12 @@ devUnlinkWaypoint(waypointId)
     level.Wp[waypointId].isLinking = false;
 }
 
+/**
+ * @brief Emplaces the waypoint that a player is being carried
+ *
+ * @returns nothing
+ * @since RotU 2.2.2
+ */
 devEmplaceWaypoint()
 {
     debugPrint("in _umiEditor::devEmplaceWaypoint()", "fn", level.nonVerbose);
@@ -445,7 +680,6 @@ devEmplaceWaypoint()
 
             // Update the waypoint's origin
             level.Wp[self.carryObj.waypointId].origin = self.carryObj.origin;
-            iPrintLnBold(self.carryObj.waypointId + ":"+level.Wp[self.carryObj.waypointId].origin);
             if (!isDefined(level.Wp[self.carryObj.waypointId].linked)) {
                 // unlinked waypoint, find closest waypoint that is linked to other waypoints
                 index = devFindNearestWaypointWithLinksIndex(level.Wp[self.carryObj.waypointId].origin);
@@ -466,6 +700,7 @@ devEmplaceWaypoint()
  * @param flag struct The flag to be picked up and moved
  *
  * @returns nothing
+ * @since RotU 2.2.2
  */
 devMoveWaypoint(flag)
 {
@@ -473,6 +708,7 @@ devMoveWaypoint(flag)
 
     self scripts\players\_usables::removeUsable(flag);
 
+    /// @bug something seems wonky here sometimes--need to investigate
     self.carryObj = flag;
     self.carryObj.origin = self.origin + AnglesToForward(self.angles)*40;
 
@@ -490,6 +726,7 @@ devMoveWaypoint(flag)
  * @brief Searches for any unlinked waypoints when the map first loads
  *
  * @returns nothing
+ * @since RotU 2.2.2
  */
 devInitializeUnlinkedWaypoints()
 {
@@ -512,10 +749,13 @@ devInitializeUnlinkedWaypoints()
  * @param nearestWp int The index of the nearest waypoint
  *
  * @returns nothing
+ * @since RotU 2.2.2
  */
 devUpdateLocalWaypoints(nearestWp)
 {
     debugPrint("in _umiEditor::devUpdateLocalWaypoints()", "fn", level.nonVerbose);
+
+    level.localWaypoints = [];
 
     // create a sparse array to hold a flag: should we include this waypoint?
     if (!isDefined(level.waypointBoolean)) { // initialize
@@ -574,6 +814,7 @@ devUpdateLocalWaypoints(nearestWp)
         nearestUnlinkedWaypoint = nearestWp;
         nearestWp = devFindNearestWaypointWithLinksIndex(level.Wp[nearestUnlinkedWaypoint].origin);
     }
+    level.nearestLinkedWaypoint = nearestWp;
 
     // flag nearest linked waypoint and three generations of children
     level.waypointBoolean[nearestWp] = 2;
@@ -633,6 +874,7 @@ devUpdateLocalWaypoints(nearestWp)
  * @param n integer The number of waypoints to return
  *
  * @returns integer array An array of n waypoint indices sorted by shortest distance
+ * @since RotU 2.2.2
  */
 devFindClosestWaypoints(waypoints, origin, n)
 {
@@ -665,6 +907,7 @@ devFindClosestWaypoints(waypoints, origin, n)
  *
  * @returns array The sorted array
  * @recursive
+ * @since RotU 2.2.2
  */
 devQuicksortWaypoints(data, left, right, callback)
 {
@@ -702,6 +945,7 @@ devQuicksortWaypoints(data, left, right, callback)
  *
  * @returns integer The index of the kth-closest waypoint
  * @recursive
+ * @since RotU 2.2.2
  */
 devSelectKthClosestWaypoint(list, left, right, k, callback)
 {
@@ -742,6 +986,7 @@ devSelectKthClosestWaypoint(list, left, right, k, callback)
  *
  * @returns struct .storeIndex contains the final position if the pivot value
  *                 .list contains the partitioned array
+ * @since RotU 2.2.2
  */
 devPartition(list, left, right, pivotIndex, callback)
 {
@@ -779,23 +1024,19 @@ devPartition(list, left, right, pivotIndex, callback)
 /**
  * @brief Watches a player's movement and updates data that has gone stale
  *
- * @param player entity The player to watch
- *
  * @returns nothing
+ * @since RotU 2.2.2
  */
-devWatchPlayer(player)
+devWatchPlayer()
 {
     debugPrint("in _umiEditor::devWatchPlayer()", "fn", level.nonVerbose);
-
-    // holds 2 levels of linked waypoints, plus 20 closest unlinked waypoints
-    level.localWaypoints = [];
 
     oldNearestWp = 0;
     while (1) {
         nearestWp = 0;
         nearestDistance = 9999999999;
         for (i=0; i<level.WpCount; i++) {
-            distance = distancesquared(player.origin, level.Wp[i].origin);
+            distance = distancesquared(level.devPlayer.origin, level.Wp[i].origin);
             if(distance < nearestDistance) {
                 nearestDistance = distance;
                 nearestWp = i;
@@ -806,16 +1047,15 @@ devWatchPlayer(player)
             level.localWaypoints = [];
             level.currentWaypoint = nearestWp;
             devUpdateLocalWaypoints(nearestWp);
-            iPrintLnBold(level.localWaypoints.size);
-            player setClientDvar("dev_waypoint", nearestWp);
-            player setClientDvar("dev_waypoint_link", "implement me");
+            level.devPlayer setClientDvar("dev_waypoint", nearestWp);
             oldNearestWp = nearestWp;
             level.waypointIdHud setValue(nearestWp);
         }
+
         // update the player's origin on the HUD
-        level.playerXHud setValue(player.origin[0]);
-        level.playerYHud setValue(player.origin[1]);
-        level.playerZHud setValue(player.origin[2]);
+        level.playerXHud setValue(level.devPlayer.origin[0]);
+        level.playerYHud setValue(level.devPlayer.origin[1]);
+        level.playerZHud setValue(level.devPlayer.origin[2]);
         wait 0.05;
     }
 }
@@ -824,17 +1064,16 @@ devWatchPlayer(player)
  * @brief Initializes a HUD to display waypoint information
  *
  * @returns nothing
+ * @since RotU 2.2.2
  */
-devDrawWaypointHud()
+devInitWaypointHud()
 {
-    debugPrint("in _umiEditor::devDrawWaypointHud()", "fn", level.nonVerbose);
-
-    player = scripts\include\adminCommon::getPlayerByShortGuid(getDvar("admin_forced_guid"));
+    debugPrint("in _umiEditor::devInitWaypointHud()", "fn", level.nonVerbose);
 
     // Set up HUD elements
     verticalOffset = 80;
 
-    level.waypointIdHud = newClientHudElem(player);
+    level.waypointIdHud = newClientHudElem(level.devPlayer);
     level.waypointIdHud.elemType = "font";
     level.waypointIdHud.font = "default";
     level.waypointIdHud.fontscale = 1.4;
@@ -852,7 +1091,7 @@ devDrawWaypointHud()
     level.waypointIdHud.label = &"ZOMBIE_WAYPOINT_ID";
     level.waypointIdHud setValue(0);
 
-    level.playerXHud = newClientHudElem(player);
+    level.playerXHud = newClientHudElem(level.devPlayer);
     level.playerXHud.elemType = "font";
     level.playerXHud.font = "default";
     level.playerXHud.fontscale = 1.4;
@@ -868,9 +1107,9 @@ devDrawWaypointHud()
     level.playerXHud.alpha = 1;
     level.playerXHud.glowColor = (0,0,1);
     level.playerXHud.label = &"ZOMBIE_PLAYER_X";
-    level.playerXHud setValue(player.origin[0]);
+    level.playerXHud setValue(level.devPlayer.origin[0]);
 
-    level.playerYHud = newClientHudElem(player);
+    level.playerYHud = newClientHudElem(level.devPlayer);
     level.playerYHud.elemType = "font";
     level.playerYHud.font = "default";
     level.playerYHud.fontscale = 1.4;
@@ -886,9 +1125,9 @@ devDrawWaypointHud()
     level.playerYHud.alpha = 1;
     level.playerYHud.glowColor = (0,0,1);
     level.playerYHud.label = &"ZOMBIE_PLAYER_Y";
-    level.playerYHud setValue(player.origin[1]);
+    level.playerYHud setValue(level.devPlayer.origin[1]);
 
-    level.playerZHud = newClientHudElem(player);
+    level.playerZHud = newClientHudElem(level.devPlayer);
     level.playerZHud.elemType = "font";
     level.playerZHud.font = "default";
     level.playerZHud.fontscale = 1.4;
@@ -904,9 +1143,7 @@ devDrawWaypointHud()
     level.playerZHud.alpha = 1;
     level.playerZHud.glowColor = (0,0,1);
     level.playerZHud.label = &"ZOMBIE_PLAYER_Z";
-    level.playerZHud setValue(player.origin[2]);
-
-    thread devWatchPlayer(player);
+    level.playerZHud setValue(level.devPlayer.origin[2]);
 }
 
 getOrigin(struct) {return struct.origin;} /// callback
@@ -922,6 +1159,7 @@ getDistance(struct) {return struct.distance;} /// callback
  * @param origin vector The position to measure distances with respect to
  *
  * @returns integer The index of the nearest waypoint
+ * @since RotU 2.2.2
  */
 devFindNearestWaypointIndex(origin)
 {
@@ -948,6 +1186,7 @@ devFindNearestWaypointIndex(origin)
  * @param origin vector The position to measure distances with respect to
  *
  * @returns integer The index of the nearest waypoint that has a link
+ * @since RotU 2.2.2
  */
 devFindNearestWaypointWithLinksIndex(origin)
 {
@@ -972,6 +1211,7 @@ devFindNearestWaypointWithLinksIndex(origin)
  * @param waypointId integer The index of the waypoint to flag
  *
  * @returns nothing
+ * @since RotU 2.2.2
  */
 devFlagWaypoint(waypointId)
 {
@@ -983,6 +1223,7 @@ devFlagWaypoint(waypointId)
                 level.unlinkedWaypointFlags[i].waypointId = waypointId;
                 level.unlinkedWaypointFlags[i].origin = level.Wp[waypointId].origin;
                 level.unlinkedWaypointFlags[i] show();
+                level scripts\players\_usables::addUsable(level.unlinkedWaypointFlags[i], "waypoint", "Press [use] to pickup waypoint", 70);
                 return;
             }
         }
@@ -1006,6 +1247,7 @@ devFlagWaypoint(waypointId)
  * @param waypointId integer The index of the waypoint to unflag
  *
  * @returns nothing
+ * @since RotU 2.2.2
  */
 devUnflagWaypoint(waypointId)
 {
@@ -1017,6 +1259,7 @@ devUnflagWaypoint(waypointId)
                 level.unlinkedWaypointFlags[i].waypointId = -1;
                 level.unlinkedWaypointFlags[i].origin = (0,0,-9999);
                 level.unlinkedWaypointFlags[i] hide();
+                self scripts\players\_usables::removeUsable(level.unlinkedWaypointFlags[i]);
                 return;
             }
         }
@@ -1041,6 +1284,7 @@ devUnflagWaypoint(waypointId)
  * and 20 flags for unlinked waypoints.
  *
  * @returns nothing
+ * @since RotU 2.2.2
  */
 devInitWaypointFlags()
 {
@@ -1054,6 +1298,7 @@ devInitWaypointFlags()
         flag hide();
         level.linkedWaypointFlags[i] = flag;
     }
+
     level.unlinkedWaypointFlags = [];
     for (i=0; i<20; i++) {
         flag = spawn("script_model", (0,0,-9999));
@@ -1062,12 +1307,18 @@ devInitWaypointFlags()
         flag hide();
         level.unlinkedWaypointFlags[i] = flag;
     }
+
+    level.linkingFlag = spawn("script_model", (0,0,-9999));
+    level.linkingFlag.waypointId = -1;
+    level.linkingFlag setModel("prop_flag_brit");
+    level.linkingFlag hide();
 }
 
 /**
  * @brief Draws and updates the lines representing the links between linked waypoints
  *
  * @returns nothing
+ * @since RotU 2.2.2
  */
 devDrawWaypointLinks()
 {
@@ -1078,23 +1329,25 @@ devDrawWaypointLinks()
     // There aren't enough usable colors to ensure that every connected link is
     // a different color, so we just cycle through the colors--this seems to work
     // better than picking colors pseudo-randomly
+
+    currentLinkColor = decimalRgbToColor(128,255,0);    // bright green -- used for current waypoint link
+    // decimalRgbToColor(255,0,0);                      // red -- reserved for links currently being drawn
+
     colors = [];
-    colors[0] = decimalRgbToColor(255,0,0);         // red
-    colors[1] = decimalRgbToColor(255,128,0);       // orange
+    colors[0] = decimalRgbToColor(255,128,0);       // orange
+    colors[1] = decimalRgbToColor(128,0,255);       // purple
     colors[2] = decimalRgbToColor(255,255,0);       // yellow
     colors[3] = decimalRgbToColor(0,102,0);         // forest green
     colors[4] = decimalRgbToColor(0,255,255);       // cyan
     colors[5] = decimalRgbToColor(0,0,255);         // blue
-    colors[6] = decimalRgbToColor(128,0,255);       // purple
-    colors[7] = decimalRgbToColor(255,0,255);       // fuschia
-    colors[8] = decimalRgbToColor(255,0,128);       // hot pink
-    colors[9] = decimalRgbToColor(128,128,128);     // grey
-    colors[10] = decimalRgbToColor(102,51,0);       // brown
-    colors[11] = decimalRgbToColor(255,255,255);    // white
-    colors[12] = decimalRgbToColor(0,0,0);          // black
-    colors[13] = decimalRgbToColor(229,255,204);    // pale green
-    colors[14] = decimalRgbToColor(128,255,0);      // bright green
-    colors[15] = decimalRgbToColor(0,255,128);      // aquamarine
+    colors[6] = decimalRgbToColor(255,0,255);       // fuschia
+    colors[7] = decimalRgbToColor(255,0,128);       // hot pink
+    colors[8] = decimalRgbToColor(128,128,128);     // grey
+    colors[9] = decimalRgbToColor(102,51,0);        // brown
+    colors[10] = decimalRgbToColor(255,255,255);    // white
+    colors[11] = decimalRgbToColor(0,0,0);          // black
+    colors[12] = decimalRgbToColor(229,255,204);    // pale green
+    colors[13] = decimalRgbToColor(0,255,128);      // aquamarine
 
     // Waypoints are doubly-linked; we only need to draw each link once, so build
     // an array of unique links
@@ -1113,14 +1366,16 @@ devDrawWaypointLinks()
             }
         }
     }
-    debugPrint("Found " + level.waypointLinks.size + " unique waypoint links", "val");
+
+    level thread devWatchNearestWaypointLink();
 
     while (1) {
         for (i=0; i<level.waypointLinks.size; i++) {
             //                 Line( <start>, <end>, <color>, <depthTest>, <duration> )
             from = level.Wp[level.waypointLinks[i].fromId].origin + (0,0,10);
             to = level.Wp[level.waypointLinks[i].toId].origin + (0,0,10);
-            color = level.waypointLinks[i].color;
+            if (i == level.currentWaypointLink) {color = currentLinkColor;}
+            else {color = level.waypointLinks[i].color;}
             line(from, to, color, false, 25);
         }
         wait 0.05;
@@ -1128,24 +1383,132 @@ devDrawWaypointLinks()
 }
 
 /**
-* @brief UMI writes the player's current position to the server log
-* Intended to help add/edit waypoints to maps lacking them.  Should be called
-* from an admin command, or perhaps from a keybinding.
-*
-* @returns nothing
-* @since RotU 2.2.1
-*/
-devRecordWaypoint()
+ * @brief Tracks the nearest waypoint link to the player and updates the menu
+ *
+ * @returns nothing
+ * @since RotU 2.2.2
+ */
+devWatchNearestWaypointLink()
 {
-    debugPrint("in _umiEditor::devRecordWaypoint()", "fn", level.nonVerbose);
+    debugPrint("in _umiEditor::devWatchNearestWaypointLink()", "fn", level.nonVerbose);
 
-    x = self.origin[0];
-    y = self.origin[1];
-    z = self.origin[2];
+    level endon("waypoint_links_dirty");
 
-    msg = "Recorded waypoint: origin: ("+x+","+y+","+z+")";
-    noticePrint(msg);
-    iPrintLnBold(msg);
+    while (1) {
+        linkIndex = devFindNearestWaypointLink();
+        level.currentWaypointLink = linkIndex;
+        linkText = level.waypointLinks[linkIndex].fromId+":"+level.waypointLinks[linkIndex].toId;
+        level.devPlayer setClientDvar("dev_waypoint_link", linkText);
+        wait 0.2;
+    }
+}
+
+/**
+ * @brief Finds the waypoint link with the smallest angular distance wrt the player
+ *
+ * @returns integer The index of the waypoint link in the level.waypointLinks array
+ * @since RotU 2.2.2
+ */
+devFindNearestWaypointLink()
+{
+    debugPrint("in _umiEditor::devFindNearestWaypointLink()", "fn", level.nonVerbose);
+
+    // Since there are times when nearest linear distance to a waypoint link is mathematically
+    // undefined, we use the smallest angular distance, which is always defined.
+    nearestWp = level.nearestLinkedWaypoint;
+    origin = level.devPlayer.origin + (0,0,10);
+    smallestTheta = 360;
+
+    linked = -1;
+    from = level.Wp[nearestWp].origin + (0,0,10);
+    for (i=0; i<level.Wp[nearestWp].linkedCount; i++) { // about 2-5 waypoints
+        to = level.Wp[nearestWp].linked[i].origin + (0,0,10);
+        theta = scripts\players\_turrets::angleBetweenTwoVectors(to - from, origin - from);
+        if (theta < smallestTheta) {
+            smallestTheta = theta;
+            linked = i;
+        }
+    }
+
+    linkedWp = level.Wp[nearestWp].linked[linked].ID;
+    linkIndex = devFindWaypointLinkIndex(nearestWp, linkedWp);
+    return linkIndex;
+}
+
+/**
+ * @brief Finds the index for the link between two waypoints using a modified binary search
+ *
+ * @param fromWp integer The index of the first waypoint in the link
+ * @param toWp integer The index of the second waypoint in the link
+ *
+ * @returns integer The index of the waypoint link, or -1 if it wasn't found, which shouldn't happen.
+ * @since RotU 2.2.2
+ */
+devFindWaypointLinkIndex(fromWp, toWp)
+{
+    debugPrint("in _umiEditor::devFindWaypointLinkIndex()", "fn", level.nonVerbose);
+
+    // In the level.waypointLinks[] array, .fromId is always in acsending order,
+    // so we can do a binary search.  Also, .toId is always > .fromId, so we can
+    // determine which one of the bidirectional links we are actually using, and
+    // hence to search for.
+
+    leftBound = 0;
+    rightBound = level.waypointLinks.size - 1;
+    index = -1;
+
+    // Ensure we are searching for the bidirectionl link we have actually stored,
+    // not the reverse link
+    if (toWp > fromWp) {
+        fromValue = fromWp;
+        toValue = toWp;
+    } else {
+        fromValue = toWp;
+        toValue = fromWp;
+    }
+
+    while (leftBound <= rightBound) {
+        //calculate the midpoint
+        midpoint = Int((leftBound + rightBound) / 2);
+
+        // determine which subarray to search
+        if (level.waypointLinks[midpoint].fromId < fromValue) {
+            // change leftBound to search upper subarray
+            leftBound = midpoint + 1;
+        } else if (level.waypointLinks[midpoint].fromId > fromValue ) {
+            // change rightBound to search lower subarray
+            rightBound = midpoint - 1;
+        } else {
+            // value found at midpoint
+            index = midpoint;
+            break;
+        }
+    }
+
+    if (index == -1) {
+        errorPrint("Failed to find index!");
+    }
+
+    // rewind then advance index until it points to the first (of possibly several)
+    // links that start at this waypoint
+    while (level.waypointLinks[index].fromId == fromValue) {
+        if (index == 0) {break;} // don't rewind past beginning of array
+        index--;
+    }
+    if (index != 0) {index++;}
+
+    // Now iterate through the array until we find the link we are looking for
+    while (level.waypointLinks[index].fromId == fromValue) {
+        if (level.waypointLinks[index].toId == toValue) {
+            // this is the link we are looking for
+            return index;
+        } else {
+            index++;
+        }
+    }
+    // error, we couldn't find the link
+    errorPrint("Error: Couldn't find waypoint link index!");
+    return -1;
 }
 
 /**
