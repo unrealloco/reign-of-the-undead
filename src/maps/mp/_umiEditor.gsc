@@ -757,6 +757,9 @@ devUpdateLocalWaypoints(nearestWp)
 
     level.localWaypoints = [];
 
+    // If there aren't any waypoints, do nothing
+    if (level.WpCount == 0) {return;}
+
     // create a sparse array to hold a flag: should we include this waypoint?
     if (!isDefined(level.waypointBoolean)) { // initialize
         level.waypointBoolean = [];
@@ -1031,7 +1034,7 @@ devWatchPlayer()
 {
     debugPrint("in _umiEditor::devWatchPlayer()", "fn", level.nonVerbose);
 
-    oldNearestWp = 0;
+    oldNearestWp = -1;
     while (1) {
         nearestWp = 0;
         nearestDistance = 9999999999;
@@ -1361,6 +1364,7 @@ devDrawWaypointLinks()
                 level.waypointLinks[linkIndex] = link;
                 link.fromId = level.Wp[i].ID;
                 link.toId = level.Wp[i].linked[j].ID;
+                // debugPrint("linkIndex: "+linkIndex+" .fromId: "+link.fromId+" .toId: "+link.toId, "val");
                 link.color = colors[linkIndex % colors.size];
                 linkIndex++;
             }
@@ -1395,6 +1399,10 @@ devWatchNearestWaypointLink()
     level endon("waypoint_links_dirty");
 
     while (1) {
+        if (level.waypointLinks.size == 0) {
+            wait 0.5;
+            continue;
+        }
         linkIndex = devFindNearestWaypointLink();
         level.currentWaypointLink = linkIndex;
         linkText = level.waypointLinks[linkIndex].fromId+":"+level.waypointLinks[linkIndex].toId;
@@ -1413,9 +1421,15 @@ devFindNearestWaypointLink()
 {
     debugPrint("in _umiEditor::devFindNearestWaypointLink()", "fn", level.nonVerbose);
 
+    if (level.waypointLinks.size == 1) {return 0;}
+
     // Since there are times when nearest linear distance to a waypoint link is mathematically
     // undefined, we use the smallest angular distance, which is always defined.
-    nearestWp = level.nearestLinkedWaypoint;
+    if (!isDefined(level.nearestLinkedWaypoint)) {
+        nearestWp = devFindNearestWaypointWithLinksIndex(level.devPlayer.origin);
+    } else {
+        nearestWp = level.nearestLinkedWaypoint;
+    }
     origin = level.devPlayer.origin + (0,0,10);
     smallestTheta = 360;
 
@@ -1453,6 +1467,9 @@ devFindWaypointLinkIndex(fromWp, toWp)
     // determine which one of the bidirectional links we are actually using, and
     // hence to search for.
 
+//     iPrintLnBold(fromWp+":"+toWp);
+//     debugPrint(fromWp+":"+toWp, "val");
+
     leftBound = 0;
     rightBound = level.waypointLinks.size - 1;
     index = -1;
@@ -1487,15 +1504,17 @@ devFindWaypointLinkIndex(fromWp, toWp)
 
     if (index == -1) {
         errorPrint("Failed to find index!");
+    } else {
+        debugPrint("Value found at index: "+index, "val");
     }
 
-    // rewind then advance index until it points to the first (of possibly several)
-    // links that start at this waypoint
-    while (level.waypointLinks[index].fromId == fromValue) {
-        if (index == 0) {break;} // don't rewind past beginning of array
+    // there are possibly several matches in the array, so peek at the value in
+    // the previous index
+    while ((index > 0) && (level.waypointLinks[index-1].fromId == fromValue)) {
+        // the previous index also matches fromValue, so decrement index
         index--;
     }
-    if (index != 0) {index++;}
+    // index now points to the first matching fromValue in the array
 
     // Now iterate through the array until we find the link we are looking for
     while (level.waypointLinks[index].fromId == fromValue) {
