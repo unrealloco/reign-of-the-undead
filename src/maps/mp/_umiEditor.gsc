@@ -51,6 +51,14 @@ init()
     precacheModel("prop_flag_american"); // used for linked waypoints
     precacheModel("prop_flag_russian");  // used for unlinked waypoints
     precacheModel("prop_flag_brit");     // used for linking waypoints
+
+    if ((getDvarInt("developer_script") == 1) && (getDvarInt("developer") == 1)) {
+        level.developerMode = true;
+    } else {
+        level.developerMode = false;
+        noticePrint("Map: Developer mode is off, UMI Map Editor is unavailable");
+        noticePrint("Map: To enable developer mode, playMod.bat requires '+set developer 1 +set developer_script 1'");
+    }
 }
 
 /**
@@ -78,7 +86,7 @@ onOpenDevMenuRequest()
 {
     debugPrint("in _umiEditor::onOpenDevMenuRequest()", "fn", level.nonVerbose);
 
-    if (scripts\server\_adminInterface::isAdmin(self)) {
+    if ((level.developerMode) && (scripts\server\_adminInterface::isAdmin(self))) {
         self onOpenDevMenu();
         self openMenu(game["menu_development"]);
     }
@@ -151,33 +159,20 @@ watchDevelopmentMenuResponses()
     } // End while(1)
 }
 
-
-/**
- * @brief UMI draws the waypoints on the map
- * @threaded
- *
- * works with playMod.bat with:
- * +set developer 1 +set developer_script 1 +set dedicated 0
- *
- * @returns nothing
- * @since RotU 2.2.1
- */
-devDrawWaypoints()
+initMapEditor()
 {
-    debugPrint("in _umiEditor::devDrawWaypoints()", "fn", level.nonVerbose);
-
-    noticePrint("Map: Drawing waypoints requires +set developer 1 +set developer_script 1");
-
-    initEditor();
-}
-
-initEditor()
-{
-    debugPrint("in _umiEditor::initEditor()", "fn", level.nonVerbose);
+    debugPrint("in _umiEditor::initMapEditor()", "fn", level.nonVerbose);
 
     // wait until someone is in the game to see the waypoints before we draw them
     while (level.activePlayers == 0) {
         wait 0.5;
+    }
+
+    if (!level.developerMode) {
+        noticePrint("Map: Developer mode is off, UMI Map Editor is unavailable");
+        noticePrint("Map: To enable developer mode, playMod.bat requires '+set developer 1 +set developer_script 1'");
+        iPrintLnBold("Error: Game must be started in developer mode, see server log");
+        return;
     }
 
     // the admin player that will be doing the editing
