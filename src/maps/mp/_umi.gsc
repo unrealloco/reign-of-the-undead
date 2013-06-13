@@ -626,7 +626,7 @@ convertToNativeWaypoints()
 
         // RotU doesn't use .type, but read it in so we can preserve the info
         // for _umiEditor::devSaveWaypoints
-        if (isDefined(level.waypoints[i].type)) { // stand, jump, mantle
+        if (isDefined(level.waypoints[i].type)) { // stand, jump, mantle, climb
             waypoint.type = level.waypoints[i].type;
         }
         // RotU doesn't use .angles, but read it in so we can preserve the info

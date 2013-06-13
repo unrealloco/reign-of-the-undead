@@ -172,6 +172,12 @@ LANG_ENGLISH        "Ammobox In:"
 REFERENCE           WAYPOINT_ID
 LANG_ENGLISH        "Waypoint ID: &&1"
 
+REFERENCE           WAYPOINT_TYPE
+LANG_ENGLISH        "Waypoint Type: "
+
+REFERENCE           WAYPOINT_SHORTCUTS
+LANG_ENGLISH        "Keyboard Shortcuts:\nToggle Give Waypoints (H)\nLink Waypoint (J)\nDelete Waypoint (K)\nDelete Link (L)\nCycle Waypoint Type (M)\n"
+
 REFERENCE           PLAYER_X
 LANG_ENGLISH        "Player x: &&1"
 

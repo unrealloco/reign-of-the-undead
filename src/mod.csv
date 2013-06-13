@@ -32,6 +32,8 @@ menufile,ui_mp/settings_quick_war.menu
 menufile,ui/playerprofile.menu
 menufile,ui_mp/challenges.menu
 
+rawfile,maps/mp/_umi_shortcuts.cfg
+
 weapon,mp/bot_zombie_walk_mp
 weapon,mp/bot_zombie_stand_mp
 weapon,mp/bot_zombie_run_mp

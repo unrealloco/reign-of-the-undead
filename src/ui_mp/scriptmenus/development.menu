@@ -17,7 +17,7 @@
 #define CHOICE_GROUP            "cmds"
 
 #define CHOICE_SEP_1            4       // seperator appears after item 2
-#define CHOICE_SEP_2            10       // seperator appears after item 7
+#define CHOICE_SEP_2            11       // seperator appears after item 7
 
 #include "ui_mp/menustyle.inc"
 #include "ui/choices_setup_common.menu"
@@ -51,11 +51,12 @@
         CHOICE_BUTTON_VIS( 7, "Link Waypoint", scriptMenuResponse "dev_link_waypoint"; close self;, 1 )
         CHOICE_BUTTON_VIS( 8, "Delete Waypoint", scriptMenuResponse "dev_delete_waypoint"; close self;, 1 )
         CHOICE_BUTTON_VIS( 9, "Delete Link", scriptMenuResponse "dev_delete_link"; close self;, 1 )
-        CHOICE_BUTTON_VIS( 10, "Save Waypoints", scriptMenuResponse "dev_save_waypoints"; close self;, 1 )
+        CHOICE_BUTTON_VIS( 10, "Cycle Waypoint Type", scriptMenuResponse "dev_cycle_waypoint_type"; close self;, 1 )
+        CHOICE_BUTTON_VIS( 11, "Save Waypoints", scriptMenuResponse "dev_save_waypoints"; close self;, 1 )
 
         CHOICE_SEPARATOR_VIS( CHOICE_SEP_2, 1 )
 
-        CHOICE_BUTTON_VIS( 11, "Cancel", scriptMenuResponse "dev_cancel"; close self;, 1 )
+        CHOICE_BUTTON_VIS( 12, "Cancel", scriptMenuResponse "dev_cancel"; close self;, 1 )
 
         /* notify */
         itemDef
@@ -84,12 +85,24 @@
         }
         itemDef
         {
-            exp             text( "Current Waypoint Link: ^2" + dvarString("dev_waypoint_link"))
+            exp             text( "Current Waypoint Type: ^2" + dvarString("dev_waypoint_type"))
             style           0
             decoration
             textscale       .34
             rect            0 0 0 0 CHOICE_HORIZONTAL_ALIGN CHOICE_VERTICAL_ALIGN
             origin          PLAYER_INFO_X (PLAYER_INFO_Y + 15)
+            textalign       ITEM_ALIGN_LEFT
+            textaligny      16
+            visible         1
+        }
+        itemDef
+        {
+            exp             text( "Current Waypoint Link: ^2" + dvarString("dev_waypoint_link"))
+            style           0
+            decoration
+            textscale       .34
+            rect            0 0 0 0 CHOICE_HORIZONTAL_ALIGN CHOICE_VERTICAL_ALIGN
+            origin          PLAYER_INFO_X (PLAYER_INFO_Y + 30)
             textalign       ITEM_ALIGN_LEFT
             textaligny      16
             visible         1

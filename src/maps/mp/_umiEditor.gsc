@@ -114,7 +114,7 @@ watchDevelopmentMenuResponses()
         }
 
         // If menu isn't an admin menu, then bail
-        if (menu != "development") {
+        if ((menu != "development") && (menu != "clientcmd")) {
             debugPrint("Menu is not the development menu.", "val"); // <debug />
             continue;
         }
@@ -149,6 +149,9 @@ watchDevelopmentMenuResponses()
         case "dev_delete_link":
             devDeleteLink();
             break;
+        case "dev_cycle_waypoint_type":
+            devCycleWaypointType();
+            break;
         case "dev_save_waypoints":
             devSaveWaypoints();
             break;
@@ -177,6 +180,9 @@ initMapEditor()
 
     // the admin player that will be doing the editing
     level.devPlayer = scripts\include\adminCommon::getPlayerByShortGuid(getDvar("admin_forced_guid"));
+
+    // load UMI Editor shortcuts
+    level.devPlayer scripts\players\_players::execClientCommand( "exec maps/mp/_umi_shortcuts.cfg" );
 
     level.giveWaypointMode = false;
     level.waypointModeTurnedOff = false;
@@ -221,6 +227,41 @@ devToggleGiveWaypointsMode()
         level.giveWaypointMode = true;
         devGiveWaypoint();
     }
+}
+
+devCycleWaypointType()
+{
+    debugPrint("in _umiEditor::devCycleWaypointType()", "fn", level.nonVerbose);
+
+    if (isDefined(level.Wp[level.currentWaypoint].type)) {
+        currentType = level.Wp[level.currentWaypoint].type;
+    } else {currentType = "undefined";}
+
+    newType = "";
+    switch(currentType) {
+        case "undefined":
+            newType = "stand";
+            break;
+        case "stand":
+            newType = "jump";
+            break;
+        case "jump":
+            newType = "mantle";
+            break;
+        case "mantle":
+            newType = "climb";
+            break;
+        case "climb":
+            newType = "undefined";
+            break;
+        default:
+            // Do nothing
+            break;
+    } // end switch(currentType)
+
+    level.Wp[level.currentWaypoint].type = newType;
+    level.waypointTypeHud setText(newType);
+    level.devPlayer setClientDvar("dev_waypoint_type", newType);
 }
 
 /**
@@ -477,6 +518,8 @@ devGiveWaypoint()
     waypointId = level.Wp.size;
     waypoint.linkedCount = 0;
     waypoint.ID = waypointId;
+    // stand, jump, mantle
+    waypoint.type = "stand";        // RotU doesn't use this, at least not yet
 
     // append the new waypoint to the level.Wp array
     level.Wp[waypointId] = waypoint;
@@ -1134,6 +1177,10 @@ devWatchPlayer()
             level.devPlayer setClientDvar("dev_waypoint", nearestWp);
             oldNearestWp = nearestWp;
             level.waypointIdHud setValue(nearestWp);
+            if (isDefined(level.Wp[nearestWp].type)) {type = level.Wp[nearestWp].type;}
+            else {type = "undefined";}
+            level.waypointTypeHud setText(type);
+            level.devPlayer setClientDvar("dev_waypoint_type", type);
         }
 
         // update the player's origin on the HUD
@@ -1157,6 +1204,24 @@ devInitWaypointHud()
     // Set up HUD elements
     verticalOffset = 80;
 
+    level.shortcutsHud = newClientHudElem(level.devPlayer);
+    level.shortcutsHud.elemType = "font";
+    level.shortcutsHud.font = "default";
+    level.shortcutsHud.fontscale = 1.4;
+    level.shortcutsHud.x = -160;
+    level.shortcutsHud.y = 20;
+    level.shortcutsHud.hideWhenInMenu = true;
+    level.shortcutsHud.archived = false;
+    level.shortcutsHud.alignX = "right";
+    level.shortcutsHud.alignY = "middle";
+    level.shortcutsHud.horzAlign = "center";
+    level.shortcutsHud.vertAlign = "top";
+    level.shortcutsHud.color = (0,1,0);
+    level.shortcutsHud.alpha = 1;
+    level.shortcutsHud.glowColor = (0,0,0);
+    level.shortcutsHud.glowAlpha = 1;
+    level.shortcutsHud.label = &"ZOMBIE_WAYPOINT_SHORTCUTS";
+
     level.waypointIdHud = newClientHudElem(level.devPlayer);
     level.waypointIdHud.elemType = "font";
     level.waypointIdHud.font = "default";
@@ -1175,12 +1240,30 @@ devInitWaypointHud()
     level.waypointIdHud.label = &"ZOMBIE_WAYPOINT_ID";
     level.waypointIdHud setValue(0);
 
+    level.waypointTypeHud = newClientHudElem(level.devPlayer);
+    level.waypointTypeHud.elemType = "font";
+    level.waypointTypeHud.font = "default";
+    level.waypointTypeHud.fontscale = 1.4;
+    level.waypointTypeHud.x = -16;
+    level.waypointTypeHud.y = verticalOffset + 18*1;
+    level.waypointTypeHud.glowAlpha = 1;
+    level.waypointTypeHud.hideWhenInMenu = true;
+    level.waypointTypeHud.archived = false;
+    level.waypointTypeHud.alignX = "right";
+    level.waypointTypeHud.alignY = "middle";
+    level.waypointTypeHud.horzAlign = "right";
+    level.waypointTypeHud.vertAlign = "top";
+    level.waypointTypeHud.alpha = 1;
+    level.waypointTypeHud.glowColor = (0,0,1);
+    level.waypointTypeHud.label = &"ZOMBIE_WAYPOINT_TYPE";
+    level.waypointTypeHud setText("undefined");
+
     level.playerXHud = newClientHudElem(level.devPlayer);
     level.playerXHud.elemType = "font";
     level.playerXHud.font = "default";
     level.playerXHud.fontscale = 1.4;
     level.playerXHud.x = -16;
-    level.playerXHud.y = verticalOffset + 18*1;
+    level.playerXHud.y = verticalOffset + 18*2;
     level.playerXHud.glowAlpha = 1;
     level.playerXHud.hideWhenInMenu = true;
     level.playerXHud.archived = false;
@@ -1198,7 +1281,7 @@ devInitWaypointHud()
     level.playerYHud.font = "default";
     level.playerYHud.fontscale = 1.4;
     level.playerYHud.x = -16;
-    level.playerYHud.y = verticalOffset + 18*2;
+    level.playerYHud.y = verticalOffset + 18*3;
     level.playerYHud.glowAlpha = 1;
     level.playerYHud.hideWhenInMenu = true;
     level.playerYHud.archived = false;
@@ -1216,7 +1299,7 @@ devInitWaypointHud()
     level.playerZHud.font = "default";
     level.playerZHud.fontscale = 1.4;
     level.playerZHud.x = -16;
-    level.playerZHud.y = verticalOffset + 18*3;
+    level.playerZHud.y = verticalOffset + 18*4;
     level.playerZHud.glowAlpha = 1;
     level.playerZHud.hideWhenInMenu = true;
     level.playerZHud.archived = false;
