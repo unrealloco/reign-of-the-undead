@@ -129,6 +129,9 @@ watchDevelopmentMenuResponses()
         case "dev_toggle_waypoints_mode":
             devToggleGiveWaypointsMode();
             break;
+        case "dev_autolink_waypoints":
+            devAutoLinkWaypoints();
+            break;
         case "dev_link_waypoint":
             devLinkWaypoint();
             break;
@@ -369,6 +372,79 @@ devLinkTwoWaypoints(waypointA, waypointB)
     level thread devDrawWaypointLinks();
 
     devUpdateLocalWaypoints(level.currentWaypoint);
+}
+
+/**
+ * @brief Auto-links unlinked waypoints
+ * This isn't a very efficient implementation, but the links it creates are correct
+ * about 75% of the time.  On an Intel i7 @ 3.9 GHz, auto-linking a file of 20
+ * waypoints (all unlinked), took 1800ms. In a file with 489 linked waypoints and 20
+ * unlinked waypoints, auto-linking took 2800ms.
+ *
+ * @returns nothing
+ * @since RotU 2.2.2
+ */
+devAutoLinkWaypoints()
+{
+    debugPrint("in _umiEditor::devAutoLinkWaypoints()", "fn", level.nonVerbose);
+
+    begin = gettime();
+    n = level.unlinkedWaypoints.size;
+    sum = 0;
+    for (i=1; i<=n; i++) {
+        sum = sum + (i-1);
+    }
+    //iPrintLnBold(sum+" unique waypoint links possible");
+
+    masterLinks = [];
+    for (i=0; i<level.unlinkedWaypoints.size; i++) {
+        origin = level.Wp[level.unlinkedWaypoints[i]].origin + (0,0,20);
+        waypoints = [];
+        for (j=0; j<level.Wp.size; j++) {
+            if (j == level.unlinkedWaypoints[i]) {continue;} // don't consider linking to yourself
+            end = level.Wp[j].origin + (0,0,20);
+            result = bulletTrace(origin, end, false, undefined);
+            if (result["position"] == end) {
+                // we didn't hit any obstructions
+                waypoints[waypoints.size] = j;
+                level.Wp[j].distance = distanceSquared(origin, end);
+            }
+        }
+        // of the line-of-sight waypoints, find the 10 closest
+        closest = devFindClosestWaypoints(waypoints, origin, 3);
+        links = [];
+        for (k=0; k<closest.size; k++) {
+            link = spawnstruct();
+            link.originWp = level.unlinkedWaypoints[i];
+            link.waypoint = closest[k];
+            link.ordinal = k; // 0th closest, 5th closest, zero-based
+            link.distanceProxy = level.Wp[link.waypoint].distance;
+            links[links.size] = link;
+        }
+        masterLinks[i] = links;
+    }
+
+    for (i=0; i<masterLinks.size; i++) {
+        for (j=0; j<masterLinks[i].size; j++) {
+            fromWp = masterLinks[i][j].originWp;
+            toWp = masterLinks[i][j].waypoint;
+            alreadyLinked = false;
+            for (k=0; k<level.Wp[fromWp].linkedCount; k++) {
+                if (level.Wp[fromWp].linked[k].ID == toWp) {alreadyLinked = true;}
+            }
+            if (!alreadyLinked) {
+                devLinkTwoWaypoints(fromWp, toWp);
+                debugPrint(fromWp+":"+toWp, "val");
+            }
+        }
+    }
+
+    elapsed = gettime() - begin;
+    iPrintLnBold("Autolinking took "elapsed+" ms");
+
+    iPrintLnBold("Auto-saving waypoints");
+    noticePrint("The following waypoint file was auto-saved after waypoints were autolinked.");
+    devSaveWaypoints();
 }
 
 /**
