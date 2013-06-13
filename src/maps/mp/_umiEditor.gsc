@@ -310,9 +310,11 @@ devFinishLink()
  * @returns nothing
  * @since RotU 2.2.2
  */
-devLinkTwoWaypoints(waypointA, waypointB)
+devLinkTwoWaypoints(waypointA, waypointB, deferUpdates)
 {
     debugPrint("in _umiEditor::devLinkTwoWaypoints()", "fn", level.nonVerbose);
+
+    if (!isDefined(deferUpdates)) {deferUpdates = false;}
 
     // link waypointA to waypointB
     if (!isDefined(level.Wp[waypointA].linked)) {
@@ -366,20 +368,21 @@ devLinkTwoWaypoints(waypointA, waypointB)
     }
     level.Wp[waypointB].linkedCount = level.Wp[waypointB].linked.size;
 
-    // refresh the waypoint links
-    level notify("waypoint_links_dirty");
-    wait 0.05;
-    level thread devDrawWaypointLinks();
+    if (!deferUpdates) {
+        // refresh the waypoint links
+        level notify("waypoint_links_dirty");
+        wait 0.05;
+        level thread devDrawWaypointLinks();
 
-    devUpdateLocalWaypoints(level.currentWaypoint);
+        devUpdateLocalWaypoints(level.currentWaypoint);
+    }
 }
 
 /**
  * @brief Auto-links unlinked waypoints
- * This isn't a very efficient implementation, but the links it creates are correct
- * about 75% of the time.  On an Intel i7 @ 3.9 GHz, auto-linking a file of 20
- * waypoints (all unlinked), took 1800ms. In a file with 489 linked waypoints and 20
- * unlinked waypoints, auto-linking took 2800ms.
+ * The links it creates are correct about 75% of the time.  On an Intel i7 @ 3.9 GHz,
+ * auto-linking a file of 20 waypoints (all unlinked), took 50ms. In a file with
+ * 489 linked waypoints and 20 unlinked waypoints, auto-linking took 50ms.
  *
  * @returns nothing
  * @since RotU 2.2.2
@@ -433,14 +436,21 @@ devAutoLinkWaypoints()
                 if (level.Wp[fromWp].linked[k].ID == toWp) {alreadyLinked = true;}
             }
             if (!alreadyLinked) {
-                devLinkTwoWaypoints(fromWp, toWp);
+                devLinkTwoWaypoints(fromWp, toWp, true); // defer updates
                 debugPrint(fromWp+":"+toWp, "val");
             }
         }
     }
 
+    // since we deferred refreshing the waypoint links, do it now
+    level notify("waypoint_links_dirty");
+    wait 0.05;
+    level thread devDrawWaypointLinks();
+
+    devUpdateLocalWaypoints(level.currentWaypoint);
+
     elapsed = gettime() - begin;
-    iPrintLnBold("Autolinking took "elapsed+" ms");
+    iPrintLnBold("Autolinking took "+elapsed+" ms");
 
     iPrintLnBold("Auto-saving waypoints");
     noticePrint("The following waypoint file was auto-saved after waypoints were autolinked.");
