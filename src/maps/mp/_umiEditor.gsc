@@ -307,6 +307,7 @@ devFinishLink()
         if (self attackbuttonpressed()) {
             if (self.carryObj.waypointId == level.currentWaypoint) {
                 iPrintLnBold("Cannot link a waypoint to itself!");
+                wait 0.1;
                 continue;
             }
 
@@ -636,10 +637,6 @@ devSwapWaypoints(waypointA, waypointB, redrawWaypointLinks)
 
     if (!isDefined(redrawWaypointLinks)) {redrawWaypointLinks = true;}
 
-    // update the references
-    devUpdateWaypointReferences(waypointA, waypointB);
-    devUpdateWaypointReferences(waypointB, waypointA);
-
     // swap the actual waypoints and their .ID properties
     temp = level.Wp[waypointA];
     level.Wp[waypointA] = level.Wp[waypointB];
@@ -952,11 +949,11 @@ devUpdateLocalWaypoints(nearestWp)
         for (j=0; j<level.Wp[child].linkedCount; j++) {
             // add in the id for each linked waypoint
             grandchild = level.Wp[child].linked[j].ID;
-            if (level.waypointBoolean[grandchild] !=2) {level.waypointBoolean[grandchild] = 1;}
+            if (level.waypointBoolean[grandchild] != 2) {level.waypointBoolean[grandchild] = 1;}
             for (k=0; k<level.Wp[grandchild].linkedCount; k++) {
                 // add in the id for each linked waypoint
                 greatgrandchild = level.Wp[grandchild].linked[k].ID;
-                if (level.waypointBoolean[greatgrandchild] !=2) {level.waypointBoolean[greatgrandchild] = 1;}
+                if (level.waypointBoolean[greatgrandchild] != 2) {level.waypointBoolean[greatgrandchild] = 1;}
             }
         }
     }
