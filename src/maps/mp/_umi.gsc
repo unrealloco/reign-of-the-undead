@@ -413,7 +413,7 @@ deleteSabotageEntities()
  * @brief UMI to build equipment stores by tradespawns
  *
  * @param equipmentShops string Space-separated list of tradespawn array indices,
- * e.g. @code buildWeaponShopsByTradespawns("1 3 5 7"); @endcode
+ * e.g. @code buildShopsByTradespawns("1 3 5 7"); @endcode
  *
  * @pre tradespawns have been loaded into level.tradespawns
  * @returns nothing

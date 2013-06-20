@@ -1989,6 +1989,71 @@ devEmplaceWeaponShop()
     }
 }
 
+/**
+ * @brief Initializes weapon shops so they can be edited
+ *
+ * @param targetname string The name of the entities' targetname attribute,
+ * e.g. @code buildWeaponShopsByTargetname("ammostock"); @endcode
+ *
+ * @returns nothing
+ * @since RotU 2.2.2
+ */
+initWeaponShopEditor(weaponShops)
+{
+    debugPrint("in _umiEditor::initWeaponShopEditor()", "fn", level.nonVerbose);
+
+    weapons = strTok(weaponShops, " ");
+    if (!isDefined(level.tradespawns[int(weapons[0])])) {
+        errorPrint("Map: No weapon shop tradespawns defined, or tradespawns haven't been loaded().");
+        return;
+    }
+    if (!isDefined(level.devWeaponShops)) {level.devWeaponShops = [];}
+
+    for (i=0; i<weapons.size; i++) {
+        tradespawn = level.tradespawns[int(weapons[i])];
+        shop = spawn("script_model", tradespawn.origin);
+        if (isDefined(shop)) {
+            shop.angles = tradespawn.angles;
+            shop setModel("com_plasticcase_green_big");
+            level.devWeaponShops[level.devWeaponShops.size] = shop;
+
+            level scripts\players\_usables::addUsable(shop, "weaponsShop", "Press [use] to pickup weapon shop", 80);
+        }
+    }
+}
+
+/**
+ * @brief Initializes equipment shops so they can be edited
+ *
+ * @param equipmentShops string Space-separated list of tradespawn array indices,
+ * e.g. @code buildShopsByTradespawns("1 3 5 7"); @endcode
+ *
+ * @returns nothing
+ * @since RotU 2.2.2
+ */
+initEquipmentShopEditor(equipmentShops)
+{
+    debugPrint("in _umiEditor::initEquipmentShopEditor()", "fn", level.nonVerbose);
+
+    shops = strTok(equipmentShops, " ");
+    if (!isDefined(level.tradespawns[int(shops[0])])) {
+        errorPrint("Map: No equipment shop tradespawns defined, or tradespawns haven't been loaded().");
+        return;
+    }
+    if (!isDefined(level.devEquipmentShops)) {level.devEquipmentShops = [];}
+
+    for (i=0; i<shops.size; i++) {
+        tradespawn = level.tradespawns[int(shops[i])];
+        shop = spawn("script_model", tradespawn.origin);
+        if (isDefined(shop)) {
+            shop.angles = tradespawn.angles;
+            shop setModel("ad_sodamachine");
+            level.devEquipmentShops[level.devEquipmentShops.size] = shop;
+
+            level scripts\players\_usables::addUsable(shop, "equipmentShop", "Press [use] to pickup equipment shop", 80);
+        }
+    }
+}
 
 /**
 * @brief UMI permits a player pick up and move am equipment shop
@@ -2018,7 +2083,7 @@ devMoveEquipmentShop(shop)
 }
 
 /**
-* @brief UIM permits a player pick up and move a weapon shop
+* @brief UMI permits a player pick up and move a weapon shop
 *
 * @param shop entity The shop to pick up
 *
