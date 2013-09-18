@@ -10,6 +10,8 @@
 // This file contains the tradespawns (equipment & weapon shop locations) for
 // the map 'mp_pipeline'
 //
+// N.B. You will need to delete the timecodes at the beginning of these lines!
+//
 load_tradespawns()
 {
     level.tradespawns = [];
@@ -51,8 +53,8 @@ load_tradespawns()
     level.tradespawns[11].origin = (1147.44,-71.5449,208.125);
     level.tradespawns[11].angles = (0,178.44,0);
     level.tradespawns[12] = spawnstruct();  // spec'd for weapon shop
-    level.tradespawns[12].origin = (432.362,956.556,-119.875);
-    level.tradespawns[12].angles = (0,270.358,0);
+    level.tradespawns[12].origin = (-428.994,1765.8,0.250304);
+    level.tradespawns[12].angles = (359.985,270.28,0);
     level.tradespawns[13] = spawnstruct();  // spec'd for equipment shop
     level.tradespawns[13].origin = (145.845,1143.89,-119.875);
     level.tradespawns[13].angles = (0,91.3518,0);
