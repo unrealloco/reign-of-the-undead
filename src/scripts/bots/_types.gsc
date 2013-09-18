@@ -98,13 +98,13 @@ loadAnimTree(type)
             self.animation["walk"] = "bot_zombie_walk_mp";
             self.animation["sprint"] = "bot_zombie_run_mp";
             self.animation["melee"] = "bot_zombie_melee_mp";
-        break;
+            break;
         case "zombiefast":
             self.animation["stand"] = "bot_zombie_stand_mp";
             self.animation["walk"] = "bot_zombie_walk_mp";
             self.animation["sprint"] = "m40a3_acog_mp";
             self.animation["melee"] = "bot_zombie_melee_mp";
-        break;
+            break;
         case "dog":
             self.animation["stand"] = "bot_dog_idle_mp";
             self.animation["sprint"] = "bot_dog_run_mp";

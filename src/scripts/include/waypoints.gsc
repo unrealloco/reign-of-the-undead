@@ -74,21 +74,6 @@ loadWaypoints()
             iprintlnbold("^1UNLINKED WAYPOINT: " + waypoint.ID + " AT: " +  waypoint.origin);
         }
     }
-    //thread draw_wp();
-}
-
-draw_wp()
-{
-    debugPrint("in waypoints::draw_wp()", "fn", level.lowVerbosity);
-
-    while(1) {
-        for (iii=0; iii<level.WpCount; iii++) {
-            for (i=0; i<level.Wp[iii].linked.size; i++) {
-                line(level.Wp[iii].origin, level.Wp[iii].linked[i].origin);
-            }
-        }
-        wait 0.05;
-    }
 }
 
 getNearestWp(origin)
@@ -291,26 +276,5 @@ ListExists(list, n, listSize)
     }
 
     return false;
-}
-
-// DEBUG AND TOOLS
-
-
-drawWP()
-{
-    debugPrint("in waypoints::drawWP()", "fn", level.lowVerbosity);
-
-    for (;;) {
-        for (i=0; i<level.WpCount; i++) {
-            wp = level.Wp[i];
-            lineCol = (0,1,0);
-            line(wp.origin, wp.origin + (0,0,96), lineCol);
-            lineCol = (0,0,1);
-            for (ii=0; ii<wp.linkedCount; ii++) {
-                line(wp.origin, wp.linked[ii].origin, lineCol);
-            }
-        }
-        wait .01;
-    }
 }
 

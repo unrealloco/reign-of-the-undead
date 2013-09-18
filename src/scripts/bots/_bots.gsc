@@ -61,8 +61,7 @@ init()
 
 
     wait 1;
-    if (level.loadBots)
-    loadBots(level.dvar["bot_count"]);
+    if (level.loadBots) {loadBots(level.dvar["bot_count"]);}
 
     scripts\bots\_types::initZomTypes();
 
@@ -76,6 +75,7 @@ precache()
 {
     debugPrint("in _bots::precache()", "fn", level.nonVerbose);
 
+    // weapons used for animations
     precacheitem("bot_zombie_walk_mp");
     precacheitem("bot_zombie_stand_mp");
     precacheitem("bot_zombie_run_mp");
@@ -562,43 +562,31 @@ zomMain()
     //self.intervalScale = 1;
     update = 0;
 
-    while (1)
-    {
-        switch (self.status)
-        {
-
+    while (1) {
+        switch (self.status) {
             case "idle":
             zomWaitToBeTriggered();
 
-            switch(level.zomIdleBehavior)
-            {
+            switch(level.zomIdleBehavior) {
                 case "magic":
                     if (update==5) {
-                        if (level.zomTarget != "")
-                        {
-                            if (level.zomTarget == "player_closest")
-                            {
+                        if (level.zomTarget != "") {
+                            if (level.zomTarget == "player_closest") {
                                 ent = self getClosestTarget();
-                                if (isdefined(ent))
-                                {
+                                if (isDefined(ent)) {
                                     self zomSetTarget(ent.origin);
                                 }
+                            } else {
+                                self zomSetTarget(getRandomEntity(level.zomTarget).origin);
                             }
-                            else
-                            self zomSetTarget(getRandomEntity(level.zomTarget).origin);
-                        }
-                        else
-                        {
+                        } else {
                             ent = self getClosestTarget();
-                            if (isdefined(ent))
-                            self zomSetTarget(ent.origin);
+                            if (isdefined(ent)) {self zomSetTarget(ent.origin);}
                         }
                         update = 0;
                     } else {
                         update++;
-
                     }
-
                 break;
             }
 
@@ -612,30 +600,21 @@ zomMain()
             } else {update++;}
             if (isdefined(self.bestTarget))
             {
-
                 self.lastMemorizedPos = self.bestTarget.origin;
-                if (!checkForBarricade(self.bestTarget.origin))
-                {
-                    if (distance(self.bestTarget.origin, self.origin) < self.meleeRange)
-                    {
+                if (!checkForBarricade(self.bestTarget.origin)) {
+                    if (distance(self.bestTarget.origin, self.origin) < self.meleeRange) {
                         self thread zomMoveLockon(self.bestTarget, self.meleeTime, self.meleeSpeed);
                         self zomMelee();
                         //doWait = false;
-                    }
-                    else
-                    {
+                    } else {
                         zomMovement();
                         self zomMoveTowards(self.bestTarget.origin);
                         //doWait = false;
                     }
-                }
-                else
-                {
+                } else {
                     self zomMelee();
                 }
-            }
-            else
-            {
+            } else {
                 self zomGoSearch();
             }
 
@@ -644,32 +623,22 @@ zomMain()
             case "searching":
 
             zomWaitToBeTriggered();
-            if (isdefined(self.lastMemorizedPos))
-            {
-                if (!checkForBarricade(self.lastMemorizedPos))
-                {
-                    if (distance(self.lastMemorizedPos, self.origin) > 48)
-                    {
+            if (isdefined(self.lastMemorizedPos)) {
+                if (!checkForBarricade(self.lastMemorizedPos)) {
+                    if (distance(self.lastMemorizedPos, self.origin) > 48) {
                         zomMovement();
                         self zomMoveTowards(self.lastMemorizedPos);
                         //doWait = false;
-                    }
-                    else
-                    {
+                    } else {
                         self.lastMemorizedPos = undefined;
                     }
-                }
-                else
-                {
+                } else {
                     self zomMelee();
                 }
             }
-            else
-            zomGoIdle();
-
+            else {zomGoIdle();}
 
             break;
-
         }
 
         //if (doWait)
@@ -681,65 +650,33 @@ zomGetBestTarget()
 {
     debugPrint("in _bots::zomGetBestTarget()", "fn", level.fullVerbosity);
 
-    if (!isdefined(self.currentTarget))
-    {
-        for (i=0; i<level.players.size; i++)
-        {
+    if (!isDefined(self.currentTarget)) {
+        for (i=0; i<level.players.size; i++) {
             player = level.players[i];
-            if (zomSpot(player))
-            {
+            if (zomSpot(player)) {
                 self.currentTarget = player;
                 return player;
             }
             wait 0.05;
         }
-        /*for (i=0; i<level.zomTargets.size; i++)
-        {
-            obj = level.zomTargets[i];
-            if (zomSpot(obj))
-            {
-                self.currentTarget = obj;
-                return obj;
-            }
-        }*/
-    }
-    else
-    {
-        if (!zomSpot(self.currentTarget))
-        {
+    } else {
+        if (!zomSpot(self.currentTarget)) {
             self.currentTarget = undefined;
             return undefined;
         }
 
-
         targetdis = distancesquared(self.origin, self.currentTarget.origin) - level.zomPreference;
-        for (i=0; i<level.players.size; i++)
-        {
+        for (i=0; i<level.players.size; i++) {
             player = level.players[i];
             if (!isDefined(player)) {continue;}
-            if (distancesquared(self.origin, player.origin) < targetdis)
-            {
-                if (zomSpot(player))
-                {
+            if (distancesquared(self.origin, player.origin) < targetdis) {
+                if (zomSpot(player)) {
                     self.currentTarget = player;
                     return player;
                 }
             }
         }
-        /*for (i=0; i<level.zomTargets.size; i++)
-        {
-            obj = level.zomTargets.size[i];
-            if (distancesquared(self.origin, obj.origin) - obj.zomPreference < targetdis)
-            {
-                if (zomSpot(obj))
-                {
-                    self.currentTarget = obj;
-                    return obj;
-                }
-            }
-        }*/
         return self.currentTarget;
-
     }
 }
 
@@ -750,24 +687,20 @@ zomMovement()
 
     self.cur_speed = 0;
 
-    if ((self.alertLevel >= 200 && (!self.walkOnly || self.quake)) || self.sprintOnly ) //GO RUNNING... AAHH
-    {
+    if ((self.alertLevel >= 200 && (!self.walkOnly || self.quake)) || self.sprintOnly ) {
         self setanim("sprint");
         self.cur_speed = self.runSpeed;
-        if (self.quake)
-        {
+        if (self.quake) {
             Earthquake( 0.25, .3, self.origin, 380);
         }
 
-        if (level.dvar["zom_dominoeffect"])
-        thread alertZombies(self.origin, 480, 5, self);
-    }
-    else
-    {
+        if (level.dvar["zom_dominoeffect"]) {
+            thread alertZombies(self.origin, 480, 5, self);
+        }
+    } else {
         self setanim("walk");
         self.cur_speed = self.walkSpeed;
-        if (self.quake)
-        {
+        if (self.quake) {
             Earthquake( 0.17, .3, self.origin, 320);
         }
     }
@@ -1197,62 +1130,63 @@ infection(chance)
 
 }
 
-moveToPoint(origin, speed)
+/**
+ * @brief Moves a zombie to/towards a desired position
+ *
+ * @param goalPosition vector The desired new position of the zombie
+ * @param speed integer ??? How fast the zombie should move
+ *
+ * @returns nothing
+ */
+moveToPoint(goalPosition, speed)
 {
     // 8th most-called function (2% of all function calls).
     // Do *not* put a function entrance debugPrint statement here!
 
-    dis = distance(self.linkObj.origin, origin);
-    if (dis < speed)
-    speed = dis;
-    else
-    speed = speed * level.zomSpeedScale;
-    targetDirection = vectorToAngles(VectorNormalize(origin - self.linkObj.origin));
+    dis = distance(self.linkObj.origin, goalPosition);
+
+    if (dis < speed) {speed = dis;}
+    else {speed = speed * level.zomSpeedScale;}
+
+    targetDirection = vectorToAngles(VectorNormalize(goalPosition - self.linkObj.origin));
     step = anglesToForward(targetDirection) * speed ;
 
     self SetPlayerAngles(targetDirection);
 
-    /*self.mover zomMove(step, time);
-    //wait time * 0.05;
-    self.mover dropToGround();*/
+    // tentative new position for zombie
     newPos = self.linkObj.origin + step + (0,0,40);
+    // find ground level below tentative new position
     dropNewPos = dropPlayer(newPos, 200);
-    if (isdefined(dropNewPos))
-    {
-        newPos = (dropNewPos[0], dropNewPos[1], self compareZ(origin[2], dropNewPos[2]));
+    if (isDefined(dropNewPos)) {
+        newPos = (dropNewPos[0], dropNewPos[1], self compareZ(goalPosition[2], dropNewPos[2]));
     }
-    self.linkObj moveto(newPos, level.zomInterval , 0, 0);
+    // now actually move the zombie to the new position
+    self.linkObj moveto(newPos, level.zomInterval, 0, 0);
 }
 
-compareZ(z1, z2)
+compareZ(goalPositionZ, dropNewZ)
 {
     // 9th most-called function (2% of all function calls).
     // Do *not* put a function entrance debugPrint statement here!
 
-    dif_z2 = z2 - self.origin[2];
-    if (dif_z2 > 30) // Heavy rise in Z
-    {
-        if (z1 > z2) // z1 is even higher, np
-        {
-            if (dif_z2 > 20)
-            z2 = self.origin[2] + 20;
-            return z2;
-        }
-        else
-        return self.origin[2];
-
+    deltaZ = dropNewZ - self.origin[2];
+    limit = 60; //30
+    if (deltaZ > limit) {
+        // new position would be more than 30 units higher than current position
+        if (goalPositionZ > dropNewZ) {
+            // goalPositionZ is even higher, limit delta height to 'limit' units
+            return self.origin[2] + limit;
+        } else {return goalPositionZ;}
     }
-    if (dif_z2 < -30)// Heavy fall in Z
-    {
-        if (z1 < z2) // z2 is even lower, np
-        {
-            return z2;
-        }
-        else
-        return self.origin[2];
+    if (deltaZ < -1 * limit) {
+        // new position would be more than 30 units lower than current position
+        if (goalPositionZ < dropNewZ) {
+            // dropNewZ is even lower, np
+            return dropNewZ;
+        } else {return goalPositionZ;}
     }
-    return z2;
-
+    // deltaZ is +/- limit units of current height, so just return the new height
+    return dropNewZ;
 }
 
 zomAreaDamage(range)
@@ -1457,7 +1391,7 @@ checkForBarricade(targetposition)
     return 0;
 }
 
-alertZombies( origin, distance, alertPower, ignoreEnt)
+alertZombies(origin, distance, alertPower, ignoreEnt)
 {
     // 14th most-called function (1.5% of all function calls).
     // Do *not* put a function entrance debugPrint statement here!
