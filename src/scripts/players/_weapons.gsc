@@ -994,7 +994,7 @@ watchTnt()
 {
     debugPrint("in _weapons::watchTnt()", "fn", level.nonVerbose);
 
-    self endon("death");
+    /// We can't endon "death" because it gets emmitted whan a player-zombie is killed
     self endon("disconnect");
     self endon("spawned");      // end this instance before a respawn
 
