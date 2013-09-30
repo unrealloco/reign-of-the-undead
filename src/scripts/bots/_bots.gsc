@@ -594,12 +594,11 @@ zomMain()
 
             case "triggered":
 
-            if (update==10) {
+                if ((update==10) || (self.bestTarget.isDown)) {  // find new target when current target goes down
                 self.bestTarget = zomGetBestTarget();
                 update = 0;
             } else {update++;}
-            if (isdefined(self.bestTarget))
-            {
+            if (isdefined(self.bestTarget)) {
                 self.lastMemorizedPos = self.bestTarget.origin;
                 if (!checkForBarricade(self.bestTarget.origin)) {
                     if (distance(self.bestTarget.origin, self.origin) < self.meleeRange) {
@@ -658,6 +657,12 @@ zomGetBestTarget()
                 return player;
             }
             wait 0.05;
+        }
+        // if zombie can't see any players, just grab the closest player
+        ent = self getClosestTarget();
+        if (isDefined(ent)) {
+            self zomSetTarget(ent.origin);
+            return ent;
         }
     } else {
         if (!zomSpot(self.currentTarget)) {
