@@ -915,9 +915,16 @@ beAmmobox(time)
         for (j=0; j<level.players.size; j++) {
             player = level.players[j];
             if (!isDefined(player)) {continue;}
+            if (i==0) {player.tntLocked = 0;}
             if (distance(self.origin, player.origin) < 120) {
                 if (!player.isDown) {
-                    self.master thread restoreAmmoMagazine(player);
+                    weapon = player getcurrentweapon();
+                    if ((weapon == "tnt_mp") && (player.tntLocked)) {
+                        // do nothing - we don't want players to get too much free TNT
+                    } else {
+                        self.master thread restoreAmmoMagazine(player);
+                        if (weapon == "tnt_mp") {player.tntLocked = 1;}
+                    }
                 }
             }
         }
