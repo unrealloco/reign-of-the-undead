@@ -49,11 +49,10 @@ precache()
     precachemodel("body_mp_usmc_support");
     precachemodel("body_mp_usmc_woodland_sniper");
     precachemodel("body_mp_opforce_support");
-    precachemodel("body_complete_mp_spetsnaz_vlad");
-    precachemodel("body_mp_sas_urban_specops");
     precachemodel("body_mp_usmc_woodland_support");
     precachemodel("body_mp_usmc_woodland_recon");
     precachemodel("body_mp_usmc_woodland_specops");
+    precachemodel("body_mp_usmc_woodland_assault");
     precachemodel("body_mp_usmc_sniper");
 
     precachemodel("head_sp_usmc_zach_zach_body_goggles");
@@ -65,6 +64,7 @@ precache()
     precachemodel("head_sp_sas_woodland_peter");
     precachemodel("head_sp_sas_woodland_todd");
     precachemodel("head_sp_sas_woodland_hugh");
+    precachemodel("head_sp_usmc_ryan_ryan_body_nod");
     precachemodel("head_sp_spetsnaz_collins_vladbody");
 }
 
@@ -106,24 +106,26 @@ setPlayerClassModel(class)
                     case 0:
                         self.myBody = "body_mp_usmc_woodland_support";
                         self.myHead = "head_sp_sas_woodland_mac";
-                    break;
+                        break;
                     case 1:
                         self.myBody = "body_mp_usmc_woodland_support";
                         self.myHead = "head_sp_opforce_derik_body_f";
-                    break;
+                        break;
                 }
         break;
         case "engineer":
-            rI = randomint(2);
-            switch (rI)
-            {
-                case 0:
-                        self.myBody = "body_mp_sas_urban_specops";
-                break;
-                case 1:
-                        self.myBody = "body_complete_mp_spetsnaz_vlad";
-                break;
-            }
+            self.myBody = "body_mp_usmc_woodland_assault"; //"body_mp_usmc_woodland_specops";
+            self.myHead = "head_sp_spetsnaz_collins_vladbody"; //"head_mp_usmc_tactical_mich"; //"head_sp_sas_woodland_todd"; // mac, todd, OK
+//             rI = randomint(2);
+//             switch (rI)
+//             {
+//                 case 0:
+//                         self.myBody = "body_mp_sas_urban_specops";
+//                 break;
+//                 case 1:
+//                         self.myBody = "body_complete_mp_spetsnaz_vlad";
+//                 break;
+//             }
         break;
         case "scout":
             rI = randomint(2);

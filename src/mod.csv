@@ -85,11 +85,10 @@ xmodel,body_mp_usmc_rifleman
 xmodel,body_mp_usmc_support
 xmodel,body_mp_usmc_woodland_sniper
 xmodel,body_mp_opforce_support
-xmodel,body_complete_mp_spetsnaz_vlad
-xmodel,body_mp_sas_urban_specops
 xmodel,body_mp_usmc_woodland_support
 xmodel,body_mp_usmc_woodland_recon
 xmodel,body_mp_usmc_woodland_specops
+xmodel,body_mp_usmc_woodland_assault
 xmodel,body_mp_usmc_sniper
 
 xmodel,head_sp_usmc_zach_zach_body_goggles
@@ -100,7 +99,6 @@ xmodel,head_sp_sas_woodland_mac
 xmodel,head_sp_opforce_geoff_headset_body_c
 xmodel,head_sp_sas_woodland_peter
 xmodel,head_sp_sas_woodland_todd
-xmodel,head_sp_sas_woodland_hugh
 xmodel,head_sp_sas_woodland_hugh
 xmodel,head_sp_spetsnaz_collins_vladbody
 
