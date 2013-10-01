@@ -232,7 +232,6 @@ Callback_PlayerLastStand( eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon,
 
     iPrintln( self.name + " ^7is down!" );
     self.deaths ++;
-    level.alivePlayers -= 1;
     self.isAlive = false;
 
     self setStatusIcon("icon_down");
@@ -257,6 +256,49 @@ Callback_PlayerLastStand( eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon,
         else
         self takeweapon(weapon);
     }
+
+    // Help new players out
+    prestige = self scripts\players\_persistence::statGet("plevel");
+    rank = self.pers["rank"];
+    noticePrint("rank: " + rank + " prestige: " + prestige);
+    if ((prestige < 1) &&
+        (rank < 30))
+    {
+        self thread assistNewPlayers();
+    } else {
+        // only decrement counter if player isn't a noob, so the game won't end
+        // when they go down if they are the only player
+        level.alivePlayers -= 1;
+    }
+}
+
+/**
+ * @brief Make the game a bit easier for new players
+ *
+ * For players that have never prestiged, and whose rank is less than 30,
+ * we help them out a bit.  When they go down, we automatically revive them, cure
+ * them if needed, and give them some spending money.  We also inform them that
+ * running is the key to survival.
+ */
+assistNewPlayers()
+{
+    debugPrint("in _players::resetSpawning()", "fn", level.nonVerbose);
+
+    self thread revive();
+    self.sessionstate = "playing";
+    self defaultHeadicon();
+
+    wait 0.05;
+
+    if (self.infected) {
+        self scripts\players\_infection::cureInfection();
+    }
+
+    rank = self.pers["rank"];
+    if (rank < 10) {self scripts\players\_players::incUpgradePoints(1000);}
+    else if (rank < 20) {self scripts\players\_players::incUpgradePoints(500);}
+    else if (rank < 30) {self scripts\players\_players::incUpgradePoints(250);}
+    self iprintlnbold("^1You must keep running to survive!");
 }
 
 restoreAmmo()
@@ -639,7 +681,6 @@ onPlayerKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHit
 
         thread delayStartRagdoll( body, sHitLoc, vDir, sWeapon, eInflictor, sMeansOfDeath );
     }
-
 }
 
 resetSpawning()

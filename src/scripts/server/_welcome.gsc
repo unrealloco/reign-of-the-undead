@@ -119,7 +119,32 @@ onPlayerSpawn()
 
             // Compute a reasonable time to display the message
             length = msg.size;
-            time = 5; // intit at 5 seconds, just in case
+            time = 5; // init at 5 seconds, just in case
+
+            // Assume linearity, using (seconds,length) data of (7,55) and (4,26)
+            t = (3/29)*length + 1.3103;
+
+            // Round time, with bias towards rounding up
+            intT = int(t);
+            remainder = t - intT;
+            if (remainder > 0.3) {
+                time = intT + 1;
+            } else {
+                time = intT;
+            }
+            self glowMessage(&"", msg, (1,1,1), time, 100, 1.4);
+        }
+
+        // Append welcome message for new players
+        prestige = self scripts\players\_persistence::statGet( "plevel" );
+        rank = self.pers["rank"];
+        if ((prestige < 1) &&
+            (rank < 30))
+        {
+            msg = "New player assistance ends at rank 30";
+            // Compute a reasonable time to display the message
+            length = msg.size;
+            time = 5; // init at 5 seconds, just in case
 
             // Assume linearity, using (seconds,length) data of (7,55) and (4,26)
             t = (3/29)*length + 1.3103;
