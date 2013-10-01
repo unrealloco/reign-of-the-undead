@@ -64,7 +64,6 @@ precache()
     precachemodel("head_sp_sas_woodland_peter");
     precachemodel("head_sp_sas_woodland_todd");
     precachemodel("head_sp_sas_woodland_hugh");
-    precachemodel("head_sp_usmc_ryan_ryan_body_nod");
     precachemodel("head_sp_spetsnaz_collins_vladbody");
 }
 
@@ -114,18 +113,8 @@ setPlayerClassModel(class)
                 }
         break;
         case "engineer":
-            self.myBody = "body_mp_usmc_woodland_assault"; //"body_mp_usmc_woodland_specops";
-            self.myHead = "head_sp_spetsnaz_collins_vladbody"; //"head_mp_usmc_tactical_mich"; //"head_sp_sas_woodland_todd"; // mac, todd, OK
-//             rI = randomint(2);
-//             switch (rI)
-//             {
-//                 case 0:
-//                         self.myBody = "body_mp_sas_urban_specops";
-//                 break;
-//                 case 1:
-//                         self.myBody = "body_complete_mp_spetsnaz_vlad";
-//                 break;
-//             }
+            self.myBody = "body_mp_usmc_woodland_assault";
+            self.myHead = "head_sp_spetsnaz_collins_vladbody";
         break;
         case "scout":
             rI = randomint(2);
