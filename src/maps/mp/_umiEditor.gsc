@@ -43,7 +43,7 @@
 
 init()
 {
-    precacheMenu("development");
+    //precacheMenu("development");
 
     // Used as default weapon/shop models when running ROZO maps
     precacheModel("ad_sodamachine");
