@@ -638,6 +638,12 @@ zomMain()
             else {zomGoIdle();}
 
             break;
+
+            case "stunned":
+                // no stunning in final wave!
+                if (level.currentWave < level.totalWaves) {wait 1.0;}
+                zomGoIdle();
+            break;
         }
 
         //if (doWait)
@@ -721,6 +727,17 @@ zomGoIdle()
     self.alertLevel = 0;
     self.status = "idle";
     //iprintlnbold("IDLE!");
+}
+
+zomGoStunned()
+{
+    debugPrint("in _bots::zomGoStunned()", "fn", level.fullVerbosity);
+
+    self setanim("stand");
+    self.cur_speed = 0;
+    self.alertLevel = 0;
+    self.status = "stunned";
+    //iprintlnbold("STUNNED!");
 }
 
 zomGoTriggered()

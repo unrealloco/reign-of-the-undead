@@ -263,37 +263,30 @@ init()
 
     // Set default base costs for special weapons
     if (getdvar("surv_unlockextra1_points") == "") {
-        setdvar("surv_unlockextra1_points", 2000);
+        setdvar("surv_unlockextra1_points", 1000);
     }
     if (getdvar("surv_unlockextra2_points") == "") {
-        setdvar("surv_unlockextra2_points", 3000);
+        setdvar("surv_unlockextra2_points", 1500);
     }
     if (getdvar("surv_unlockextra3_points") == "") {
-        setdvar("surv_unlockextra3_points", 4000);
+        setdvar("surv_unlockextra3_points", 1500);
     }
     if (getdvar("surv_unlockextra4_points") == "") {
-        setdvar("surv_unlockextra4_points", 4000);
+        setdvar("surv_unlockextra4_points", 1500);
     }
-//     if (getdvar("surv_unlockspecial3_points") == "") {
-//         setdvar("surv_unlockspecial3_points", 4000);
-//     }
-//     if (getdvar("surv_unlockspecial3_points") == "") {
-//         setdvar("surv_unlockspecial3_points", 4000);
-//     }
-
 
     // Set default special weapons
     if (getdvar("surv_extra_unlock1") == "") {
-        setdvar("surv_extra_unlock1", "barrett_acog_mp");
+        setdvar("surv_extra_unlock1", "barrett_acog_mp");   // raygun
     }
     if (getdvar("surv_extra_unlock2") == "") {
-        setdvar("surv_extra_unlock2", "skorpion_acog_mp");
+        setdvar("surv_extra_unlock2", "skorpion_acog_mp");  // flamethrower
     }
     if (getdvar("surv_extra_unlock3") == "") {
-        setdvar("surv_extra_unlock3", "ak74u_acog_mp");
+        setdvar("surv_extra_unlock3", "ak74u_acog_mp");     // tesla
     }
     if (getdvar("surv_extra_unlock4") == "") {
-        setdvar("surv_extra_unlock4", "saw_acog_mp");
+        setdvar("surv_extra_unlock4", "saw_acog_mp");       // minigun
     }
 
     // Find special weapons (i.e. extra_unlocks)

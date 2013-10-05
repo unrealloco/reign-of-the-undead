@@ -218,8 +218,7 @@ givePlayerWeapons()
         self setWeaponAmmoStock(self.primary, self.persData.primaryAmmoStock);
         self setWeaponAmmoClip(self.primary, self.persData.primaryAmmoClip);
     }
-    if (self.primary != "none") {
-        /// @bug Should this be self.extra?
+    if (self.extra != "none") {
         self giveWeapon(self.extra);
         self giveMaxAmmo(self.extra);
     }
@@ -288,8 +287,7 @@ watchWeaponUsage()
 
     self.firingWeapon = false;
 
-    for ( ;; )
-    {
+    for ( ;; ) {
         self waittill ( "begin_firing" );
 
         weap = self getcurrentweapon();
@@ -299,10 +297,10 @@ watchWeaponUsage()
         self.hasDoneCombat = true;
         self.firingWeapon = true;
 
-        if (weap=="saw_acog_mp") {
+        if (weap=="saw_acog_mp") { // minigun
             self stoplocalsound("weap_minigun_spin_over_plr");
             self thread minigunQuake();
-        } else if (weap=="skorpion_acog_mp") {
+        } else if (weap=="skorpion_acog_mp") { // flamethrower
             self stoplocalsound("flamethrower_cooldown_plr");
             ent = spawn("script_model", self.origin);
             ent linkto(self);
@@ -313,42 +311,32 @@ watchWeaponUsage()
 
             self playsound("flamethrower_fire_npc");
             self playlocalsound("flamethrower_ignite_plr");
-        } else if (weap=="g3_acog_mp") // thundergun
-        {
+        } else if (weap=="g3_acog_mp") { // thundergun
             for (i=0; i<level.bots.size; i++) {
                 bot = level.bots[i];
-                if (!isdefined(bot))
-                continue;
+                if (!isdefined(bot)) {continue;}
 
                 if (isalive(bot)) {
                     dis = distance(bot.origin, self.origin);
                     if (dis < 768) {
                         dam = int((600-600*dis/768));
                         realdam = int(200 * (1 - (dis/521)));
-                        if (realdam < 0)
-                        realdam = 0;
+                        if (realdam < 0) {realdam = 0;}
+                        else if (realdam < 40) {realdam = 40;}
 
-                        if (DistanceSquared(anglestoforward(self getplayerangles()), vectornormalize(bot.origin-self.origin)) < .7)
-                        self thread thunderBlast(dam, realdam, bot);
-
-                        //iprintlnbold(DistanceSquared(self.angles, vectortoangles(player.origin-self.origin)));
-                        //iprintlnbold(realdam);
-
+                        if (DistanceSquared(anglestoforward(self getplayerangles()), vectornormalize(bot.origin-self.origin)) < .7) {
+                            self thread thunderBlast(dam, realdam, bot);
+                        }
                     }
                 }
-                //PhysicsExplosionSphere(self gettagorigin("tag_weapon"), 1768, 1512, 100);
-
             }
         }
 
-        /*if (!self.isDown)
-        self alertTillEndFiring();
-        else*/
         self waittill ( "end_firing" );
 
-        if (weap=="saw_acog_mp") {
+        if (weap=="saw_acog_mp") { // minigun
             self playlocalsound("weap_minigun_spin_over_plr");
-        } else if (weap=="skorpion_acog_mp") {
+        } else if (weap=="skorpion_acog_mp") { // flamethrower
             self stoplocalsound("flamethrower_ignite_plr");
             self playlocalsound("flamethrower_cooldown_plr");
             ent stopLoopSound("flamethrower_fire_npc");
@@ -372,33 +360,18 @@ watchWeaponUsage()
     }
 }
 
-thunderBlast(dam, realdam, player)
+thunderBlast(dam, realdam, bot)
 {
     debugPrint("in _weapons::thunderBlast()", "fn", level.lowVerbosity);
 
-
     direction = (0,0,0);
-    oldhealth = player.health;
-    player unlink();
-    for (ii=0; ii<4; ii++)
-    {
-        if (ii==0) { direction = (0,0,1); }
-        if (ii==1) { direction = vectorNormalize(player.origin+(0,0,20)-self.origin); }
-        player.health = player.health + dam;
-        if (isalive(player)) {
-        player finishPlayerDamage(self, self, dam, 0, "MOD_PROJECTILE", "thundergun_mp", direction, direction, "none", 0);
-        }
-        wait 0.05;
-    }
-    wait .05;
-    player.health = oldhealth;
-    //iprintlnbold(oldhealth);
-    if (realdam >= player.health) {
-        player finishPlayerDamage(self, self, dam, 0, "MOD_PROJECTILE", "thundergun_mp", direction, direction, "none", 0);
-    }
-    else {
-
-        player thread [[level.callbackPlayerDamage]](
+    if (realdam >= bot.health) {
+        // bot dies
+        bot finishPlayerDamage(self, self, dam, 0, "MOD_PROJECTILE", "thundergun_mp", direction, direction, "none", 0);
+    } else {
+        // bot gets stunned, and damage is done
+        bot thread scripts\bots\_bots::zomGoStunned();
+        bot thread [[level.callbackPlayerDamage]](
             self, // eInflictor The entity that causes the damage.(e.g. a turret)
             self, // eAttacker The entity that is attacking.
             realdam, // iDamage Integer specifying the amount of damage done
@@ -411,7 +384,6 @@ thunderBlast(dam, realdam, player)
             0 // psOffsetTime The time offset for the damage
         );
     }
-    //player mod\_mod::PlayerDamage(self, self, realdam, 0, "MOD_PROJECTILE", "thundergun_mp", direction, direction, "none", 0);
 }
 
 removeEntOnDowned(ent)
@@ -482,6 +454,7 @@ alertTillEndFiring()
     }
 }
 
+/// @deprecated
 watchWeaponSwitching()
 {
     debugPrint("in _weapons::watchWeaponSwitching()", "fn", level.nonVerbose);
@@ -489,42 +462,26 @@ watchWeaponSwitching()
     self endon("death");
     self endon("disconnect");
     self endon("spawned");      // end this instance before a respawn
-    lastWeapon = "none";
-    for ( ;; )
-    {
-        self waittill( "weapon_change" );
 
-        currentWeapon = self getCurrentWeapon();
-
-        switch( currentWeapon )
-        {
-            case "saw_acog_mp":
-            break;
-            case "helicopter_mp":
-                //self thread scripts\players\_parachute::parachute();
-
-                //if ( lastWeapon != "none" )
-                //  self switchToWeapon( lastWeapon );
-                break;
-            case "none":
-                break;
-
-            default:
-                lastWeapon = self getCurrentWeapon();
-                break;
-        }
-
-    }
 }
 
-
-
+/**
+ * @brief Replaces a player's weapon with a new weapon
+ *
+ * Called to pick up a weapon, upgrade a weapon, or to give grenades from the shop.
+ * It is not used when a player just switches between weapons in their current
+ * inventory of weapons.
+ *
+ * @param type string One of primary|secondary|extra|grenade
+ * @param weapon string The name of the weapon, i.e. g3_mp
+ *
+ * @returns nothing
+ */
 swapWeapons(type, weapon)
 {
     debugPrint("in _weapons::swapWeapons()", "fn", level.nonVerbose);
 
-    switch (type)
-    {
+    switch (type) {
     case "primary":
         if (self.primary != "none")
             self takeweapon(self.primary);
