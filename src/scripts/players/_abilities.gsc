@@ -1901,7 +1901,8 @@ doAmmoSpecial()
     weapon = self GetCurrentWeapon();
     if ((weapon == self.primary) || (weapon == self.secondary)) {
         self playlocalsound("weap_pickup");
-        self GiveMaxAmmo(weapon);
+        self GiveMaxAmmo(self.primary);
+        self GiveMaxAmmo(self.secondary);
         return 1;
     }
     self iprintln("^1Invalid weapon!");
