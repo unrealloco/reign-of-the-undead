@@ -262,7 +262,8 @@ Callback_PlayerLastStand( eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon,
     rank = self.pers["rank"];
     noticePrint("rank: " + rank + " prestige: " + prestige);
     if ((prestige < 1) &&
-        (rank < 30))
+        (rank < 30) &&
+        (self.newPlayerAssistCount < 3))
     {
         self thread assistNewPlayers();
     } else {
@@ -287,6 +288,8 @@ assistNewPlayers()
     self thread revive();
     self.sessionstate = "playing";
     self defaultHeadicon();
+
+    self.newPlayerAssistCount++;
 
     wait 0.05;
 
@@ -355,6 +358,7 @@ onPlayerConnect()
     self.ownsTurret = false;            // does the player own a defense turret?
     self.spawnCount = 0;                // how many times has the player spawned this session
     self.isChangingClass = false;       // is the player trying to change their class?
+    self.newPlayerAssistCount = 0;      // keep track of new player assistance counts
 
     self.pers["generalWarnings"] = self getStat(2354);
     if (!isDefined(self.pers["generalWarnings"])) {
@@ -477,6 +481,8 @@ onWaveIntermissionBegins()
         players = level.players;
         for (i=0; i<players.size; i++) {
             players[i].intermissionReviveCount = 0;
+            // reset new player assistance counts between waves
+            players[i].newPlayerAssistCount = 0;
         }
         level.waveIntermission = true;
         level.waveEndedTime = getTime();
