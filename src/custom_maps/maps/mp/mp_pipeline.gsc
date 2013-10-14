@@ -68,9 +68,21 @@ main()
     convertToNativeWaypoints();
 
     waitUntilFirstPlayerSpawns();
-    buildWeaponShopsByTradespawns("0 2 4 6 8 10 12");
-    buildShopsByTradespawns("1 3 5 7 9 11 13");
+
+    umiEditorMode = false; // toggle true/false to switch between editor and game mode
+
+    if (umiEditorMode) {
+        devDrawAllPossibleSpawnpoints();
+        maps\mp\_umiEditor::initMapEditor();
+        maps\mp\_umiEditor::initWeaponShopEditor("0 2 4 6 8 10 12");
+        maps\mp\_umiEditor::initEquipmentShopEditor("1 3 5 7 9 11 13");
+    } else {
+        buildWeaponShopsByTradespawns("0 2 4 6 8 10 12");
+        buildShopsByTradespawns("1 3 5 7 9 11 13");
+    }
 
     buildZombieSpawnsByClassname("mp_dm_spawn");
-    startGame();
+    if (umiEditorMode) {
+        // Do Nothing
+    } else {startGame();}
 }

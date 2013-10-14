@@ -22,3 +22,7 @@ to the images folder in your working copy.
 10. Run updateLocalInstall.bat to copy this files to the Mod folder in your cod4 install.
 11. Run compileMod.bat
 13. Run playMod.bat to evaluate your new headicon.
+
+Prestige instructions
+
+Same basic procedure, but 'material type' must be set to '2d' instead of 'effect'.

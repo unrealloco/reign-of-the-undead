@@ -1664,9 +1664,15 @@ devFindWaypointLinkIndex(fromWp, toWp)
     }
 
     if (index == -1) {
-        errorPrint("Failed to find index!");
+        errorPrint("Failed to find index!"); /// @bug we sometimes fail to find the index
+        errorPrint("toWp: " + toWp + " fromWp: " + fromWp);
+        errorPrint("toValue: " + toValue + " fromValue: " + fromValue);
+        devDumpWaypointLinks();
+        // We are going to be in an infinite loop here, so wait a bit to give us
+        // time to kill the game before server_mp.log gets too bloated.
+        wait 7;
     } else {
-        debugPrint("Value found at index: "+index, "val");
+        //debugPrint("Value found at index: "+index, "val");
     }
 
     // there are possibly several matches in the array, so peek at the value in
@@ -1689,6 +1695,22 @@ devFindWaypointLinkIndex(fromWp, toWp)
     // error, we couldn't find the link
     errorPrint("Error: Couldn't find waypoint link index!");
     return -1;
+}
+
+/**
+ * @brief write waypoint links to server log for debugging purposes
+ *
+ * @returns nothing
+ */
+devDumpWaypointLinks()
+{
+    debugPrint("in _umiEditor::devDumpWaypointLinks()", "fn", level.nonVerbose);
+
+    for (i=0; i<level.waypointLinks.size; i++) {
+        from = level.waypointLinks[i].fromId;
+        to = level.waypointLinks[i].toId;
+        errorPrint("Wayoint Link index: " + i + " from: " + from + " to: " + to);
+    }
 }
 
 /**
@@ -2247,9 +2269,9 @@ devSaveTradespawns()
             type = "equipment";
         }
 
-        x = shop.origin[0];
-        y = shop.origin[1];
-        z = shop.origin[2];
+        x = devExponentialGuard(shop.origin[0]);
+        y = devExponentialGuard(shop.origin[1]);
+        z = devExponentialGuard(shop.origin[2]);
         rho = shop.angles[0];
         phi = shop.angles[1];
 
@@ -2263,6 +2285,32 @@ devSaveTradespawns()
     logPrint("}\n");
 
     iPrintLnBold("Tradespawn data written to the server log.");
+}
+
+/**
+ * @brief Change numbers as required to ensure they aren't written in exponential notation
+ *
+ * @param number integer/float The number to check or change
+ *
+ * @returns a number
+ * @since RotU 2.2.2
+ */
+devExponentialGuard(number)
+{
+    debugPrint("in _umiEditor::devExponentialGuard()", "fn", level.nonVerbose);
+
+    tolerance = 0.001;
+    integer = int(number);
+    remainder = number - integer;
+    if (remainder < 0) {remainder = -1 * remainder;} // use positive value for comparison
+    if (remainder < tolerance) {
+        // the decimal portion of the number is within +/- tolerance, so round to nearest thou
+        if (number < 0) {
+            return integer - tolerance;
+        } else if (number > 0){
+            return integer + tolerance;
+        } else {return number;} // number is zero!
+    } else {return number;} // number doesn't have unneeded precision, so just return it
 }
 
 /**
@@ -2296,9 +2344,9 @@ devSaveWaypoints()
     logPrint("    \n");
 
     for (i=0; i<level.Wp.size; i++) {
-        x = level.Wp[i].origin[0];
-        y = level.Wp[i].origin[1];
-        z = level.Wp[i].origin[2];
+        x = devExponentialGuard(level.Wp[i].origin[0]);
+        y = devExponentialGuard(level.Wp[i].origin[1]);
+        z = devExponentialGuard(level.Wp[i].origin[2]);
 
         logPrint("    level.waypoints["+i+"] = spawnstruct();\n");
         logPrint("    level.waypoints["+i+"].origin = ("+x+","+y+","+z+");\n");
