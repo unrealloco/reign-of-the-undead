@@ -594,7 +594,7 @@ zomMain()
 
             case "triggered":
 
-                if ((update==10) || (self.bestTarget.isDown)) {  // find new target when current target goes down
+                if ((isDefined(self.bestTarget)) && ((update==10) || (self.bestTarget.isDown))) {  // find new target when current target goes down
                 self.bestTarget = zomGetBestTarget();
                 update = 0;
             } else {update++;}
