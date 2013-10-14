@@ -1637,7 +1637,7 @@ devFindWaypointLinkIndex(fromWp, toWp)
 
     // Ensure we are searching for the bidirectionl link we have actually stored,
     // not the reverse link
-    if (toWp > fromWp) {
+    if (toWp > fromWp) { /// @bug sometimes toWp is undefined
         fromValue = fromWp;
         toValue = toWp;
     } else {
@@ -1664,6 +1664,7 @@ devFindWaypointLinkIndex(fromWp, toWp)
     }
 
     if (index == -1) {
+        // ex.: it was looking for 'undefined' and 370, but no 370 in waypointLinks array
         errorPrint("Failed to find index!"); /// @bug we sometimes fail to find the index
         errorPrint("toWp: " + toWp + " fromWp: " + fromWp);
         errorPrint("toValue: " + toValue + " fromValue: " + fromValue);
