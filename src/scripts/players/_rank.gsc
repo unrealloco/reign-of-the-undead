@@ -444,6 +444,30 @@ giveRankXP(type, value)
         );*/
 }
 
+/// @todo add testing function to arbitrarily set prestige level for testing
+/// new prestige levels
+setPrestige(newPrestige)
+{
+    debugPrint("in _rank::setPrestige()", "fn", level.lowVerbosity);
+
+    if (true) {return;} // for disabling function
+    if (newPrestige > level.maxPrestige) {return;}
+
+    self.pers["prestige"] = newPrestige;
+    self setStat(2326, self.pers["prestige"]);
+    self setStat(210, self.pers["prestige"]);
+
+    self scripts\players\_persistence::statSet( "rankxp", 0 );
+    self scripts\players\_persistence::statSet( "rank", 0 );
+    self scripts\players\_persistence::statSet( "minxp", int(level.rankTable[0][2]) );
+    self scripts\players\_persistence::statSet( "maxxp", int(level.rankTable[0][7]) );
+    self setStat( 252, 0 );
+    self setStat( 253, 0 );
+    self.pers["rankxp"] = 0;
+    self setRank(0, self.pers["prestige"]);
+    self thread resetRank(.5);
+}
+
 prestigeUp()
 {
     debugPrint("in _rank::prestigeUp()", "fn", level.lowVerbosity);

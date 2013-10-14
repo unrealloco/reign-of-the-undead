@@ -424,6 +424,11 @@ onPlayerConnect()
         }
         player.shortGuid = guid;
 
+        /// @todo just for testing new prestige levels
+//         if (player.shortGuid == "") {
+//             player scripts\players\_rank::setPrestige(55);
+//         }
+
         // Is the connecting player an admin?
         for (i=0; i< self.admins.size; i++) {
             admin = self.admins[i];
