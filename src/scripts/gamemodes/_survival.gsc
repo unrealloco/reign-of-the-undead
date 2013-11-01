@@ -54,11 +54,6 @@ loadConfig()
     debugPrint("in _survival::loadConfig()", "fn", level.nonVerbose);
 
     wait .1;// Assume types not set, loading default
-//     dvarDefault("surv_special1", "dog");
-//     dvarDefault("surv_special2", "burning");
-//     dvarDefault("surv_special3", "toxic");
-//     dvarDefault("surv_special4", "tank");
-//     dvarDefault("surv_special5", "boss");
     dvarDefault("surv_special_final", "boss");  // rotu 2.2
     dvarDefault("surv_total_waves", 12);        // rotu 2.2
     dvarDefault("surv_wave_count_system", "2.2"); // rotu 2.2
@@ -561,7 +556,6 @@ startRegularWave()
         wait level.dif_zomSpawnRate;
     }
 
-    // this assumes there is less than 20 bugged zombies
     level thread killBuggedZombies();
     level waittill("wave_finished");
 
@@ -584,21 +578,21 @@ startSpecialWave(type)
     level endon( "game_ended" );
 
     level.intermission = 1;
-    waveType = type;
+    level.waveType = type;
 
     level.zom_spawntype = 0;
-    if ((type == "tank") || (type == "burning_tank")) {
+    if ((level.waveType == "tank") || (level.waveType == "burning_tank")) {
         level.zom_spawntype = 1; // souls spawn
     }
-    if (type == "toxic") {
+    if (level.waveType == "toxic") {
         level.zom_spawntype = 2; // ground spawn
     }
 
     timer(level.dvar["surv_timeout"], &"ZOMBIE_NEWWAVEIN" , (.7,.2,0));
     wait level.dvar["surv_timeout"] + 2;
 
-    if (type == "boss") {level.waveSize = 1;}
-    else if (type == "cyclops") {
+    if (level.waveType == "boss") {level.waveSize = 1;}
+    else if ((level.waveType == "cyclops") || (level.waveType == "many_bosses")) {
         level.waveSize = int(0.85 * level.activePlayers);
         if (level.waveSize == 0) {level.waveSize = 1;}
     }
@@ -607,12 +601,56 @@ startSpecialWave(type)
         level.waveSize = int(level.waveSize * level.specialWaveSizeFactor) + 1;
     }
 
+    level.bossIgnoreKillCount = 0;
+    level.bossCurrentMethod = 0;
     level.waveProgress = 0;
 
-    if (waveType == "inferno") { // burning or burning dog
+    // Force larger wave size for testing ''many_bosses' final wave
+    // if (level.waveType == "many_bosses") {level.waveSize = 3;}
+
+    if (level.waveType == "many_bosses") {
+        // Initialize kill methods and count how many are used
+        level.bossDoExplosives = false;
+        level.bossDoPrimary = false;
+        level.bossDoSidearm = false;
+        level.bossDoMelee = false;
+        level.bossMethodCount = 0;
+        if (getDvarInt("surv_boss_do_explosives") == 1) {
+            level.bossDoExplosives = true;
+            level.bossMethodCount++;
+        }
+        if (getDvarInt("surv_boss_do_primary") == 1) {
+            level.bossDoPrimary = true;
+            level.bossMethodCount++;
+        }
+        if (getDvarInt("surv_boss_do_sidearm") == 1) {
+            level.bossDoSidearm = true;
+            level.bossMethodCount++;
+        }
+        if (getDvarInt("surv_boss_do_melee") == 1) {
+            level.bossDoMelee = true;
+            level.bossMethodCount++;
+        }
+
+        level.bossIgnoreKillCount = (level.bossMethodCount * level.waveSize) - level.waveSize;
+
+        cohortSize = level.waveSize;
+        level.bosses = [];
+        // array of bots to help us track boss properties as they die and revive
+        for (i=0; i<cohortSize; i++) {
+            //level.bosses[i].bot = null;
+        }
+        level.killballFactor = getDvarFloat("surv_boss_killball_factor");
+        if (!isDefined(level.killballFactor)) {level.killballFactor = 1.0;}
+        level.bossColor = (0,0,0);
+    }
+
+    if (level.waveType == "inferno") { // burning or burning dog
         announceMessage(&"ZOMBIE_NEWSPECIALWAVE", "burning zombies", (.7,.2,0), 4, 95);
-    } else if (waveType == "random") { // random special zombies
+    } else if (level.waveType == "random") { // random special zombies
         announceMessage(&"ZOMBIE_NEWSPECIALWAVE", "mixed zombies", (.7,.2,0), 4, 95);
+    } else if (level.waveType == "many_bosses") { // many zombies
+        announceMessage(&"ZOMBIE_NEWSPECIALWAVE", level.zom_typenames["boss"], (.7,.2,0), 4, 95);
     } else {
         announceMessage(&"ZOMBIE_NEWSPECIALWAVE", level.zom_typenames[type], (.7,.2,0), 4, 95);
     }
@@ -620,14 +658,14 @@ startSpecialWave(type)
     wait 5;
 
     // Set the environment for the special wave
-    scripts\server\_environment::setAmbient(scripts\bots\_types::getAmbientForType(type));
-    scripts\server\_environment::setGlobalFX(scripts\bots\_types::getFxForType(type));
-    thread scripts\server\_environment::setBlur(scripts\bots\_types::getBlurForType(type), 20);
-    vision = scripts\bots\_types::getVisionForType(type);
+    scripts\server\_environment::setAmbient(scripts\bots\_types::getAmbientForSpecialWave(type));
+    scripts\server\_environment::setGlobalFX(scripts\bots\_types::getFxForSpecialWave(type));
+    thread scripts\server\_environment::setBlur(scripts\bots\_types::getBlurForSpecialWave(type), 20);
+    vision = scripts\bots\_types::getVisionForSpecialWave(type);
     if (vision != "") {
         scripts\server\_environment::setVision(vision, 20);
     }
-    fog = scripts\bots\_types::getFogForType(type);
+    fog = scripts\bots\_types::getFogForSpecialWave(type);
     if (fog != "") {
         scripts\server\_environment::setFog(fog, 20);
     }
@@ -639,14 +677,32 @@ startSpecialWave(type)
     level notify("start_monitoring");
     thread watchWaveProgress();
     thread watchEnd();
+
+    if ((level.waveType == "boss")) {
+        // What different ways must the final zombie be killed?
+        level.bossDoExplosives = false;
+        level.bossDoPrimary = false;
+        level.bossDoSidearm = false;
+        level.bossDoMelee = false;
+        if (getDvarInt("surv_boss_do_explosives") == 1) {level.bossDoExplosives = true;}
+        if (getDvarInt("surv_boss_do_primary") == 1) {level.bossDoPrimary = true;}
+        if (getDvarInt("surv_boss_do_sidearm") == 1) {level.bossDoSidearm = true;}
+        if (getDvarInt("surv_boss_do_melee") == 1) {level.bossDoMelee = true;}
+
+        level.killballFactor = getDvarFloat("surv_boss_killball_factor");
+        if (!isDefined(level.killballFactor)) {level.killballFactor = 1.0;}
+        level.bossColor = (0,0,0);
+    }
+
+    // spawn the zombies
     for (i=0; i<level.waveSize; ) {
         if (!level.playWave) {
             // we want to stop playing this wave, so don't create any more zombies
-            if (type == "boss") {level.bossOverlay fadeout(1);}
+            if ((level.waveType == "boss") || (level.waveType == "many_bosses")) {level.bossOverlay fadeout(1);}
             break;
         }
         if (level.botsAlive<level.dif_zomMax) {
-            if (waveType == "inferno") {
+            if (level.waveType == "inferno") {
                 // type is a random burning, burning_dog, or burning_tank
                 spawnType = level.zom_spawntype;
                 random = randomFloat(1);
@@ -658,13 +714,28 @@ startSpecialWave(type)
                 if (isdefined(spawnZombie(type, spawnType))) {
                     i++;
                 }
-            } else if (waveType == "random") {
+            } else if (level.waveType == "random") {
                 // random special zombies
                 type = scripts\gamemodes\_gamemodes::getRandomSpecialType();
                 spawnType = 0;
                 if ((type == "tank") || (type == "burning_tank")) {spawnType = 1;}
                 else if (type == "toxic") {spawnType = 2;}
                 if (isdefined(spawnZombie(type, spawnType))) {
+                    i++;
+                }
+            } else if (level.waveType == "boss") {
+                // we use same type for boss and many_bosses
+                type = "boss";
+                if (isdefined(spawnZombie(type, level.zom_spawntype))) {
+                    i++;
+                }
+            } else if (level.waveType == "many_bosses") {
+                // we use same type for boss and many_bosses
+                type = "boss";
+                bot = spawnZombie(type, level.zom_spawntype);
+                if (isdefined(bot)) {
+                    bot.id = i;
+                    level.bosses[i] = bot;
                     i++;
                 }
             } else {
@@ -675,7 +746,10 @@ startSpecialWave(type)
         }
         wait level.dif_zomSpawnRate;
     }
-    if (type!="boss") {level thread killBuggedZombies();}
+    if (level.waveType == "many_bosses") {
+        scripts\bots\_types::nextBossStatus();
+    }
+    if ((type != "boss") && (type != "many_bosses")) {level thread killBuggedZombies();}
 
     level waittill("wave_finished");
 
@@ -753,9 +827,15 @@ watchWaveProgress()
     level thread doWaveHud();
     while (1) {
         level waittill("bot_killed");
-        level.waveProgress++;
-        if (level.waveProgress >= level.waveSize)
-        break;
+
+        // on the final "many_bosses" wave, ignore all the kills except for the kills
+        // from the last kill method
+        if ((isDefined(level.bossCurrentMethod)) && (level.bossIgnoreKillCount > 0)) {
+            level.bossIgnoreKillCount--;
+            continue;
+        } else {level.waveProgress++;}
+
+        if (level.waveProgress >= level.waveSize) {break;}
     }
     level notify("wave_finished");
 }
@@ -880,5 +960,3 @@ soulSpawn(type, spawn, bot)
 
     scripts\bots\_bots::spawnZombie(type, spawn, bot);
 }
-
-

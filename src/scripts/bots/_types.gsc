@@ -168,9 +168,17 @@ addZomType(name, modelType, animTree, soundType, walkSpeed, runSpeed, meleeSpeed
     struct.spawnFX = undefined;
 }
 
-getBlurForType(type)
+
+/**
+ * @brief Selects the correct environment blur for a special wave
+ *
+ * @param type string The type of the special wave
+ *
+ * @returns float, the blur setting to be used with this wave
+ */
+getBlurForSpecialWave(type)
 {
-    debugPrint("in _types::getBlurForType()", "fn", level.nonVerbose);
+    debugPrint("in _types::getBlurForSpecialWave()", "fn", level.nonVerbose);
 
     switch (type) {
         case "burning":         // Fall through
@@ -185,9 +193,16 @@ getBlurForType(type)
     }
 }
 
-getAmbientForType(type)
+/**
+ * @brief Selects the correct environment ambient for a special wave
+ *
+ * @param type string The type of the special wave
+ *
+ * @returns string, the ambient setting to be used with this wave
+ */
+getAmbientForSpecialWave(type)
 {
-    debugPrint("in _types::getAmbientForType()", "fn", level.nonVerbose);
+    debugPrint("in _types::getAmbientForSpecialWave()", "fn", level.nonVerbose);
 
     switch (type) {
         case "burning":         // Fall through
@@ -202,6 +217,7 @@ getAmbientForType(type)
         case "tank":
             return "ambient_tank";
         case "boss":            // Fall through
+        case "many_bosses":     // Fall through
         case "cyclops":
             return "ambient_boss";
         default:
@@ -209,14 +225,22 @@ getAmbientForType(type)
     }
 }
 
-getFogForType(type)
+/**
+ * @brief Selects the correct environment fog for a special wave
+ *
+ * @param type string The type of the special wave
+ *
+ * @returns string, the fog setting to be used with this wave
+ */
+getFogForSpecialWave(type)
 {
-    debugPrint("in _types::getFogForType()", "fn", level.nonVerbose);
+    debugPrint("in _types::getFogForSpecialWave()", "fn", level.nonVerbose);
 
     switch (type) {
         case "toxic":
             return "toxic";
         case "boss":            // Fall through
+        case "many_bosses":     // Fall through
         case "cyclops":
             return "boss";
         default:
@@ -224,9 +248,16 @@ getFogForType(type)
     }
 }
 
-getVisionForType(type)
+/**
+ * @brief Selects the correct environment vision for a special wave
+ *
+ * @param type string The type of the special wave
+ *
+ * @returns string, the vision setting to be used with this wave
+ */
+getVisionForSpecialWave(type)
 {
-    debugPrint("in _types::getVisionForType()", "fn", level.nonVerbose);
+    debugPrint("in _types::getVisionForSpecialWave()", "fn", level.nonVerbose);
 
     switch (type) {
         case "burning":         // Fall through
@@ -235,6 +266,7 @@ getVisionForType(type)
         case "inferno":
             return "inferno";
         case "boss":            // Fall through
+        case "many_bosses":     // Fall through
         case "cyclops":
             return "boss";
         default:
@@ -242,9 +274,16 @@ getVisionForType(type)
     }
 }
 
-getFxForType(type)
+/**
+ * @brief Selects the correct environment FX for a special wave
+ *
+ * @param type string The type of the special wave
+ *
+ * @returns string, the FX setting to be used with this wave
+ */
+getFxForSpecialWave(type)
 {
-    debugPrint("in _types::getFxForType()", "fn", level.nonVerbose);
+    debugPrint("in _types::getFxForSpecialWave()", "fn", level.nonVerbose);
 
     switch (type) {
         case "burning":         // Fall through
@@ -255,6 +294,7 @@ getFxForType(type)
         case "tank":
             return "lightning";
         case "boss":            // Fall through
+        case "many_bosses":     // Fall through
         case "cyclops":
             return "lightning_boss";
         default:
@@ -286,6 +326,7 @@ loadZomStats(type)
     }
 }
 
+/// @param type string The type of bot, not the type of special wave
 onSpawn(type)
 {
     debugPrint("in _types::onSpawn()", "fn", level.veryHighVerbosity);
@@ -328,22 +369,14 @@ onSpawn(type)
             self.turretAimHeight = 12;
             break;
         case "boss":
-            // What different ways must the final zombie be killed?
-            level.bossDoExplosives = false;
-            level.bossDoPrimary = false;
-            level.bossDoSidearm = false;
-            level.bossDoMelee = false;
-            if (getDvarInt("surv_boss_do_explosives") == 1) {level.bossDoExplosives = true;}
-            if (getDvarInt("surv_boss_do_primary") == 1) {level.bossDoPrimary = true;}
-            if (getDvarInt("surv_boss_do_sidearm") == 1) {level.bossDoSidearm = true;}
-            if (getDvarInt("surv_boss_do_melee") == 1) {level.bossDoMelee = true;}
-
-            level.killballFactor = getDvarFloat("surv_boss_killball_factor");
-            if (!isDefined(level.killballFactor)) {level.killballFactor = 1.0;}
-            level.bossColor = (0,0,0);
-            nextBossStatus();
-            self.quake = true;
-            self thread bossSpecialAttack();
+            if (level.waveType == "boss") { // final wave is a single boss
+                nextBossStatus();
+                self.quake = true;
+                self thread bossSpecialAttack();
+            } else if (level.waveType == "many_bosses") { // final wave is many bosses
+                self.quake = true;
+                self thread manyBossesSpecialAttack();
+            }
             break;
         case "cyclops":
             self thread cyclopsSpecialAttack();
@@ -359,6 +392,21 @@ bossSpecialAttack()
     debugPrint("in _types::bossSpecialAttack()", "fn", level.nonVerbose);
 
     self endon("death");
+    wait 3;
+    // divide by zero guard
+    if (level.killballFactor == 0) {level.killballFactor = 0.01;}
+    while (1) {
+        self thread doSpecialAttack();
+        wait int((20 + randomint(10)) * (1 / level.killballFactor));
+    }
+}
+
+manyBossesSpecialAttack()
+{
+    debugPrint("in _types::bossSpecialAttack()", "fn", level.nonVerbose);
+
+    self endon("death");
+    self endon("boss_fake_death");
     wait 3;
     // divide by zero guard
     if (level.killballFactor == 0) {level.killballFactor = 0.01;}
@@ -468,42 +516,37 @@ killBall(player)
 }
 
 
+/// @param type string The type of bot, not the type of special wave
 onDamage(type, sMeansOfDeath, sWeapon, iDamage, eAttacker)
 {
     debugPrint("in _types::onDamage()", "fn", level.fullVerbosity);
 
     switch (type) {
-        case "boss":
+        case "boss":  // this is a boss zombie
             if (level.bossStatus == "dead") {return 0;}
             if (sMeansOfDeath == "MOD_IMPACT") {return 0;}
-            self.health = 10000;
-//             debugPrint("sMeansOfDeath: " + sMeansOfDeath, "val");
+            acceptableDamage = false;       // flag: is this damage acceptable?
             if (level.bossStatus == "explosives") {
                 if (scripts\players\_weapons::isExplosive(sWeapon)) {
-                    eAttacker scripts\players\_players::incUpgradePoints(5 * level.dvar["game_rewardscale"]);
-                    level.bossDamageDone += idamage;
-                    newValue = int(level.bossDamageDone * 100 / level.bossDamageToDo);
-                    if (newValue > 100) {newValue = 100;}
-
-                    level.bossOverlay setValue(newValue);
-                    if (newValue == 100) {nextBossStatus();}
-                    if (level.bossStatus == "dead") {return 0;}
-                    else {return 1;}
+                    acceptableDamage = true;
                 }
             } else if (level.bossStatus == "primary") {
                 if ((sWeapon == eAttacker.primary) && (sMeansOfDeath != "MOD_MELEE")) {
-                    eAttacker scripts\players\_players::incUpgradePoints(5 * level.dvar["game_rewardscale"]);
-                    level.bossDamageDone += idamage;
-                    newValue = int(level.bossDamageDone * 100 / level.bossDamageToDo);
-                    if (newValue > 100) {newValue = 100;}
-
-                    level.bossOverlay setValue(newValue);
-                    if (newValue == 100) {nextBossStatus();}
-                    if (level.bossStatus == "dead") {return 0;}
-                    else {return 1;}
+                    acceptableDamage = true;
                 }
             } else if (level.bossStatus == "sidearm") {
                 if ((sWeapon == eAttacker.secondary) && (sMeansOfDeath != "MOD_MELEE")) {
+                    acceptableDamage = true;
+                }
+            } else if (level.bossStatus == "melee") {
+                if (sMeansOfDeath == "MOD_MELEE") {
+                    acceptableDamage = true;
+                }
+            }
+
+            if (level.waveType == "boss") { // final wave is a single boss
+                self.health = 10000;        // we don't actually do real damage to the boss
+                if (acceptableDamage) {
                     eAttacker scripts\players\_players::incUpgradePoints(5 * level.dvar["game_rewardscale"]);
                     level.bossDamageDone += idamage;
                     newValue = int(level.bossDamageDone * 100 / level.bossDamageToDo);
@@ -514,10 +557,27 @@ onDamage(type, sMeansOfDeath, sWeapon, iDamage, eAttacker)
                     if (level.bossStatus == "dead") {return 0;}
                     else {return 1;}
                 }
-            } else if (level.bossStatus == "melee") {
-                if (sMeansOfDeath == "MOD_MELEE") {
+            } else if (level.waveType == "many_bosses") { // final wave is many bosses
+                if (acceptableDamage) {
                     eAttacker scripts\players\_players::incUpgradePoints(5 * level.dvar["game_rewardscale"]);
-                    level.bossDamageDone += idamage;
+
+                    // calculate the actual damage _bots::Callback_BotDamage() will apply
+                    if(!isDefined(self.incdammod)) {
+                        self.incdammod = 1;
+                    }
+                    appliedDamage = int(idamage * eAttacker scripts\players\_abilities::getDamageModifier(sWeapon, sMeansOfDeath, self, iDamage) * self.incdammod);
+                    if (appliedDamage < 1) {appliedDamage = 1;}
+
+                    if (self.health <= appliedDamage) {
+                        // this damage will kill the bot
+                        level.bossDamageDone += self.health;
+                        spawnpoint = spawnstruct();
+                        spawnpoint.angles = self.angles;
+                        spawnpoint.origin = self.origin;
+                        level.bosses[self.id].nextSpawnpoint = spawnpoint;
+                    } else {
+                        level.bossDamageDone += appliedDamage;
+                    }
                     newValue = int(level.bossDamageDone * 100 / level.bossDamageToDo);
                     if (newValue > 100) {newValue = 100;}
 
@@ -559,18 +619,25 @@ nextBossStatus()
     debugPrint("in _types::nextBossStatus()", "fn", level.nonVerbose);
 
     if (!level.bossDoExplosives && !level.bossDoPrimary && !level.bossDoSidearm && !level.bossDoMelee) {
-        level.bossStatus = "dead";
-        level.bossOverlay fadeout(1);
-        wait 0.1;
-        self suicide();
-        return;
+        if (level.waveType == "boss") {
+            level.bossStatus = "dead";
+            level.bossOverlay fadeout(1);
+            wait 0.1;
+            self suicide();
+            return;
+        } else if (level.waveType == "many_bosses") {
+            //level.bossStatus = "dead";
+            level.bossOverlay fadeout(1);
+            wait 0.1;
+            return;
+        }
     }
 
     if (isDefined(level.bossOverlay)) {
         level.bossOverlay destroy();
     }
 
-    difficultyFactor = 1;
+    difficultyFactor = 1; // default
     red = (1,0,0);
     green = (0,1,0);
     if (level.bossColor == (0,0,0)) {level.bossColor = red;}
@@ -599,9 +666,32 @@ nextBossStatus()
         difficultyFactor = getDvarFloat("surv_boss_melee_factor");
     }
 
+    level.bossCurrentMethod++;
+
     level.bossOverlay setvalue(0);
     level.bossDamageDone = 0;
-    level.bossDamageToDo = level.activePlayers * 1400 * difficultyFactor;
+    if (level.waveType == "boss") {
+        level.bossDamageToDo = level.activePlayers * 1400 * difficultyFactor;
+    } else if (level.waveType == "many_bosses") {
+        // calculate boss' health for next kill method
+        botHealth = int(2500 * difficultyFactor);
+        level.bossDamageToDo = level.waveSize * botHealth;
+        wait 0.5;
+        for (i=0; i < level.bosses.size; i++) {
+            if (isDefined(level.bosses[i].nextSpawnpoint)) {
+                // If it is defined, we aren't on the first method, so we need to respawn
+                // boss zombies.  We respawn them at the same spot they previously
+                // went down, not at the normal spawn points
+                boss = scripts\bots\_bots::spawnZombie("boss", level.bosses[i].nextSpawnpoint);
+                boss.id = i;
+                level.bosses[i] = boss;
+            } else {
+                boss = level.bosses[i];
+            }
+            boss.health = botHealth;
+            boss.maxHealth = botHealth;
+        }
+    }
 }
 
 
@@ -611,6 +701,7 @@ onAttack(type, target)
 
     switch (type) {
         case "boss":            // Fall through
+        case "many_bosses":     // Fall through
         case "cyclops":
             target thread scripts\players\_players::bounce(vectorNormalize(target.origin+(0,0,15)-self.origin));
             target shellShock("boss", 2);
@@ -676,10 +767,7 @@ unEntoxicate(time)
     self endon("death");
     self endon("disconnect");
     wait time;
-    /** @bug FIXED: Player mave have left while intoxicated.
-    * We make sure the player still exists before trying to set a property on
-    * the player, and we also endon("disconnect") now.
-    */
+
     if(isDefined(self)) {
         self.entoxicated = false;
     }

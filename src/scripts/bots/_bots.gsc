@@ -473,24 +473,23 @@ Callback_BotKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDir, 
     }
 
     corpse = self scripts\bots\_types::onCorpse(self.type);
-    if (self.soundType == "zombie")
-    self zomSound(0, "zom_death", randomint(6));
+    if (self.soundType == "zombie") {
+        self zomSound(0, "zom_death", randomint(6));
+    }
 
-    if (corpse > 0)
-    {
+    if (corpse > 0) {
         if (self.type=="toxic") {
             deathAnimDuration = 20;
         }
 
         body = self clonePlayer( deathAnimDuration );
 
-        if (corpse > 1)
-        {
+        if (corpse > 1) {
             thread delayStartRagdoll( body, sHitLoc, vDir, sWeapon, eInflictor, sMeansOfDeath );
         }
+    } else {
+        self setorigin((0,0,-10000));
     }
-    else
-    self setorigin((0,0,-10000));
 
     level.dif_killedLast5Sec++;
 
