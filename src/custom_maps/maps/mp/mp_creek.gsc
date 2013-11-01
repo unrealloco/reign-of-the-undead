@@ -65,7 +65,7 @@ main()
 
     waitUntilFirstPlayerSpawns();
 
-    umiEditorMode = true; // toggle true/false to switch between editor and game mode
+    umiEditorMode = false; // toggle true/false to switch between editor and game mode
 
     if (umiEditorMode) {
         devDrawAllPossibleSpawnpoints();
