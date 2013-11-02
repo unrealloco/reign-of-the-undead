@@ -42,8 +42,6 @@ initGame()
     level.currentWave = 1;
     level.waveOrderCurrentWave = 0;
     level.playWave = true;
-    level.wavesRepeat = level.dvar["surv_waves_repeat"];
-    level.currentWaveRepitition = 0;
     level.hasReceivedDamage = 0;
     level.canBuyRaygun = false;
     thread loadConfig();
@@ -58,7 +56,6 @@ loadConfig()
     dvarDefault("surv_total_waves", 12);        // rotu 2.2
     dvarDefault("surv_wave_count_system", "2.2"); // rotu 2.2
 
-    level.waveCountSystem = getDvar("surv_wave_count_system");
     level.totalWaves = getDvarInt("surv_total_waves");
     level.finalWave = getDvar("surv_special_final");
     level.nthZombieIsSpecial = getDvarInt("surv_nth_zombie_is_special");
@@ -92,9 +89,6 @@ loadConfig()
     }
 
     level.slowBots = 1 - level.dvar["surv_slow_start"];
-    if (level.waveCountSystem == "2.1") {
-        calculateNumberOfWaves();
-    }
 
     buildWaveOrder();
 }
@@ -179,21 +173,6 @@ getRandomSpawn()
 
 
 /**
- * @brief Calculates the total number of waves
- *
- * @returns nothing
- */
-calculateNumberOfWaves()
-{
-    debugPrint("in _survival::calculateNumberOfWaves()", "fn", level.lowVerbosity);
-
-    specialWaves = level.dvar["surv_specialwaves"];
-    regularWaves = specialWaves * (level.dvar["surv_specialinterval"] - 1);
-    level.totalWaves = level.dvar["surv_waves_repeat"] * (regularWaves + specialWaves);
-}
-
-
-/**
  * @brief Calculates the number of zombies in a wave based on the wave system
  *
  * @param wave integer The one-based wave number to calculate the number of zombies for
@@ -268,28 +247,12 @@ mainGametype()
     // In these cases, we just get a random spawn points; make a note of this in the logs
     if (level.wp.size == 0) {
         noticePrint("Legacy map " + getdvar("mapname") + " doesn't use waypoints. Using random spawn points instead of waypoints for spawning and emberFX");
+        noticePrint("You may use the UMI Editor to create waypoints for this map.");
     }
 
-    if (level.waveCountSystem == "2.1") {
-        for (iii=0; iii<level.wavesRepeat; iii++) {
-            for (i=0; i<level.dvar["surv_specialwaves"]; i++)
-            {
-                if (isdefined(level.specialWaves[i])) {
-                    special = level.specialWaves[i];
-                } else {
-                    special = level.specialWaves[randomint(level.specialWaves.size)];
-                }
-
-                if (special != "boss") {
-                    scripts\gamemodes\_gamemodes::addSpawnType(special);
-                }
-
-                for (j=1; j<level.dvar["surv_specialinterval"]; j++) {
-                    startRegularWave();
-                }
-
-                startSpecialWave(special);
-            }
+    for (level.waveOrderCurrentWave=0; level.waveOrderCurrentWave<level.waveOrder.size; level.waveOrderCurrentWave++) {
+        // After half the waves, make zombies harder
+        if (level.waveOrderCurrentWave==Int(level.waveOrder.size / 2)) {
             level.zom_types["zombie"].maxHealth*= 1 + (0.5 * level.secondHalfZombieDifficultyFactor);
             level.zom_types["zombie"].damage*= 1 + (0.4 * level.secondHalfZombieDifficultyFactor);
             level.zom_types["fat"].maxHealth*= 1 + (1.0 * level.secondHalfZombieDifficultyFactor);
@@ -312,42 +275,11 @@ mainGametype()
             level.zom_types["dog"].maxHealth *= 1 + (0.5 * level.secondHalfZombieDifficultyFactor);
             level.zom_types["cyclops"].damage *= 1 + (0.4 * level.secondHalfZombieDifficultyFactor);
             level.zom_types["cyclops"].maxHealth *= 1 + (0.5 * level.secondHalfZombieDifficultyFactor);
-            level.currentWaveRepitition++;
             allowRaygun();
             level.rewardScale *= 2;
         }
-    } else if (level.waveCountSystem == "2.2") {
-        for (level.waveOrderCurrentWave=0; level.waveOrderCurrentWave<level.waveOrder.size; level.waveOrderCurrentWave++) {
-            // After half the waves, make zombies harder
-            if (level.waveOrderCurrentWave==Int(level.waveOrder.size / 2)) {
-                level.zom_types["zombie"].maxHealth*= 1 + (0.5 * level.secondHalfZombieDifficultyFactor);
-                level.zom_types["zombie"].damage*= 1 + (0.4 * level.secondHalfZombieDifficultyFactor);
-                level.zom_types["fat"].maxHealth*= 1 + (1.0 * level.secondHalfZombieDifficultyFactor);
-                level.zom_types["fat"].damage*= 1 + (0.4 * level.secondHalfZombieDifficultyFactor);
-                level.zom_types["fast"].runSpeed*= 1 + (0.2 * level.secondHalfZombieDifficultyFactor);
-                level.zom_types["fast"].maxHealth*= 1 + (0.3 * level.secondHalfZombieDifficultyFactor);
-                level.zom_types["fast"].damage*= 1 + (0.4 * level.secondHalfZombieDifficultyFactor);
-                level.zom_types["runners"].runSpeed*= 1 + (0.2 * level.secondHalfZombieDifficultyFactor);
-                level.zom_types["runners"].maxHealth*= 1 + (0.3 * level.secondHalfZombieDifficultyFactor);
-                level.zom_types["runners"].damage*= 1 + (0.4 * level.secondHalfZombieDifficultyFactor);
-                level.zom_types["tank"].maxHealth*= 1 + (0.1 * level.secondHalfZombieDifficultyFactor);
-                level.zom_types["tank"].damage*= 1 + (0.2 * level.secondHalfZombieDifficultyFactor);
-                level.zom_types["burning_tank"].maxHealth*= 1 + (0.1 * level.secondHalfZombieDifficultyFactor);
-                level.zom_types["burning_tank"].damage*= 1 + (0.2 * level.secondHalfZombieDifficultyFactor);
-                level.zom_types["burning"].damage*= 1 + (0.6 * level.secondHalfZombieDifficultyFactor);
-                level.zom_types["burning_dog"].damage*= 1 + (0.6 * level.secondHalfZombieDifficultyFactor);
-                level.zom_types["toxic"].damage*= 1 + (0.5 * level.secondHalfZombieDifficultyFactor);
-                level.zom_types["toxic"].maxhealth*= 1 + (0.5 * level.secondHalfZombieDifficultyFactor);
-                level.zom_types["dog"].damage *=  1 + (0.4 * level.secondHalfZombieDifficultyFactor);
-                level.zom_types["dog"].maxHealth *= 1 + (0.5 * level.secondHalfZombieDifficultyFactor);
-                level.zom_types["cyclops"].damage *= 1 + (0.4 * level.secondHalfZombieDifficultyFactor);
-                level.zom_types["cyclops"].maxHealth *= 1 + (0.5 * level.secondHalfZombieDifficultyFactor);
-                allowRaygun();
-                level.rewardScale *= 2;
-            }
-            if (level.waveOrder[level.waveOrderCurrentWave]=="regular") {startRegularWave();}
-            else {startSpecialWave(level.waveOrder[level.waveOrderCurrentWave]);}
-        }
+        if (level.waveOrder[level.waveOrderCurrentWave]=="regular") {startRegularWave();}
+        else {startSpecialWave(level.waveOrder[level.waveOrderCurrentWave]);}
     }
 
     thread scripts\gamemodes\_gamemodes::endMap("All waves have been held off!", 1);
@@ -459,7 +391,6 @@ waveNumber()
     while (1) {
         level waittill("wave_finished");
         wait .1;
-        if (level.currentWaveRepitition==1) {self.color = (1,0,0);}
 
         // Fix bug where current wave exceeds total waves when game is finished
         if (level.currentWave > level.totalWaves) {
