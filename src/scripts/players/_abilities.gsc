@@ -134,6 +134,8 @@ resetAbilities()
     self.special["ability"] = "none";
     self.special["recharge_time"] = 60;
     self.special["duration"] = 10;
+
+    self setclientdvar("ui_specialtext", "^1Special Locked");
 }
 
 
@@ -1362,10 +1364,6 @@ checkForDoubleTapF()
         if (self useButtonPressed()) {
             if (!hasPressedF) {
                 // double tap detected, so do special ability
-
-                /// irrelevant, since we break out of the loop
-//                 hasPressedF = true;
-
                 wait .1;
                 self thread onSpecialAbility();
                 break;
@@ -1418,7 +1416,6 @@ onSpecialAbility()
             self doFakeDeath(self.special["duration"]);
             self thread resetSpecial();
         break;
-        /// @todo assasin Fake Death special is not implemented
     }
 }
 
