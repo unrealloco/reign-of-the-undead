@@ -411,7 +411,7 @@ manyBossesSpecialAttack()
     // divide by zero guard
     if (level.killballFactor == 0) {level.killballFactor = 0.01;}
     while (1) {
-        self thread doSpecialAttack();
+        self thread doCyclopsSpecialAttack();
         wait int((20 + randomint(10)) * (1 / level.killballFactor));
     }
 }
