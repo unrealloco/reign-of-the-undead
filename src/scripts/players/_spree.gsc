@@ -42,6 +42,13 @@ onPlayerSpawn()
     if (!isdefined(self.hud_streak)) {streakHud();}
 }
 
+/**
+ * @brief Gives rank points for killing sprees, and recharges soldiers' special ability
+ *
+ * Rank points are governed by the linear function points = integer((20/3)*spree - (25/3))
+ *
+ * @returns nothing
+ */
 checkSpree()
 {
     debugPrint("in _spree::checkSpree()", "fn", level.highVerbosity);
@@ -68,10 +75,10 @@ checkSpree()
             case 3:
                 self stoplocalsound("double_kill");
                 self playlocalsound("triple_kill");
-                self scripts\players\_rank::giveRankXP("spree", 10);
+                self scripts\players\_rank::giveRankXP("spree", 11);
                 self.laststreak = "Triple kill! ";
                 if (self.curClass=="soldier") {
-                self scripts\players\_abilities::rechargeSpecial(10);
+                    self scripts\players\_abilities::rechargeSpecial(10);
                 }
             break;
             case 5:
@@ -86,7 +93,7 @@ checkSpree()
             case 7:
                 self stoplocalsound("multikill");
                 self playlocalsound("killing_spree");
-                self scripts\players\_rank::giveRankXP("spree", 50);
+                self scripts\players\_rank::giveRankXP("spree", 38);
                 self.laststreak = "Killing Spree! ";
                 if (self.curClass=="soldier") {
                     self scripts\players\_abilities::rechargeSpecial(20);
@@ -95,7 +102,7 @@ checkSpree()
             case 9:
                 self stoplocalsound("killing_spree");
                 self playlocalsound("ultrakill");
-                self scripts\players\_rank::giveRankXP("spree", 75);
+                self scripts\players\_rank::giveRankXP("spree", 51);
                 self.laststreak = "Ultra kill! ";
                 if (self.curClass=="soldier") {
                     self scripts\players\_abilities::rechargeSpecial(25);
@@ -104,7 +111,7 @@ checkSpree()
             case 11:
                 self stoplocalsound("ultrakill");
                 self playlocalsound("megakill");
-                self scripts\players\_rank::giveRankXP("spree", 100);
+                self scripts\players\_rank::giveRankXP("spree", 65);
                 self.laststreak = "Mega kill! ";
                 if (self.curClass=="soldier") {
                     self scripts\players\_abilities::rechargeSpecial(30);
@@ -113,7 +120,7 @@ checkSpree()
             case 13:
                 self stoplocalsound("megakill");
                 self playlocalsound("ludicrouskill");
-                self scripts\players\_rank::giveRankXP("spree", 125);
+                self scripts\players\_rank::giveRankXP("spree", 78);
                 self.laststreak = "Ludicrous kill! ";
                 if (self.curClass=="soldier") {
                     self scripts\players\_abilities::rechargeSpecial(35);
@@ -122,7 +129,7 @@ checkSpree()
             case 15:
                 self stoplocalsound("ludicrouskill");
                 self playlocalsound("holyshit");
-                self scripts\players\_rank::giveRankXP("spree", 150);
+                self scripts\players\_rank::giveRankXP("spree", 91);
                 self.laststreak = "Holy Shit!!! ";
                 if (self.curClass=="soldier") {
                     self scripts\players\_abilities::rechargeSpecial(40);
@@ -131,7 +138,7 @@ checkSpree()
             case 20:
                 self stoplocalsound("holyshit");
                 self playlocalsound("wickedsick");
-                self scripts\players\_rank::giveRankXP("spree", 200);
+                self scripts\players\_rank::giveRankXP("spree", 125);
                 self.laststreak = "Wicked Sick!!! ";
                 if (self.curClass=="soldier") {
                     self scripts\players\_abilities::rechargeSpecial(100);

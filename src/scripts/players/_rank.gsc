@@ -444,8 +444,7 @@ giveRankXP(type, value)
         );*/
 }
 
-/// @todo add testing function to arbitrarily set prestige level for testing
-/// new prestige levels
+
 setPrestige(newPrestige)
 {
     debugPrint("in _rank::setPrestige()", "fn", level.lowVerbosity);
