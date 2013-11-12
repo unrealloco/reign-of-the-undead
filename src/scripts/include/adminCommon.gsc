@@ -56,7 +56,7 @@ precache()
     precacheMenu("admin_temp_ban");
     precacheMenu("admin_warn");
     precacheMenu("admin_changemap");
-    precacheMenu("admin_dev");
+//    precacheMenu("admin_dev"); /// @todo remove, deprecated menu
 }
 
 /**
@@ -407,21 +407,22 @@ onPlayerConnect()
 
         player.isAdmin = false;
 
-        // 'player getGuid()' returns the profile name, if player is the launching player
-        // using 'Start New Server'
+        /// @bug: old comment? 'player getGuid()' returns the profile name, if player is the launching player
+        /// using 'Start New Server'
         guid = getSubStr(player getGuid(), 24, 32);
         debugPrint("connecting guid: " + guid, "val");
-        if (level.isLocalServer == "1") {
-            name = getDvar("admin_forced_profile");
-            if (guid == name) {
-                guid = getDvar("admin_forced_guid");
-                noticePrint("Local server: Host player's guid forced to " + guid);
-            }
-        }
-        if (guid == "") {
+        debugPrint("dedicated: " + getDvar("dedicated"), "val");
+
+        // force admin guid if required
+        if ((level.dedicated == "listen server") && (guid == "cod4mast")) {
             guid = getDvar("admin_forced_guid");
-            noticePrint("Host player's guid forced to " + guid);
+            noticePrint("Listen server: Host player's guid forced to " + guid);
+        } else if (level.dedicated == "dedicated LAN server") {
+            // Do nothing
+        } else if (level.dedicated == "dedicated internet server") {
+            // Do nothing
         }
+
         player.shortGuid = guid;
 
         /// @todo just for testing new prestige levels

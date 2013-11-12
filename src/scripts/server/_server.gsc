@@ -45,7 +45,7 @@ init()
 
     level.gametype = toLower(getDvar("g_gametype"));
     level.modversion = "RotU v2.2.1";
-    level.isLocalServer = getDvar("g_local_server");
+    level.dedicated = getDvar("dedicated");
 
     /**
      * Many maps try to load dust_trail_IR, but it generates errors
