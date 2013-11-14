@@ -146,10 +146,15 @@ downed()
 
     while(1) {
         self waittill("downed");
-        self autoText("I'm down; please revive me if you can.");
-        while((self.isDown) && (!self.isZombie)) {
-            self pingplayer();
-            wait 3;
+        if (self isNewPlayer()) {
+            // Do Nothing.  No minimap or autotext feedback if we are giving new
+            // player assistance
+        } else {
+            self autoText("I'm down; please revive me if you can.");
+            while((self.isDown) && (!self.isZombie)) {
+                self pingplayer();
+                wait 3;
+            }
         }
     }
 }
@@ -258,19 +263,32 @@ Callback_PlayerLastStand( eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon,
     }
 
     // Help new players out
-    prestige = self scripts\players\_persistence::statGet("plevel");
-    rank = self.pers["rank"];
-    noticePrint("rank: " + rank + " prestige: " + prestige);
-    if ((prestige < 1) &&
-        (rank < 30) &&
-        (self.newPlayerAssistCount < 3))
-    {
-        self thread assistNewPlayers();
-    } else {
+    if (self isNewPlayer()) {self thread assistNewPlayers();}
+    else {
         // only decrement counter if player isn't a noob, so the game won't end
         // when they go down if they are the only player
         level.alivePlayers -= 1;
     }
+}
+
+/**
+ * @brief Is this a new player eligible for new player assistance?
+ *
+ * @returns boolean Indicating whether to give assistance or not
+ */
+isNewPlayer()
+{
+    debugPrint("in _players::isNewPlayer()", "fn", level.nonVerbose);
+
+    prestige = self scripts\players\_persistence::statGet("plevel");
+    rank = self.pers["rank"];
+    if ((prestige < 1) &&
+        (rank < 30) &&
+        (self.newPlayerAssistCount < 3))
+    {
+        return true;
+    }
+    return false;
 }
 
 /**
