@@ -43,7 +43,6 @@ initGame()
     level.waveOrderCurrentWave = 0;
     level.playWave = true;
     level.hasReceivedDamage = 0;
-    level.canBuyRaygun = false;
     thread loadConfig();
 }
 
@@ -56,6 +55,7 @@ loadConfig()
     dvarDefault("surv_total_waves", 12);        // rotu 2.2
     dvarDefault("surv_wave_count_system", "2.2"); // rotu 2.2
 
+    level.canBuyRaygun = getDvarInt("surv_buy_raygun_anytime");
     level.totalWaves = getDvarInt("surv_total_waves");
     level.finalWave = getDvar("surv_special_final");
     level.nthZombieIsSpecial = getDvarInt("surv_nth_zombie_is_special");

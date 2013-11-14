@@ -42,7 +42,6 @@ init()
     // For our implementation of doKick(), we need a backup of the kickBanTime (which
     // is actually the tempBan time) to prevent an edge case race condition
     level.kickBanTimeBackup = getDvar("sv_kickBanTime");
-    debugPrint("level.kickBanTimeBackup: " + level.kickBanTimeBackup, "val");
 }
 
 
