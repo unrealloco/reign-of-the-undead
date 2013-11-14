@@ -670,7 +670,7 @@ killZombies(admin)
         wait 0.05;
     }
 
-    noticePrint("Admin " + admin.name + " killed " + count + "zombies.");
+    noticePrint("Admin " + admin.name + " killed " + count + " zombies.");
     admin thread adminActionConsoleMessage("Admin killed " + count + " zombies.");
 }
 

@@ -73,9 +73,17 @@ getSkillpoints(rank)
     spent  = self.rank["soldier"] + self.rank["stealth"] + self.rank["medic"];
     spent += self.rank["scout"] + self.rank["armored"] + self.rank["engineer"];
 
-    self.skillpoints = modRank * 2 - spent;
+    earned = modRank * 2;
+    self.skillpoints = earned - spent;
     if (self.rankHacker) {self.skillpoints = 0;}
     if (modRank * 2 > 174) {self.skillpoints = 174 - spent;}
+
+    // When new players get demoted, they may have spent more skillpoints than
+    // their new lower rank qualifies them for.  We don't un-spend their skillpoints,
+    // we just set available skillpoints to zero until they have been promoted
+    // enough to actually earn new skillpoints. This also ensures the skillpoints
+    // menu functions properly
+    if (self.skillpoints < 0) {self.skillpoints = 0;}
 
     self skillPointsNotify(self.skillpoints);
     self setclientdvar("ui_skillpoints", self.skillpoints);
