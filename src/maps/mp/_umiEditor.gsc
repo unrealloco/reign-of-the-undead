@@ -181,6 +181,13 @@ initMapEditor()
     // the admin player that will be doing the editing
     level.devPlayer = scripts\include\adminCommon::getPlayerByShortGuid(getDvar("admin_forced_guid"));
 
+    // Prevent massive runtime errors from hanging the hosting computer
+    if (!(isDefined(level.devPlayer))) {
+        errorPrint("level.devPlayer is not defined, which may mean the admin player wasn't recognized.");
+        errorPrint("Aborting initialization of UMI Map Editor.");
+        return;
+    }
+
     // load UMI Editor shortcuts
     level.devPlayer scripts\players\_players::execClientCommand( "exec maps/mp/_umi_shortcuts.cfg" );
 

@@ -414,7 +414,8 @@ onPlayerConnect()
         debugPrint("dedicated: " + getDvar("dedicated"), "val");
 
         // force admin guid if required
-        if ((level.dedicated == "listen server") && (guid == "cod4mast")) {
+        if (level.dedicated == "listen server") {
+            // getGuid() returns garbage if a listen server, so force admin
             guid = getDvar("admin_forced_guid");
             noticePrint("Listen server: Host player's guid forced to " + guid);
         } else if (level.dedicated == "dedicated LAN server") {
