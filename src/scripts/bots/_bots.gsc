@@ -324,15 +324,15 @@ Callback_BotDamage(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeap
         return;
     }
     self.alertLevel += 200;
-    if (isdefined(eAttacker))
-    if (isplayer(eAttacker))
-    {
+
+    if ((isdefined(eAttacker)) && (isplayer(eAttacker))) {
         if (eAttacker.curClass=="armored") {
             if (sMeansOfDeath=="MOD_MELEE") {
-                if (iDamage>self.health)
-                eAttacker scripts\players\_abilities::rechargeSpecial(self.health/25);
-                else
-                eAttacker scripts\players\_abilities::rechargeSpecial(iDamage/25);
+                if (iDamage>self.health) {
+                    eAttacker scripts\players\_abilities::rechargeSpecial(self.health/25);
+                } else {
+                    eAttacker scripts\players\_abilities::rechargeSpecial(iDamage/25);
+                }
             }
         }
         if (eAttacker.curClass=="scout" && sHitLoc=="head" && sMeansOfDeath != "MOD_MELEE") {
@@ -347,30 +347,30 @@ Callback_BotDamage(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeap
         }
 
         if(!isDefined(self.incdammod)) {
-            debugPrint("BUG: self.incammod not set; setting to 1 for : " + self.name, "val");
+            debugPrint("BUG: self.incdammod not set; setting to 1 for : " + self.name, "val");
             self.incdammod = 1;
         }
-        iDamage = int( iDamage * eAttacker scripts\players\_abilities::getDamageModifier(sWeapon, sMeansOfDeath, self, iDamage) * self.incdammod);
+        iDamage = int(iDamage * eAttacker scripts\players\_abilities::getDamageModifier(sWeapon, sMeansOfDeath, self, iDamage) * self.incdammod);
 
 //         eAttacker notify("damaged_bot", self);
         eAttacker notify("damaged_bot", self, sMeansOfDeath);
 
         eAttacker scripts\players\_damagefeedback::updateDamageFeedback(0);
-        if (self.isBot)
-        self thread addToAssist(eAttacker, iDamage);
+        if (self.isBot) {self thread addToAssist(eAttacker, iDamage);}
     }
 
-    if(self.sessionteam == "spectator")
-    return;
+    if (self.sessionteam == "spectator") {return;}
 
-    if(!isDefined(vDir))
-        iDFlags |= level.iDFLAGS_NO_KNOCKBACK;
+    if (!isDefined(vDir)) {iDFlags |= level.iDFLAGS_NO_KNOCKBACK;}
 
-    if(!(iDFlags & level.iDFLAGS_NO_PROTECTION))
-    {
-        if(iDamage < 1)
-            iDamage = 1;
+    if(!(iDFlags & level.iDFLAGS_NO_PROTECTION)) {
+        if(iDamage < 1) {iDamage = 1;}
 
+        if (level.waveType == "many_bosses") {
+            if (isDefined(eAttacker.name)) {attackerName = eAttacker.name;}
+            else {attackerName = "N/A";}
+            //noticePrint("finishPlayerDamage(," + attackerName + "," + iDamage + ",N/A," + sMeansOfDeath + "," + sWeapon + ",,,,)");
+        }
         self finishPlayerDamage(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc, psOffsetTime);
     }
 }

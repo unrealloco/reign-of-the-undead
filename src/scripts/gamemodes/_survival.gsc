@@ -536,8 +536,8 @@ startSpecialWave(type)
     level.bossCurrentMethod = 0;
     level.waveProgress = 0;
 
-    // Force larger wave size for testing ''many_bosses' final wave
-    // if (level.waveType == "many_bosses") {level.waveSize = 3;}
+    // Force larger wave size for testing 'many_bosses' final wave
+    //if (level.waveType == "many_bosses") {level.waveSize = 3;}
 
     if (level.waveType == "many_bosses") {
         // Initialize kill methods and count how many are used
@@ -679,6 +679,7 @@ startSpecialWave(type)
     }
     if (level.waveType == "many_bosses") {
         scripts\bots\_types::nextBossStatus();
+        level thread watchManyBossesProgress();
     }
     if ((type != "boss") && (type != "many_bosses")) {level thread killBuggedZombies();}
 
@@ -698,6 +699,40 @@ startSpecialWave(type)
     level notify("global_fx_end");
 
     level.currentWave++;
+}
+
+/**
+ * @brief Watch many_bosses progress to ensure it doesn't get hung
+ *
+ * There is a rare bug where all the bosses are down, but the game still thinks there
+ * is damage that needs to be done, which prevents the game from being won.
+ *
+ * After laborious testing, I can't reproduce the bug or even find any evidence
+ * of it, so I suspect it must be a consequence of a runtime error.  In any event,
+ * this function will look for this bug, then work-around it when it finds it.
+ *
+ * @returns nothing
+ */
+watchManyBossesProgress()
+{
+    debugPrint("in _survival::watchManyBossesProgress()", "fn", level.nonVerbose);
+
+    level endon("wave_finished");
+
+    while(1) {
+        wait 3;
+        alive = 0;
+        for (i=0; i<level.bosses.size; i++) {
+            if (isAlive(level.bosses[i])) {alive++;}
+        }
+        wait 0.5;
+        methodPercent = int(level.bossDamageDone * 100 / level.bossDamageToDo);
+        if ((alive == 0) && (methodPercent > 65) && (methodPercent < 100)) {
+            // Buggered! All bosses are down, but game thinks we still need to damage them!
+            level.bossOverlay setValue(100);
+            scripts\bots\_types::nextBossStatus();
+        }
+    }
 }
 
 /**

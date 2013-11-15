@@ -575,8 +575,10 @@ onDamage(type, sMeansOfDeath, sWeapon, iDamage, eAttacker)
                         spawnpoint.angles = self.angles;
                         spawnpoint.origin = self.origin;
                         level.bosses[self.id].nextSpawnpoint = spawnpoint;
+                        //noticePrint("Killing Valid Damage: " + self.health);
                     } else {
                         level.bossDamageDone += appliedDamage;
+                        //noticePrint("Valid Damage: " + appliedDamage);
                     }
                     newValue = int(level.bossDamageDone * 100 / level.bossDamageToDo);
                     if (newValue > 100) {newValue = 100;}
