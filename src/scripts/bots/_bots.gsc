@@ -366,11 +366,12 @@ Callback_BotDamage(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeap
     if(!(iDFlags & level.iDFLAGS_NO_PROTECTION)) {
         if(iDamage < 1) {iDamage = 1;}
 
-        if (level.waveType == "many_bosses") {
-            if (isDefined(eAttacker.name)) {attackerName = eAttacker.name;}
-            else {attackerName = "N/A";}
-            //noticePrint("finishPlayerDamage(," + attackerName + "," + iDamage + ",N/A," + sMeansOfDeath + "," + sWeapon + ",,,,)");
-        }
+//         // for debugging many_bosses damage bugs
+//         if ((isDefined(level.waveType)) && (level.waveType == "many_bosses")) {
+//             if (isDefined(eAttacker.name)) {attackerName = eAttacker.name;}
+//             else {attackerName = "N/A";}
+//             noticePrint("finishPlayerDamage(," + attackerName + "," + iDamage + ",N/A," + sMeansOfDeath + "," + sWeapon + ",,,,)");
+//         }
         self finishPlayerDamage(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc, psOffsetTime);
     }
 }
