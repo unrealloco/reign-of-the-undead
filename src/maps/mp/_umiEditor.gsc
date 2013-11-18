@@ -1541,13 +1541,28 @@ devDrawWaypointLinks()
 
     level thread devWatchNearestWaypointLink();
 
+    // if too many waypoint links, only draw those closer than this to the devPlayer
+    drawSubsetDistance = 2500;
+
     while (1) {
-        for (i=0; i<level.waypointLinks.size; i++) {
-            //                 Line( <start>, <end>, <color>, <depthTest>, <duration> )
+        if (level.waypointLinks.size > 1975) {onlyDrawSubset = true;}
+        else {onlyDrawSubset = false;}
+
+        for (i=level.waypointLinks.size - 1; i>0; i--) { // reverse iteration
             from = level.Wp[level.waypointLinks[i].fromId].origin + (0,0,10);
+            // On my box, the line() function is limited to drawing about 2000
+            // lines, so if there are more links to be drawn than that, we only
+            // draw the links that are relatively 'close' to the devPlayer.
+            if (onlyDrawSubset) {
+                waypointDistance = distance(from, level.devPlayer.origin);
+                if (waypointDistance > drawSubsetDistance) {
+                    continue; // don't draw this link
+                }
+            }
             to = level.Wp[level.waypointLinks[i].toId].origin + (0,0,10);
             if (i == level.currentWaypointLink) {color = currentLinkColor;}
             else {color = level.waypointLinks[i].color;}
+            // Line( <start>, <end>, <color>, <depthTest>, <duration> )
             line(from, to, color, false, 25);
         }
         wait 0.05;
