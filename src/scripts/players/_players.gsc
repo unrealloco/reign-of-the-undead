@@ -722,7 +722,7 @@ onPlayerDamage(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, 
 
     if(self.sessionteam == "spectator") {return;}
 
-    if(isdefined(eAttacker)) {
+    if (isdefined(eAttacker)) {
         if (isplayer(eAttacker)) {
             if (eAttacker.team == self.team) {
                 if (self.isZombie) {

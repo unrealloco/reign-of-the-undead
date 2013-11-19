@@ -1236,7 +1236,7 @@ selectTarget(turret)
                 {
                     for (j=0; j<level.players.size; j++) {
                         if (!isDefined(players[j])) {continue;}
-                        if ((!players[j].isDown) && (distance(zombie.origin, players[j].origin) < 200)) {
+                        if ((!players[j].isDown) && (distance(zombie.origin, players[j].origin) < 220)) {
                             // We don't engage targets if we might hurt friendlies
                             safeToEngageTarget = false;
                             break;

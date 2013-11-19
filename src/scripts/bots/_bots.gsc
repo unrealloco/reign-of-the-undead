@@ -424,12 +424,10 @@ Callback_BotKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDir, 
             switch (sWeapon) {
                 case "claymore_mp":     // Fall through
                 case "turret_mp":
+                case "none":            // minigun and grenade turrets are "none"
                     // Do nothing
                     break;
                 default:
-                    if (sWeapon == "turret_mp") {
-                        errorPrint("Weapon is turret_mp, but we are trying to punish for killing burning zombies!");
-                    }
                     players = level.players;
                     for (i=0; i<players.size; i++) {
                         if (!isDefined(players[i])) {continue;}
@@ -443,18 +441,6 @@ Callback_BotKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDir, 
                     }
                     break;
             }
-/*            if ((sWeapon != "claymore_mp") && (sWeapon != "turret_mp")) {
-                players = level.players;
-                for (i=0; i<players.size; i++) {
-                    if (attacker != players[i]) {
-                        if ((!players[i].isDown) &&
-                            (distance(self.origin, players[i].origin) < 150)) {
-                            attacker thread scripts\players\_rank::increaseDemerits(level.burningZombieDemeritSize, "burning");
-                            isBadKill = true;
-                        }
-                    }
-                }
-            }*/
         }
         if (!isBadKill) {
             // No credit for kills that hurt teammates
@@ -466,10 +452,8 @@ Callback_BotKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDir, 
             if (attacker.curClass=="stealth") {
                 attacker scripts\players\_abilities::rechargeSpecial(10);
             }
-            //attacker.score+=10;
             attacker scripts\players\_players::incUpgradePoints(10*level.rewardScale);
             giveAssists(attacker);
-            //attacker scripts\players\_rank::giveRankXP
         }
     }
 
