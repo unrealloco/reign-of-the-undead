@@ -756,8 +756,6 @@ increaseDemerits(amount, reason)
             break;
         case "wave_intermission_revive":
             message += "Not Reviving Enough Players Between Waves";
-            /// Just simulate demerits for this right now @todo enable when unrevivable bug is killed
-            amount = 0;
             break;
         case "gone_zombie":
             message += "Becoming a Zombie When You Could Have Bought a Cure";
