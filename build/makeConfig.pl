@@ -11,5 +11,5 @@ uploadPath  => 'C:\Users\Mark\Desktop\rotudevUpload',
 
 # If you add/remove config files, update this array so makeMod.pl works properly!
 configFiles => ['admin.cfg', 'damage.cfg', 'didyouknow.cfg', 'easy.cfg',
-                'mapvote.cfg', 'server.cfg', 'game.cfg',
+                'mapvote.cfg', 'server.cfg', 'game.cfg', 'startnewserver.cfg',
                 'weapons.cfg'],
