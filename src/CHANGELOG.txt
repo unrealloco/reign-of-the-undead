@@ -294,3 +294,10 @@ ROTU Change Log
   possible to beat the map.
 * In the UMI Map Editor, if there are more waypoint links than the line() function
   will draw, only draw the links within 2500 units of the dev player.
+* Fix the bug where players got demerits when their grenade or minigun turret killed
+  burning zombies.
+* Dermits for not reviving players between waves are now real, not simulated.
+* Improved waypoints for map mp_nwa_forest_v2 so zombies are less likely to get
+  stuck on the roof.
+* Make 'Start New Server' menu item work as expected.  Uses the new config file
+  startnewserver.cfg.
