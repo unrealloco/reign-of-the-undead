@@ -37,6 +37,29 @@ init()
 {
     debugPrint("in _server::init()", "fn", level.nonVerbose);
 
+    debugPrint("Running debug version of rotu_svr_scripts.iwd.", "val");
+    if (level.printFunctionEntryMessages) {
+        debugPrint("Printing function entrance messages", "val");
+    } else {
+        debugPrint("Not printing function entrance messages", "val");
+    }
+    if (level.printValueMessages) {
+        debugPrint("Printing value messages", "val");
+    } else {
+        debugPrint("Not printing value messages", "val");
+    }
+    if (level.printSignalMessages) {
+        debugPrint("Printing signal messages", "val");
+    } else {
+        debugPrint("Not printing signal messages", "val");
+    }
+    if (level.printWarningMessages) {
+        debugPrint("Printing warning messages", "val");
+    } else {
+        debugPrint("Not printing warning messages", "val");
+    }
+    debugPrint("Debug message verbosity set to: " + level.debugVerbosity, "val");
+
     if (!isDefined(game["allies"])) {game["allies"] = "marines";}
     if (!isDefined(game["axis"])) {game["axis"] = "opfor";}
 
