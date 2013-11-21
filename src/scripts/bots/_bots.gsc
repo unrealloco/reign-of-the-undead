@@ -380,10 +380,8 @@ addToAssist(player, damage)
 {
     debugPrint("in _bots::addToAssist()", "fn", level.fullVerbosity);
 
-    for (i=0; i<self.damagedBy.size; i++)
-    {
-        if (self.damagedBy[i].player == player)
-        {
+    for (i=0; i<self.damagedBy.size; i++) {
+        if (self.damagedBy[i].player == player) {
             self.damagedBy[i].damage += damage;
             return;
         }

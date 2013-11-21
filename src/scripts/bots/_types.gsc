@@ -570,21 +570,13 @@ onDamage(type, sMeansOfDeath, sWeapon, iDamage, eAttacker)
 
                     if (self.health <= appliedDamage) {
                         // this damage will kill the bot
-                        level.bossDamageDone += self.health;
                         spawnpoint = spawnstruct();
                         spawnpoint.angles = self.angles;
                         spawnpoint.origin = self.origin;
                         level.bosses[self.id].nextSpawnpoint = spawnpoint;
-                        //noticePrint("Killing Valid Damage: " + self.health);
                     } else {
-                        level.bossDamageDone += appliedDamage;
-                        //noticePrint("Valid Damage: " + appliedDamage);
+                        // Do nothing
                     }
-                    newValue = int(level.bossDamageDone * 100 / level.bossDamageToDo);
-                    if (newValue > 100) {newValue = 100;}
-
-                    level.bossOverlay setValue(newValue);
-                    if (newValue == 100) {nextBossStatus();}
                     if (level.bossStatus == "dead") {return 0;}
                     else {return 1;}
                 }
@@ -678,17 +670,35 @@ nextBossStatus()
         // calculate boss' health for next kill method
         botHealth = int(2500 * difficultyFactor);
         level.bossDamageToDo = level.waveSize * botHealth;
-        wait 0.5;
+        wait 1;
         for (i=0; i < level.bosses.size; i++) {
-            if (isDefined(level.bosses[i].nextSpawnpoint)) {
-                // If it is defined, we aren't on the first method, so we need to respawn
-                // boss zombies.  We respawn them at the same spot they previously
-                // went down, not at the normal spawn points
-                boss = scripts\bots\_bots::spawnZombie("boss", level.bosses[i].nextSpawnpoint);
-                boss.id = i;
-                level.bosses[i] = boss;
-            } else {
+            if (level.bossCurrentMethod == 1) {
                 boss = level.bosses[i];
+            } else {
+                // Need to respawn bosses
+                if (isDefined(level.bosses[i].nextSpawnpoint)) {
+                    boss = scripts\bots\_bots::spawnZombie("boss", level.bosses[i].nextSpawnpoint);
+                    boss.id = i;
+                    level.bosses[i] = boss;
+                } else {
+                    // If it isn't defined, then the boss may have been killed by
+                    // the admin command, or the meatgrinder, perhaps due to it
+                    // being bugged in a spot where it is unkillable. We set the
+                    // next spawnpoint to be the first active player's location to
+                    // ensure it gets respawned in a location players can get to.
+                    for (j=0; j<level.players.size; j++) {
+                        if ((isDefined(level.players[j].isActive)) && (level.players[j].isActive)) {
+                            spawnpoint = spawnstruct();
+                            spawnpoint.angles = level.players[j].angles;
+                            spawnpoint.origin = level.players[j].origin;
+                            level.bosses[i].nextSpawnpoint = spawnpoint;
+                            break;
+                        }
+                    }
+                    boss = scripts\bots\_bots::spawnZombie("boss", level.bosses[i].nextSpawnpoint);
+                    boss.id = i;
+                    level.bosses[i] = boss;
+                }
             }
             boss.health = botHealth;
             boss.maxHealth = botHealth;

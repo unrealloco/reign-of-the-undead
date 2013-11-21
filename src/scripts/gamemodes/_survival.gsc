@@ -679,7 +679,8 @@ startSpecialWave(type)
     }
     if (level.waveType == "many_bosses") {
         scripts\bots\_types::nextBossStatus();
-        level thread watchManyBossesProgress();
+        level thread manyBossesMeatgrinder();
+        level thread monitorManyBossesProgress();
     }
     if ((type != "boss") && (type != "many_bosses")) {level thread killBuggedZombies();}
 
@@ -702,36 +703,70 @@ startSpecialWave(type)
 }
 
 /**
- * @brief Watch many_bosses progress to ensure it doesn't get hung
+ * @brief Watch many_bosses wave for unkillable boss zombies
  *
- * There is a rare bug where all the bosses are down, but the game still thinks there
+ * On some buggy maps, a boss zombie may spawn and get stuck in a spot where
+ * the players can't damage him.  If the boss zombies, collectively, haven't taken
+ * any damage in 60 seconds, we kill them all and proceed to the next kill method.
  * is damage that needs to be done, which prevents the game from being won.
- *
- * After laborious testing, I can't reproduce the bug or even find any evidence
- * of it, so I suspect it must be a consequence of a runtime error.  In any event,
- * this function will look for this bug, then work-around it when it finds it.
  *
  * @returns nothing
  */
-watchManyBossesProgress()
+manyBossesMeatgrinder()
 {
-    debugPrint("in _survival::watchManyBossesProgress()", "fn", level.nonVerbose);
+    debugPrint("in _survival::manyBossesMeatgrinder()", "fn", level.nonVerbose);
+
+    level endon("wave_finished");
+
+    oldMethodPercent = 0;
+    while(1) {
+        wait 30;
+        methodPercent = int(level.bossDamageDone * 100 / level.bossDamageToDo);
+        if (oldMethodPercent == methodPercent) {
+            // no damage has been done in past 30 seconds
+            wait 30;
+            methodPercent = int(level.bossDamageDone * 100 / level.bossDamageToDo);
+            if (oldMethodPercent == methodPercent) {
+                // still no damage after 60 seconds, probably an unkillable final zombie
+                iprintlnbold("^1Stuck zombies detected, bringing out meatgrinder!");
+                for (i=0; i<level.bots.size; i++) {
+                    level.bots[i] suicide();
+                    wait 0.05;
+                }
+                oldMethodPercent = 0;
+            } else {
+                oldMethodPercent = methodPercent;
+                continue;
+            }
+        } else {
+            oldMethodPercent = methodPercent;
+        }
+    }
+}
+
+/**
+ * @brief Monitors the progress of the many_bosses kill methods
+ *
+ * @returns nothing
+ */
+monitorManyBossesProgress()
+{
+    debugPrint("in _survival::monitorManyBossesProgress()", "fn", level.nonVerbose);
 
     level endon("wave_finished");
 
     while(1) {
-        wait 3;
-        alive = 0;
+        damageDone = 0;
         for (i=0; i<level.bosses.size; i++) {
-            if (isAlive(level.bosses[i])) {alive++;}
+            damageDone += level.bosses[i].maxHealth - level.bosses[i].health;
         }
-        wait 0.5;
+        level.bossDamageDone = damageDone;
         methodPercent = int(level.bossDamageDone * 100 / level.bossDamageToDo);
-        if ((alive == 0) && (methodPercent > 65) && (methodPercent < 100)) {
-            // Buggered! All bosses are down, but game thinks we still need to damage them!
-            level.bossOverlay setValue(100);
-            scripts\bots\_types::nextBossStatus();
-        }
+        if (methodPercent > 100) {methodPercent = 100;}
+
+        level.bossOverlay setValue(methodPercent);
+        if (methodPercent == 100) {scripts\bots\_types::nextBossStatus();}
+        wait 0.5;
     }
 }
 
