@@ -419,10 +419,6 @@ endMap(endReasontext, showcredits)
     {
         players[i] closeMenu();
         players[i] closeInGameMenu();
-//      spawns = getentarray("mp_global_intermission", "classname");
-        /// @bug causes runtime error sometimes; probably uneeded
-//         spawn = spawns[randomint(spawns.size)];
-        //players[i] scripts\players\_players::spawnSpectator(spawn.origin, spawn.angles);
         players[i] iPrintlnBold(message);
         players[i] freezePlayerForRoundEnd();
     }
@@ -556,6 +552,8 @@ buildMovieCreditText()
     credits = [];
     results = [];
 
+    // Unless you are committing code to the Official RotU subversion repository,
+    // do not call yourself a developer.  Use the "Server Customization" credit instead.
     labels[0] = "Developer";
     credits[0] = "Mark A. Taff";
 
@@ -592,6 +590,21 @@ buildMovieCreditText()
         }
     }
 
+    // If you run a non-stock RotU, give yourself some credit. :-)
+    customizers = level.dvar["server_customizer"];
+    if (customizers != "") {
+        labels[7] = "Server Customization";
+        tokens = scripts\include\strings::split(customizers, ";");
+        if (tokens.size == 0) {
+            // no semi-colon, so only one customizer listed
+            credits[7] = customizers;
+        } else {
+            for (i=0; i<tokens.size; i++) {
+                credits[7][i] = tokens[i];
+            }
+        }
+    }
+
     /**
      * HACK: Since Activision couldn't be bothered to let us right-justify lines
      * of text in a single HUD element, we have to pad each line so it is approximately
@@ -605,13 +618,14 @@ buildMovieCreditText()
         }
     }
     extraPadding = [];
-    extraPadding[0] = 4;
-    extraPadding[1] = 0;
-    extraPadding[2] = 0;
-    extraPadding[3] = 6;
-    extraPadding[4] = 1;
-    extraPadding[5] = 1;
-    extraPadding[6] = 2;
+    extraPadding[0] = 6;
+    extraPadding[1] = 2;
+    extraPadding[2] = 2;
+    extraPadding[3] = 8;
+    extraPadding[4] = 3;
+    extraPadding[5] = 3;
+    extraPadding[6] = 4;
+    if (customizers != "") {extraPadding[7] = 0;}
 
     for (i=0; i<labels.size; i++) {
         labels[i] = leftPad(labels[i], " ", maxLength + extraPadding[i]);

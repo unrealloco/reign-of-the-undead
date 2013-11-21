@@ -102,6 +102,7 @@ loadSettings()
     dvarBool(   "hud",      "wave_number",          1);
 
     dvarString( "server",   "provider",             "Pulsar");
+    dvarString( "server",   "customizer",           "");
 
     dvarBool(   "env",      "ambient",              1);
     dvarBool(   "env",      "fog",                  1);
