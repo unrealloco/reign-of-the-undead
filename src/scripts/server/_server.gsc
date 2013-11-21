@@ -73,7 +73,7 @@ init()
 
     currentMap = getdvar("mapname");
     currentMapName = scripts\server\_mapvoting22::mapTextName(currentMap);
-    noticePrint("Starting map " + currentMapName + ".");
+    noticePrint("Starting map " + currentMapName + " (" + currentMap + ").");
 
     thread scripts\server\_settings::init();
     thread maps\mp\_umiEditor::init();
@@ -104,6 +104,7 @@ init()
     thread scripts\players\_players::onWaveIntermissionEnds();
     thread verifyRconPassword();
 
+    noticePrint("Server is running and waiting for players to connect.");
     runTestCode();
 }
 

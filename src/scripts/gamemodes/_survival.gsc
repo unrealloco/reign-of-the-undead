@@ -209,12 +209,9 @@ beginGame()
     }
     level.zomIdleBehavior = "magic";
 
-    /// @bug maps trying to precache after this wait call--it fails
-    // try to eliminate this wait, see if that works ok.
     wait 5;
 
     thread mainGametype();
-    //thread watchEnd();
 }
 
 watchEnd()
@@ -223,9 +220,10 @@ watchEnd()
 
     level endon( "game_ended" );
     level endon("wave_finished");
-    //wait 5;
+
     while (1) {
         if (level.alivePlayers == 0) {
+            noticePrint("The players lost the game.");
             thread scripts\gamemodes\_gamemodes::endMap("All survivors have died!");
             return;
         }
@@ -282,6 +280,7 @@ mainGametype()
         else {startSpecialWave(level.waveOrder[level.waveOrderCurrentWave]);}
     }
 
+    noticePrint("The players won the game.");
     thread scripts\gamemodes\_gamemodes::endMap("All waves have been held off!", 1);
 }
 
@@ -460,6 +459,8 @@ startRegularWave()
     scripts\players\_players::resetSpawning();
     level.intermission = 0;
 
+    noticePrint("Beginning wave " + level.currentWave + ": regular zombies");
+
     // Start bringing in the ZOMBIES!!!
     level notify("start_monitoring");
     thread watchEnd();
@@ -603,6 +604,8 @@ startSpecialWave(type)
 
     scripts\players\_players::resetSpawning();
     level.intermission = 0;
+
+    noticePrint("Beginning wave " + level.currentWave + ": " + level.waveType + " zombies");
 
     // Start bringing in the ZOMBIES!!!
     level notify("start_monitoring");

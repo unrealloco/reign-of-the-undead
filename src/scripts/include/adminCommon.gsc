@@ -407,8 +407,6 @@ onPlayerConnect()
 
         player.isAdmin = false;
 
-        /// @bug: old comment? 'player getGuid()' returns the profile name, if player is the launching player
-        /// using 'Start New Server'
         guid = getSubStr(player getGuid(), 24, 32);
         debugPrint("connecting guid: " + guid, "val");
         debugPrint("dedicated: " + getDvar("dedicated"), "val");
@@ -417,7 +415,7 @@ onPlayerConnect()
         if (level.dedicated == "listen server") {
             // getGuid() returns garbage if a listen server, so force admin
             guid = getDvar("admin_forced_guid");
-            noticePrint("Listen server: Host player's guid forced to " + guid);
+            debugPrint("Listen server: Host player's guid forced to " + guid, "val");
         } else if (level.dedicated == "dedicated LAN server") {
             // Do nothing
         } else if (level.dedicated == "dedicated internet server") {

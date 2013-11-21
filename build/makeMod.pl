@@ -1132,9 +1132,11 @@ sub buildNonDebugScriptFile
         } elsif ($line =~ m!</debug>.*!) {
             $removeLine = 1;
             $inMultiline = 0;
-        } elsif ($line =~ m!//\s.*<debug />.*!) {
+        } elsif ($line =~ m!\/\/\s.*<debug \/>.*!) {
             $removeLine = 1;
-        } elsif ($line =~ m!^\s*debugPrint\(".*!) {
+        } elsif ($line =~ m!^\s*debugPrint\(".*!) {#    debugPrint("string"...)
+            $removeLine = 1;
+        } elsif ($line =~ m!^\s+debugPrint\(.*!) { #    debugPrint(currentMap + ...)
             $removeLine = 1;
         }
 

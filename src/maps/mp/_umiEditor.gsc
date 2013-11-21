@@ -115,7 +115,7 @@ watchDevelopmentMenuResponses()
 
         // If menu isn't an admin menu, then bail
         if ((menu != "development") && (menu != "clientcmd")) {
-            debugPrint("Menu is not the development menu.", "val"); // <debug />
+            //debugPrint("Menu is not the development menu.", "val");
             continue;
         }
 
