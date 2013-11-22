@@ -43,21 +43,23 @@
 
 init()
 {
-    //precacheMenu("development");
-
-    // Used as default weapon/shop models when running ROZO maps
+    // Used as default weapon/shop models when running UMI maps
     precacheModel("ad_sodamachine");
     precacheModel("com_plasticcase_green_big");
     precacheModel("prop_flag_american"); // used for linked waypoints
     precacheModel("prop_flag_russian");  // used for unlinked waypoints
     precacheModel("prop_flag_brit");     // used for linking waypoints
 
-    if ((getDvarInt("developer_script") == 1) && (getDvarInt("developer") == 1)) {
+    if ((getDvarInt("developer_script") == 1) &&
+        (getDvarInt("developer") == 1) &&
+        (getDvarInt("dedicated") == 0))     // Listen server
+    {
         level.developerMode = true;
     } else {
         level.developerMode = false;
         noticePrint("Map: Developer mode is off, UMI Map Editor is unavailable");
-        noticePrint("Map: To enable developer mode, playMod.bat requires '+set developer 1 +set developer_script 1'");
+        noticePrint("Map: To enable developer mode, playMod.bat/host.bat requires '+set developer 1 +set developer_script 1'");
+        noticePrint("Map: Also, the server must be a Listen server.");
     }
 }
 
@@ -103,6 +105,9 @@ watchDevelopmentMenuResponses()
 
     self endon("disconnect");
     // threaded on each admin player
+
+    while (!(isDefined(level.developerMode))) {wait 1;} // wait until developerMode is defined
+    if (!(level.developerMode)) {return;} // don't listen for commands if developerMode is off
 
     while (1) {
         self waittill("menuresponse", menu, response);
