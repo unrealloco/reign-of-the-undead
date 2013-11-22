@@ -268,7 +268,7 @@ removeAllWarnings(admin)
 
 
 /**
- * @brief Demotes a player one rank, or 500 rank points, whichever is less
+ * @brief Demotes a player one rank, or 750 rank points, whichever is less
  *
  * @param admin The admin that is demoting the player
  *
@@ -294,9 +294,9 @@ demotePlayer(admin)
             self.pers["rankxp"] = newRankXP;
             self scripts\players\_persistence::statSet("rankxp", newRankXP);
         } else if ((currentRankId == 0) && (currentPrestigeLevel > 0)) {
-            // we will take 500 points and roll back their prestige level & reset rank
+            // we will take 750 points and roll back their prestige level & reset rank
             newRankId = level.maxRank;
-            newRankXP = int(level.rankTable[newRankId][7]) + currentRankXP - 500;
+            newRankXP = int(level.rankTable[newRankId][7]) + currentRankXP - 750;
 
             // set new rank xp
             self.pers["rankxp"] = newRankXP;
@@ -325,7 +325,7 @@ demotePlayer(admin)
             currentRankMinXP = int(level.rankTable[currentRankId][2]);
             previousRankId = currentRankId - 1;
             previousRankMinXP = int(level.rankTable[previousRankId][2]);
-            if (currentRankXP - previousRankMinXP < 500) {
+            if (currentRankXP - previousRankMinXP < 750) {
                 // we will demote them to the beginning of the previous rank
                 // set new rank xp
                 self.pers["rankxp"] = previousRankMinXP;
@@ -344,14 +344,14 @@ demotePlayer(admin)
                 self setRank(self.pers["rank"], self.pers["prestige"]);
 
                 rankTaken = true;
-            } else if (currentRankXP - currentRankMinXP >= 500){
+            } else if (currentRankXP - currentRankMinXP >= 750){
                 // we will take 500 rank points, and will not reduce their rank
-                newRankXP = currentRankXP - 500;
+                newRankXP = currentRankXP - 750;
                 self.pers["rankxp"] = newRankXP;
                 self scripts\players\_persistence::statSet("rankxp", newRankXP);
             } else {
                 // we will take 500 rank points and reduce their rank
-                newRankXP = currentRankXP - 500;
+                newRankXP = currentRankXP - 750;
                 self.pers["rankxp"] = newRankXP;
                 self scripts\players\_persistence::statSet("rankxp", newRankXP);
 
@@ -379,11 +379,11 @@ demotePlayer(admin)
             unlockPlayer(self);
             return "Player demoted one rank";
         } else {
-            noticePrint("Admin " + admin.name + " took 500 rank points from " + self.name);
-            admin thread informPlayerOfAdminAction(self, "negative", "Admin took 500 rank points from you.");
-            admin thread adminActionConsoleMessage("Admin took 500 rank points from " + self.name);
+            noticePrint("Admin " + admin.name + " took 750 rank points from " + self.name);
+            admin thread informPlayerOfAdminAction(self, "negative", "Admin took 750 rank points from you.");
+            admin thread adminActionConsoleMessage("Admin took 750 rank points from " + self.name);
             unlockPlayer(self);
-            return "Took 500 rank points";
+            return "Took 750 rank points";
         }
     }
     return "Command failed";
@@ -391,7 +391,7 @@ demotePlayer(admin)
 
 
 /**
- * @brief Promotes a player one rank, or 500 rank points, whichever is less
+ * @brief Promotes a player one rank, or 750 rank points, whichever is less
  *
  * @param admin The admin that is promoting the player
  *
@@ -408,13 +408,13 @@ promotePlayer(admin)
         currentRankXP = self scripts\players\_rank::getRankXP();
         currentRankEndingXp = int(level.rankTable[rankId][7]);
         difference = currentRankEndingXp - currentRankXP;
-        if (difference <= 500) {
+        if (difference <= 750) {
             // promote to next rank
             value = difference + 1;
             rankGiven = true;
         } else {
-            // give 500 rank points
-            value = 500;
+            // give 750 rank points
+            value = 750;
         }
 
         self scripts\players\_rank::incRankXP(value);
@@ -431,11 +431,11 @@ promotePlayer(admin)
             unlockPlayer(self);
             return "Player promoted one rank";
         } else {
-            noticePrint("Admin " + admin.name + " gave 500 rank points to " + self.name);
-            admin thread informPlayerOfAdminAction(self, "positive", "Admin gave 500 rank points to you.");
-            admin thread adminActionConsoleMessage("Admin gave 500 rank points to " + self.name);
+            noticePrint("Admin " + admin.name + " gave 750 rank points to " + self.name);
+            admin thread informPlayerOfAdminAction(self, "positive", "Admin gave 750 rank points to you.");
+            admin thread adminActionConsoleMessage("Admin gave 750 rank points to " + self.name);
             unlockPlayer(self);
-            return "Gave 500 rank points";
+            return "Gave 750 rank points";
         }
     }
     return "Command failed";
