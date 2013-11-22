@@ -48,7 +48,6 @@ precache()
     level.fx["boom"] = loadfx("explosions/pyromaniac");
     precacheStatusIcon("icon_admin");
     precacheHeadIcon("headicon_admin");
-//     precacheModel("m14_reflex_mp");
 
     precacheMenu("admin");
     precacheMenu("admin_kick");
@@ -56,7 +55,6 @@ precache()
     precacheMenu("admin_temp_ban");
     precacheMenu("admin_warn");
     precacheMenu("admin_changemap");
-//    precacheMenu("admin_dev"); /// @todo remove, deprecated menu
 }
 
 /**
@@ -483,12 +481,9 @@ getPlayer(playerEntityNumber, pickingType)
 {
     debugPrint("in adminCommon::getPlayer()", "fn", level.lowVerbosity);
 
-    if( pickingType == "number" )
+    if (pickingType == "number") {
         return getPlayerByEntityNumber(playerEntityNumber);
-/*    else
-        return getPlayerByName( playerNumber );*/
-    //else
-    //  assertEx( "getPlayer( arg1, pickingType ) called with wrong type, vaild are 'number' and 'nickname'\n" );
+    }
 }
 
 

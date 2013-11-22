@@ -731,7 +731,7 @@ loadScoutPrimaryAbility(ability)
             self setperk("specialty_holdbreath");
             self.canZoom = true;
         break;
-        case "AB3": // Last Man Standing  @todo remove deadly bullets in UI
+        case "AB3": // Last Man Standing
             self.hasLastManStanding = true;
         break;
     }

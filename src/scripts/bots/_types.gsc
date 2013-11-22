@@ -403,7 +403,7 @@ bossSpecialAttack()
 
 manyBossesSpecialAttack()
 {
-    debugPrint("in _types::bossSpecialAttack()", "fn", level.nonVerbose);
+    debugPrint("in _types::manyBossesSpecialAttack()", "fn", level.nonVerbose);
 
     self endon("death");
     self endon("boss_fake_death");

@@ -100,6 +100,8 @@ precache()
  */
 uav()
 {
+    debugPrint("in _players::uav()", "fn", level.nonVerbose);
+
     level endon("game_ended");
 
     if (getDvar("ui_always_show_zombies") == "0") {
@@ -298,10 +300,12 @@ isNewPlayer()
  * we help them out a bit.  When they go down, we automatically revive them, cure
  * them if needed, and give them some spending money.  We also inform them that
  * running is the key to survival.
+ *
+ * @returns nothing
  */
 assistNewPlayers()
 {
-    debugPrint("in _players::resetSpawning()", "fn", level.nonVerbose);
+    debugPrint("in _players::assistNewPlayers()", "fn", level.nonVerbose);
 
     self thread revive();
     self.sessionstate = "playing";
@@ -923,7 +927,7 @@ correctPlayerCounts()
         activePlayers = 0;
         players = level.players;
         for (i=0; i<players.size; i++) {
-            /// @todo spectators have isActive == false, and isAlive == true
+            // spectators have isActive == false, and isAlive == true
             if ((isDefined(players[i].isActive)) && (players[i].isActive)) {activePlayers++;}
             if ((isDefined(players[i].isAlive)) && (players[i].isAlive)) {alivePlayers++;}
             if ((isDefined(players[i].isDown)) && (players[i].isDown)) {downPlayers++;}
@@ -950,7 +954,6 @@ cleanup(message)
         noticePrint("Player disconnected before _players::cleanup() could run.");
         if (isDefined(message)) {noticePrint(message);}
         markAdminMenuAsDirty();
-        /// @todo need to check players array to recalculate these numbers
         level.activePlayers -= 1;
         level.alivePlayers -= 1;
         return;
@@ -1071,8 +1074,15 @@ markAdminMenuAsDirty()
     }
 }
 
+/**
+ * @brief Are enough players alive to permit spawning a new player?
+ *
+ * @returns boolean Whether to allow spawning or not
+ */
 enoughPlayersAlive()
 {
+    debugPrint("in _players::enoughPlayersAlive()", "fn", level.nonVerbose);
+
     if ((level.activePlayers == 0) ||
         (level.alivePlayers / level.activePlayers >= level.dvar["game_spawn_requirement"]))
     {
@@ -1468,27 +1478,7 @@ joinSpectator()
 
         spawns = getentarray("mp_global_intermission", "classname");
         debugPrint("Trying to spawn " + self.name + " as spectator; spawns.size = " + spawns.size, "val");
-        /// bug comes from menu response from player changing to spectator mid-game
-        /// happened on mp_surv_church, Legacy map mp_surv_church doesn't use waypoints
-        /// happened on mp_surv_plane, Legacy map mp_surv_plane doesn't use waypoints.
-        /// happened on mp_fnrp_movies, not a legacy map
-        /// happened on mp_fnrp_bigfight, not a legacy map, but has issues: file 'maps/mp/mp_fnrp_bigfight.gsc', line 29
-// RandomInt parm: 0
-// ******* script runtime error *******
-// RandomInt parm must be positive integer.
-// : (file 'scripts/players/_players.gsc', line 1264)
-//         spawn = spawns[randomint(spawns.size)]; /// @bug randomint param 0 bug
-//                        *
-// Error: called from:
-// (file 'scripts/players/_menus.gsc', line 244)
-//     self scripts\players\_players::joinSpectator();
-//          *
-// Error: started from:
-// (file 'scripts/players/_menus.gsc', line 102)
-//   self waittill("menuresponse", menu, response);
-//        *
-// Error: ************************************
-    spawn = spawns[randomint(spawns.size)]; /// @bug randomint param 0 bug
+        spawn = spawns[randomint(spawns.size)]; /// @bug randomint param 0 bug
 
         self setclientdvar("cg_thirdperson", 1);
 

@@ -50,7 +50,7 @@ init()
  * @brief Loads game settings
  *
  * Default, minimum, and maximum values are defined here.  These default values
- * are loaded unless they are over-ridden by settings made elsewhere (@todo: where? in config files?)
+ * are loaded unless they are over-ridden by settings made in config files
  *
  * @returns nothing
  */

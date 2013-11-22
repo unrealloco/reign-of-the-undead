@@ -167,6 +167,11 @@ watchDevelopmentMenuResponses()
     } // End while(1)
 }
 
+/**
+ * @brief Inializes the UMI Map Editor
+ *
+ * @returns nothing
+ */
 initMapEditor()
 {
     debugPrint("in _umiEditor::initMapEditor()", "fn", level.nonVerbose);
@@ -241,6 +246,11 @@ devToggleGiveWaypointsMode()
     }
 }
 
+/**
+ * @brief Changes the waypoint type to the next possible type
+ *
+ * @returns nothing
+ */
 devCycleWaypointType()
 {
     debugPrint("in _umiEditor::devCycleWaypointType()", "fn", level.nonVerbose);
@@ -355,6 +365,7 @@ devFinishLink()
  *
  * @param waypointA integer The index of the first waypoint
  * @param waypointB integer The index of the second waypoint
+ * @param deferUpdates boolean Whether to redraw links or defer the updates
  *
  * @returns nothing
  * @since RotU 2.2.2
@@ -1339,7 +1350,7 @@ getDistance(struct) {return struct.distance;} /// callback
  */
 devFindNearestWaypointIndex(origin)
 {
-    debugPrint("in _umiEditor::devFindNearestWaypoint()", "fn", level.nonVerbose);
+    debugPrint("in _umiEditor::devFindNearestWaypointIndex()", "fn", level.nonVerbose);
 
     nearestWp = 0;
     nearestDistance = 9999999999;
@@ -1742,11 +1753,11 @@ devDumpWaypointLinks()
 }
 
 /**
-* @brief UMI gives a player a weapons shop that they can emplace
-*
-* @returns nothing
-* @since RotU 2.2.1
-*/
+ * @brief UMI gives a player a weapons shop that they can emplace
+ *
+ * @returns nothing
+ * @since RotU 2.2.1
+ */
 devGiveEquipmentShop()
 {
     debugPrint("in _umiEditor::devGiveEquipmentShop()", "fn", level.nonVerbose);
@@ -1774,11 +1785,11 @@ devGiveEquipmentShop()
 }
 
 /**
-* @brief UMI emplaces an equipment shop a player is carrying
-*
-* @returns nothing
-* @since RotU 2.2.1
-*/
+ * @brief UMI emplaces an equipment shop a player is carrying
+ *
+ * @returns nothing
+ * @since RotU 2.2.1
+ */
 devEmplaceEquipmentShop()
 {
     debugPrint("in _umiEditor::devEmplaceEquipmentShop()", "fn", level.nonVerbose);
@@ -1890,15 +1901,15 @@ devEmplaceEquipmentShop()
 }
 
 /**
-* @brief UMI draws a colored laser  at the location and direction specified
-*
-* @param color string The color of the laser: red, green, blue, white, yellow, magenta, cyan
-* @param origin vector The location to place the laser
-* @param direction vector the direction to shine the laser
-*
-* @returns nothing
-* @since RotU 2.2.1
-*/
+ * @brief UMI draws a colored laser  at the location and direction specified
+ *
+ * @param color string The color of the laser: red, green, blue, white, yellow, magenta, cyan
+ * @param origin vector The location to place the laser
+ * @param direction vector the direction to shine the laser
+ *
+ * @returns nothing
+ * @since RotU 2.2.1
+ */
 devDrawLaser(color, origin, direction)
 {
     debugPrint("in _umiEditor::devDrawLaser()", "fn", level.lowVerbosity);
@@ -1926,11 +1937,11 @@ devDrawLaser(color, origin, direction)
 }
 
 /**
-* @brief UMI emplaces a weapon shop a player is carrying
-*
-* @returns nothing
-* @since RotU 2.2.1
-*/
+ * @brief UMI emplaces a weapon shop a player is carrying
+ *
+ * @returns nothing
+ * @since RotU 2.2.1
+ */
 devEmplaceWeaponShop()
 {
     debugPrint("in _umiEditor::devEmplaceWeaponShop()", "fn", level.nonVerbose);
@@ -2042,7 +2053,7 @@ devEmplaceWeaponShop()
 /**
  * @brief Initializes weapon shops so they can be edited
  *
- * @param targetname string The name of the entities' targetname attribute,
+ * @param weaponShops string The name of the entities' targetname attribute,
  * e.g. @code buildWeaponShopsByTargetname("ammostock"); @endcode
  *
  * @returns nothing
@@ -2106,13 +2117,13 @@ initEquipmentShopEditor(equipmentShops)
 }
 
 /**
-* @brief UMI permits a player pick up and move am equipment shop
-*
-* @param shop entity The shop to pick up
-*
-* @returns nothing
-* @since RotU 2.2.1
-*/
+ * @brief UMI permits a player pick up and move am equipment shop
+ *
+ * @param shop entity The shop to pick up
+ *
+ * @returns nothing
+ * @since RotU 2.2.1
+ */
 devMoveEquipmentShop(shop)
 {
     debugPrint("in _umiEditor::devMoveEquipmentShop()", "fn", level.nonVerbose);
@@ -2133,13 +2144,13 @@ devMoveEquipmentShop(shop)
 }
 
 /**
-* @brief UMI permits a player pick up and move a weapon shop
-*
-* @param shop entity The shop to pick up
-*
-* @returns nothing
-* @since RotU 2.2.1
-*/
+ * @brief UMI permits a player pick up and move a weapon shop
+ *
+ * @param shop entity The shop to pick up
+ *
+ * @returns nothing
+ * @since RotU 2.2.1
+ */
 devMoveWeaponShop(shop)
 {
     debugPrint("in _umiEditor::devMoveWeaponShop()", "fn", level.nonVerbose);
@@ -2160,11 +2171,11 @@ devMoveWeaponShop(shop)
 }
 
 /**
-* @brief UMI gives a player a weapons shop that they can emplace
-*
-* @returns nothing
-* @since RotU 2.2.1
-*/
+ * @brief UMI gives a player a weapons shop that they can emplace
+ *
+ * @returns nothing
+ * @since RotU 2.2.1
+ */
 devGiveWeaponsShop()
 {
     debugPrint("in _umiEditor::devGiveWeaponsShop()", "fn", level.nonVerbose);
@@ -2190,11 +2201,11 @@ devGiveWeaponsShop()
 }
 
 /**
-* @brief UMI deletes the shop closest to the player
-*
-* @returns nothing
-* @since RotU 2.2.1
-*/
+ * @brief UMI deletes the shop closest to the player
+ *
+ * @returns nothing
+ * @since RotU 2.2.1
+ */
 devDeleteClosestShop()
 {
     debugPrint("in _umiEditor::devDeleteClosestShop()", "fn", level.nonVerbose);
@@ -2245,11 +2256,11 @@ devDeleteClosestShop()
 }
 
 /**
-* @brief UMI writes a tradespawn file to the server log
-*
-* @returns nothing
-* @since RotU 2.2.1
-*/
+ * @brief UMI writes a tradespawn file to the server log
+ *
+ * @returns nothing
+ * @since RotU 2.2.1
+ */
 devSaveTradespawns()
 {
     debugPrint("in _umiEditor::devSaveTradespawns()", "fn", level.nonVerbose);
@@ -2418,11 +2429,11 @@ devSaveWaypoints()
 
 
 /**
-* @brief UMI writes entities with defined classname and/or targetname properties to the server log
-*
-* @returns nothing
-* @since RotU 2.2.1
-*/
+ * @brief UMI writes entities with defined classname and/or targetname properties to the server log
+ *
+ * @returns nothing
+ * @since RotU 2.2.1
+ */
 devDumpEntities()
 {
     debugPrint("in _umiEditor::devDumpEntities()", "fn", level.nonVerbose);

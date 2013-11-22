@@ -1086,6 +1086,8 @@ max(a, b)
  */
 matrixCross(A, B)
 {
+    debugPrint("in matrix::matrixCross()", "fn", level.lowVerbosity);
+
     /// @internal, so indices are zero-indexed
 
     // S is a skew-symmetric matrix of A

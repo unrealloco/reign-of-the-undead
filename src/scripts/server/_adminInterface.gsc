@@ -37,17 +37,8 @@
 #include scripts\include\utility;
 #include scripts\include\adminCommon;
 
-// Code for setting minimum fall height before player is damaged
-/*        self setClientdvar( "bg_fallDamageMinHeight", "9999" );
-        self setclientdvar( "bg_fallDamageMinHeight", "9998" );
-        self setclientdvar( "jump_height", "999" );*/
-
-
 init()
 {}
-
-
-
 
 /**
  * @brief is the player an admin?

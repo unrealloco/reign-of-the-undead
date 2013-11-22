@@ -62,6 +62,8 @@
  */
 modName()
 {
+    debugPrint("in _umi::modName()", "fn", level.nonVerbose);
+
     if (isDefined(level.modName)) {return level.modName;}
     else {
         level.modName = "rotu";
@@ -77,6 +79,8 @@ modName()
  */
 nativeMapType()
 {
+    debugPrint("in _umi::nativeMapType()", "fn", level.nonVerbose);
+
     if (isDefined(level.nativeMapType)) {return level.nativeMapType;}
     else {return "";}
 }
@@ -91,6 +95,8 @@ nativeMapType()
  */
 setNativeMapType(nativeMapType)
 {
+    debugPrint("in _umi::setNativeMapType()", "fn", level.nonVerbose);
+
     level.nativeMapType = nativeMapType;
 }
 
@@ -414,6 +420,7 @@ deleteSabotageEntities()
  *
  * @param equipmentShops string Space-separated list of tradespawn array indices,
  * e.g. @code buildShopsByTradespawns("1 3 5 7"); @endcode
+ * @param havePrefabModels boolean Does the map already have prefab shop models
  *
  * @pre tradespawns have been loaded into level.tradespawns
  * @returns nothing
@@ -544,6 +551,7 @@ buildWeaponShopsByTargetname(targetname, loadTime)
  *
  * @param weaponShops string Space-separated list of tradespawn array indices,
  * e.g. @code buildWeaponShopsByTradespawns("0 2 4 6"); @endcode
+ * @param havePrefabModels boolean Does the map already have prefab weapon shop models
  *
  * @pre tradespawns have been loaded into level.tradespawns
  * @returns nothing
@@ -847,6 +855,8 @@ buildWeaponPickupByClassname(classname, itemText, weapon, weaponType)
 /**
  * @brief Sets whether the BTD waypoints are preferred if both BTD and CSV waypoints are available
  *
+ * @param value boolean Whether BTD waypoints are preferred over CSV waypoints
+ *
  * @returns nothing
  * @since RotU 2.2.1
  */
@@ -1019,6 +1029,8 @@ isUmiMap()
  */
 privateGuessModName()
 {
+    debugPrint("in _umi::privateGuessModName()", "fn", level.lowVerbosity);
+
     return "rotu";
 }
 

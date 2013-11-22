@@ -348,6 +348,8 @@ sub quality()
 
         # only test *.gsc files
         next unless ($file =~ /\.gsc/);
+        next if ($file =~ /_waypoints\.gsc/);       # We claim no copyright to waypoints/tradespawns
+        next if ($file =~ /_tradespawns\.gsc/);
         open(R, "<$file") or die "can't open file: $!";
         # slurp in file
         my $contents = do { local $/; <R> };
@@ -431,16 +433,21 @@ sub quality()
             $path =~ s!src\/!!;
             $path =~ s!\.gsc!!;
             $path =~ s!\/!\\!g;
-            unless ($functionName eq "init") {
+            unless (($functionName eq "init") || ($functionName eq "main")) {
                 my $function = "$path\:\:$functionName";
                 $functionCounts{$function} = 0;
             }
 
             # Now get back to checking for proper function entrance debug statements
+            # No debug statements in these functions
+            next if (($functionLine =~ /main\(\)/) ||
+                     ($functionLine =~ /load_tradespawns\(\)/) ||
+                     ($functionLine =~ /load_waypoints\(\)/));
+
             my $testLine = $lines[$index+2];
             my $pattern = qr/    debugPrint\(\"in $filename\:\:$functionName\(\)\", \"fn\", level/;
             unless ($testLine =~ $pattern){
-                unless ($testLine =~ /most-called function/){
+                unless ($testLine =~ /most-called function/) {
                     # Add exception for the 21 most-used functions (~95% of all function calls)
                     $functionEntrance .= "Missing or wrong function entrance debug statement found: $relFile:$lineNumber:$functionLine";
                 }
@@ -1726,5 +1733,7 @@ sub selectFiles()
     return if ($file_dir =~ /\.svn/);   # skip .svn folder
     return if ($file_dir =~ /rotu21/);   # skip legacy rotu21 folder -- ok to remove when rotu21 folder is deleted
     return if -d $file_dir;             # don't list directories themselves
+    return if ($file_dir =~ /_spawnlogic\.gsc/);   # skip specific files
+    return if ($file_dir =~ /_spawnlogic_cod_original\.gsc/);   # skip specific files
     push @files, $file_dir;# if(/\.pl$/i);
 }

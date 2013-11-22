@@ -1303,7 +1303,7 @@ isInView(target)
     aimPoint = target.origin + (0,0,target.turretAimHeight);
     dist = distance(self.gun.origin, aimPoint);
 
-    turretRange = 2160; /// @todo make range configurable
+    turretRange = 2160;
     if (dist < turretRange) {
         visibilityAmount = target SightConeTrace(self.gun.origin, self);
         if (visibilityAmount != 0) {return dist;}

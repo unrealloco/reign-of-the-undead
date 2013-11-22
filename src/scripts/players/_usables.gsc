@@ -54,8 +54,6 @@ debugUsables()
     for (i=0; i<useObjects.size; i++) {
         if ((useObjects[i].type == "extras") ||
             (useObjects[i].type == "ammobox")) {
-/*            debugPrint(useObjects[i].type + " located at " + useObjects[i].origin, "val");
-            debugPrint("angles: " + useObjects[i].angles, "val"); // all (0,0,0)*/
         }
     }
 }

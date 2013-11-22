@@ -152,7 +152,7 @@ startMapVote()
 
     // Add a none of the above option.  If this option wins, a new map selection
     // is done and voting restarts.  Limited to once per map
-    noneOfTheAbove = true; /// @todo create server.cfg setting?
+    noneOfTheAbove = true;
     if ((noneOfTheAbove) && (!level.notaOptionUsed)) {
         level.votingMaps[level.votingMaps.size] = newMapItem("nota", "SURV");
         level.numberOfMaps++;
