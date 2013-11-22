@@ -117,7 +117,9 @@ uav()
             }
             wait visibleDuration;
             for (i = 0; i < level.players.size; i++) {
-                level.players[i] setClientDvar("g_compassShowEnemies", 0);
+                if (level.players[i].curClass != "scout") { // do not turn off scout's drone ability
+                    level.players[i] setClientDvar("g_compassShowEnemies", 0);
+                }
             }
         }
     }

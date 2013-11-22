@@ -759,7 +759,7 @@ loadScoutPassiveAbility(ability)
             /// @todo in UI, but not implemented
         break;
         case "AB4": // Scouting Drone
-            /// @todo in UI, but not implemented
+            self setClientDvar("g_compassShowEnemies", 1);
         break;
     }
 }
