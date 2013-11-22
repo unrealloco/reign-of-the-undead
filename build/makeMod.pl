@@ -80,6 +80,7 @@ sub version();
 sub help();
 sub report;
 sub quality();
+sub release();
 sub checksumUnreadable();
 sub updateUploadFolder();
 sub rebuildScriptsOnly();
@@ -118,7 +119,7 @@ my $checksumFile = "$dir/build/checksums.txt";
 
 
 # Process command line args
-getopts('fcqhvsd'); # all boolean switches
+getopts('fcqhvsdr:'); # all boolean switches, except r, which takes a parameter
 if ($opt_h){
     # Help
     help();
@@ -141,6 +142,10 @@ if ($opt_h){
     # Quality checks
     print "Performing code quality checks...\n";
     quality();
+} elsif ($opt_r){
+    # Build a release
+    print "Creating a RotU release named $opt_r\n";
+    release();
 } else {
     # Build mod
 
@@ -157,6 +162,146 @@ if ($opt_h){
     writeUpdatedChecksumFile();
 
     print $report;
+}
+
+sub release()
+{
+    $folder = $config{releasePath}."\\".$opt_r;
+    mkdir $folder;
+
+    my $file = "";
+    my $defaultfile = "";
+
+    # Copy test map from svn working copy
+    my $mapFolder = $folder.'\mp_surv_testmap';
+    mkdir $mapFolder;
+    my $srcFolder = $config{workPath};
+    $srcFolder =~ s!src!map_src\\contrib\\test_map\\usermaps\\mp_surv_testmap!;
+    my @files = ("mp_surv_testmap.ff", "mp_surv_testmap.iwd", "mp_surv_testmap_load.ff");
+    foreach $file (@files) {
+        $cmd = 'copy /y'.' "'.$srcFolder.'\\'.$file.'" "'.$mapFolder.'\\'.$file.'"';
+        # for robocopy, a byte-shifted return code of 3 or less is success
+        system($cmd) / 256 <= 3 or die "system $cmd failed: $?";
+    }
+    report "Copied test map to $folder\n";
+
+    # Copy config files from svn working copy
+    foreach $file (@{$config{configFiles}}) {
+        $defaultfile = $file;
+        $defaultfile =~ s/.cfg/_default.cfg/;
+        $cmd = 'copy /y'.' "'.$config{workPath}.'\\'.$defaultfile.'" "'.$folder.'\\'.$file.'"';
+        # for robocopy, a byte-shifted return code of 3 or less is success
+        system($cmd) / 256 <= 3 or die "system $cmd failed: $?";
+    }
+    report "Copied config files to $folder\n";
+
+    # Copy batch files from svn working copy
+    my @files = ("playMod.bat", "host.bat", "join.bat");
+    foreach $file (@files) {
+        $defaultfile = $file;
+        $defaultfile =~ s/.bat/_default.bat/;
+        $cmd = 'copy /y'.' "'.$config{workPath}.'\\'.$defaultfile.'" "'.$folder.'\\'.$file.'"';
+        # for robocopy, a byte-shifted return code of 3 or less is success
+        system($cmd) / 256 <= 3 or die "system $cmd failed: $?";
+    }
+    report "Copied batch files to $folder\n";
+
+    # Do a full non-debug build
+    my $cmd = 'perl makeMod.pl -f';
+    system($cmd) == 0 or die "system $cmd failed: $?";
+
+    my $copyCmd = 'robocopy ';
+    my $switches = '/COPYALL /NFL /NDL /NJH  /NJS ';
+
+    # Copy rotu_svr_scripts.iwd over
+    $file = 'rotu_svr_scripts.iwd ';
+    $cmd = $copyCmd.' "'.$config{modPath}.'" "'.$folder.'" '.$file.$switches;
+    $cmd =~ s!\\!\/!g;
+    # for robocopy, a byte-shifted return code of 3 or less is success
+    system($cmd) / 256 <= 3 or die "system $cmd failed: $?";
+    report "Copied rotu_svr_scripts.iwd to $folder\n";
+
+    # Copy rotu_svr_custom.iwd over
+    $file = 'rotu_svr_custom.iwd ';
+    $cmd = $copyCmd.' "'.$config{modPath}.'" "'.$folder.'" '.$file.$switches;
+    $cmd =~ s!\\!\/!g;
+    # for robocopy, a byte-shifted return code of 3 or less is success
+    system($cmd) / 256 <= 3 or die "system $cmd failed: $?";
+    report "Copied rotu_svr_custom.iwd to $folder\n";
+
+    # Copy yz_custom.iwd over
+    $file = 'yz_custom.iwd ';
+    $cmd = $copyCmd.' "'.$config{modPath}.'" "'.$folder.'" '.$file.$switches;
+    $cmd =~ s!\\!\/!g;
+    # for robocopy, a byte-shifted return code of 3 or less is success
+    system($cmd) / 256 <= 3 or die "system $cmd failed: $?";
+    report "Copied yz_custom.iwd to $folder\n";
+
+    # Copy rotu_svr_mapdata.iwd over
+    $file = 'rotu_svr_mapdata.iwd ';
+    $cmd = $copyCmd.' "'.$config{modPath}.'" "'.$folder.'" '.$file.$switches;
+    $cmd =~ s!\\!\/!g;
+    # for robocopy, a byte-shifted return code of 3 or less is success
+    system($cmd) / 256 <= 3 or die "system $cmd failed: $?";
+    report "Copied rotu_svr_mapdata.iwd to $folder\n";
+
+    # Copy sound.iwd over
+    $file = 'sound.iwd ';
+    $cmd = $copyCmd.' "'.$config{modPath}.'" "'.$folder.'" '.$file.$switches;
+    $cmd =~ s!\\!\/!g;
+    # for robocopy, a byte-shifted return code of 3 or less is success
+    system($cmd) / 256 <= 3 or die "system $cmd failed: $?";
+    report "Copied sound.iwd to $folder\n";
+
+    # Copy 2d.iwd over
+    $file = '2d.iwd ';
+    $cmd = $copyCmd.' "'.$config{modPath}.'" "'.$folder.'" '.$file.$switches;
+    $cmd =~ s!\\!\/!g;
+    # for robocopy, a byte-shifted return code of 3 or less is success
+    system($cmd) / 256 <= 3 or die "system $cmd failed: $?";
+    report "Copied 2d.iwd to $folder\n";
+
+    # Copy weapons.iwd over
+    $file = 'weapons.iwd ';
+    $cmd = $copyCmd.' "'.$config{modPath}.'" "'.$folder.'" '.$file.$switches;
+    $cmd =~ s!\\!\/!g;
+    # for robocopy, a byte-shifted return code of 3 or less is success
+    system($cmd) / 256 <= 3 or die "system $cmd failed: $?";
+    report "Copied weapons.iwd to $folder\n";
+
+    # Copy mod.ff over
+    $file = 'mod.ff ';
+    $cmd = $copyCmd.' "'.$config{modPath}.'" "'.$folder.'" '.$file.$switches;
+    $cmd =~ s!\\!\/!g;
+    # for robocopy, a byte-shifted return code of 3 or less is success
+    system($cmd) / 256 <= 3 or die "system $cmd failed: $?";
+    report "Copied mod.ff to $folder\n";
+
+    # Build a debug version of rotu_svr_scripts
+    my $cmd = 'perl makeMod.pl -sd';
+    system($cmd) == 0 or die "system $cmd failed: $?";
+
+    # Copy debug version of rotu_svr_scripts
+    $file = "rotu_svr_scripts.iwd";
+    $debugFile = "rotu_svr_scripts_debug.iwd";
+    $cmd = 'copy /y'.' "'.$config{modPath}.'\\'.$file.'" "'.$folder.'\\'.$debugFile.'"';
+    # for robocopy, a byte-shifted return code of 3 or less is success
+    system($cmd) / 256 <= 3 or die "system $cmd failed: $?";
+    report "Copied debug version of rotu_svr_scripts.iwd to $folder\n";
+
+    my $cwd = Cwd::cwd();
+    my $zipCmd = $cwd.'/7za.exe a -tzip -xr!?svn ';
+    my $archive = "";
+
+    $archive = $config{releasePath}.'\\'.$opt_r.'.zip';
+    deleteFile($archive);
+    $cmd = $zipCmd.'"'.$archive.'" '.$folder;
+    $cmd =~ s!\\!\/!g;
+    system($cmd) == 0 or die "system $cmd failed: $?";
+    report "Saved zip archive of release to $archive\n";
+
+    print $report;
+    exit 0;
 }
 
 sub quality()
@@ -900,28 +1045,31 @@ sub help()
 {
     version();
     print "\n";
-    print "  Usage: $0 [-f | -c | -d | -q | -s | -h | -v]\n\n";
+    print "  Usage: $0 [-f | -c | -d | -q | -s | -h | -v | -r release]\n\n";
     print "  Called with no switches, $0 builds only the components required due\n";
     print "  to source code changes it detects. Prior to first use, ensure you\n";
     print "  have edited makeConfig.pl to suit your environment. $0 depends on\n";
     print "  being called from the build folder.\n\n";
     print "  Switches:\n";
-    print "    -f\t Forces a full rebuild\n";
-    print "    -c\t Cleans up the development environment by deleting files it\n";
-    print "         placed the CoD raw folder, in this mod's folder, in the build\n";
-    print "         folder, and in the upload folder, then exits\n";
-    print "    -d\t Creates the debug version of the server script files. Can be\n";
-    print "         combined with the -f or -s switches\n";
-    print "    -q\t Performs various code quality checks, then exits.  The checks\n";
-    print "         are not infallible nor definitive.  They are intended to help\n";
-    print "         find the needle in the haystack, not as a substitute for reason.\n";
-    print "    -s\t Forces a rebuild of the server script files only\n";
-    print "    -h\t Prints this help information\n";
-    print "    -v\t Prints version and copyright information\n";
+    print "    -f          Forces a full rebuild\n";
+    print "    -c          Cleans up the development environment by deleting files it\n";
+    print "                placed the CoD raw folder, in this mod's folder, in the build\n";
+    print "                folder, and in the upload folder, then exits\n";
+    print "    -d          Creates the debug version of the server script files. Can be\n";
+    print "                combined with the -f or -s switches\n";
+    print "    -q          Performs various code quality checks, then exits.  The checks\n";
+    print "                are not infallible nor definitive.  They are intended to help\n";
+    print "                find the needle in the haystack, not as a substitute for reason.\n";
+    print "    -s          Forces a rebuild of the server script files only\n";
+    print "    -h          Prints this help information\n";
+    print "    -v          Prints version and copyright information\n";
+    print "    -r release  Prepares a binary release from your working copy. The parameter\n";
+    print "                'release' should be the name of the release.\n";
     print "\n";
     print "  Examples:\n";
-    print "    perl $0 -fd\t Force a full debug rebuild\n";
-    print "    perl $0 -sd\t Force a debug rebuild of the server scripts only\n";
+    print "    perl $0 -fd                  Force a full debug rebuild\n";
+    print "    perl $0 -sd                  Force a debug rebuild of the server scripts only\n";
+    print "    perl $0 -r rotu.2.2.1r104    Prepare the 2.2.1 binary release\n";
 }
 
 sub updateUploadFolder()
