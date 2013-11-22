@@ -206,6 +206,15 @@ sub release()
     }
     report "Copied batch files to $folder\n";
 
+    # Copy text files from svn working copy
+    my @files = ("AUTHORS.txt", "CHANGELOG.txt", "LICENSE.txt", "README.txt");
+    foreach $file (@files) {
+        $cmd = 'copy /y'.' "'.$config{workPath}.'\\'.$file.'" "'.$folder.'\\'.$file.'"';
+        # for robocopy, a byte-shifted return code of 3 or less is success
+        system($cmd) / 256 <= 3 or die "system $cmd failed: $?";
+    }
+    report "Copied text files to $folder\n";
+
     # Do a full non-debug build
     my $cmd = 'perl makeMod.pl -f';
     system($cmd) == 0 or die "system $cmd failed: $?";
