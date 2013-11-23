@@ -36,6 +36,11 @@
 #include scripts\include\entities;
 #include scripts\include\utility;
 
+/**
+ * @brief Populates the array of xmodels to use for zombies
+ *
+ * @returns nothing
+ */
 initZomModels()
 {
     debugPrint("in _types::initZomModels()", "fn", level.nonVerbose);
@@ -59,6 +64,15 @@ initZomModels()
     addZomModel("boss", "cyclops", "");
 }
 
+/**
+ * @brief Adds a zombie xmodel to the array of zombie models
+ *
+ * @param type string The category of zombie
+ * @param body string The xmodel to use for the body
+ * @param head string The xmodel to use for the head
+ *
+ * @returns nothing
+ */
 addZomModel(type, body, head)
 {
     debugPrint("in _types::addZomModel()", "fn", level.nonVerbose);
@@ -73,6 +87,13 @@ addZomModel(type, body, head)
     }
 }
 
+/**
+ * @brief Builds a zombie of a specific type
+ *
+ * @param type string The category of zombie to build
+ *
+ * @returns nothing
+ */
 loadZomModel(type)
 {
     debugPrint("in _types::loadZomModel()", "fn", level.veryHighVerbosity);
@@ -86,7 +107,13 @@ loadZomModel(type)
     if (head != "") {self attach(head);}
 }
 
-
+/**
+ * @brief Loads the animations available for this type of zombie
+ *
+ * @param type string The category of zombie to build
+ *
+ * @returns nothing
+ */
 loadAnimTree(type)
 {
     debugPrint("in _types::loadAnimTree()", "fn", level.veryHighVerbosity);
@@ -127,6 +154,11 @@ loadAnimTree(type)
 
 // TYPES
 
+/**
+ * @brief Populates the array of zombie properties
+ *
+ * @returns nothing
+ */
 initZomTypes()
 {
     debugPrint("in _types::initZomTypes()", "fn", level.nonVerbose);
@@ -146,6 +178,25 @@ initZomTypes()
     addZomType("cyclops", "boss", "boss", "zombie",           20, 45, 30, 160, 60,  3500, .8, 1, 0.0); // cyclops, damaged by everything
 }
 
+/**
+ * @brief Adds the properties for a type of zombie to the array of zombie types
+ *
+ * @param name string The name of zombie type
+ * @param modelType string The the type of xmodel to use for the zombie
+ * @param animTree string The animation tree to use for the zombie
+ * @param soundType string The sound to use for the zombie
+ * @param walkSpeed integer The walking speed of the zombie
+ * @param runSpeed integer The running speed of the zombie
+ * @param meleeSpeed integer The melee speed of the zombie
+ * @param meleeRange integer The melee range of the zombie
+ * @param damage integer The base damage the zombie does to players
+ * @param maxHealth integer The health the zombie has before being damaged
+ * @param meleeTime float The duration in seconds of a melee attack
+ * @param sprintOnly boolean Is the zombie prevented from walking
+ * @param infectionChance float The percentage chance of the zombie infecting a player
+ *
+ * @returns nothing
+ */
 addZomType(name, modelType, animTree, soundType, walkSpeed, runSpeed, meleeSpeed, meleeRange, damage, maxHealth, meleeTime, sprintOnly, infectionChance)
 {
     debugPrint("in _types::addZomType()", "fn", level.nonVerbose);
@@ -302,6 +353,13 @@ getFxForSpecialWave(type)
     }
 }
 
+/**
+ * @brief Applies the zombie type properties to a given bot
+ *
+ * @param type string The type of the zombie
+ *
+ * @returns nothing
+ */
 loadZomStats(type)
 {
     debugPrint("in _types::loadZomStats()", "fn", level.veryHighVerbosity);
@@ -326,7 +384,13 @@ loadZomStats(type)
     }
 }
 
-/// @param type string The type of bot, not the type of special wave
+/**
+ * @brief Sets properties and plays effects when certain special zombies spawn
+ *
+ * @param type string The type of the zombie, not the type of special wave
+ *
+ * @returns nothing
+ */
 onSpawn(type)
 {
     debugPrint("in _types::onSpawn()", "fn", level.veryHighVerbosity);
@@ -387,6 +451,11 @@ onSpawn(type)
     }
 }
 
+/**
+ * @brief Repeatedly does kill-ball attacks while a single final boss is alive
+ *
+ * @returns nothing
+ */
 bossSpecialAttack()
 {
     debugPrint("in _types::bossSpecialAttack()", "fn", level.nonVerbose);
@@ -401,6 +470,28 @@ bossSpecialAttack()
     }
 }
 
+/**
+ * @brief Performs one kill-ball attack for a single final boss
+ *
+ * @returns nothing
+ */
+doSpecialAttack()
+{
+    debugPrint("in _types::doSpecialAttack()", "fn", level.nonVerbose);
+
+    for (i=0; i<level.players.size; i++) {
+        if (level.players[i].isAlive) {
+            self thread killBall(level.players[i]);
+        }
+        wait 0.5;
+    }
+}
+
+/**
+ * @brief Repeatedly does kill-ball attacks while a many_bosses boss is alive
+ *
+ * @returns nothing
+ */
 manyBossesSpecialAttack()
 {
     debugPrint("in _types::manyBossesSpecialAttack()", "fn", level.nonVerbose);
@@ -416,18 +507,11 @@ manyBossesSpecialAttack()
     }
 }
 
-doSpecialAttack()
-{
-    debugPrint("in _types::doSpecialAttack()", "fn", level.nonVerbose);
-
-    for (i=0; i<level.players.size; i++) {
-        if (level.players[i].isAlive) {
-            self thread killBall(level.players[i]);
-        }
-        wait 0.5;
-    }
-}
-
+/**
+ * @brief Repeatedly does kill-ball attacks while a cyclops is alive
+ *
+ * @returns nothing
+ */
 cyclopsSpecialAttack()
 {
     debugPrint("in _types::cyclopsSpecialAttack()", "fn", level.nonVerbose);
@@ -440,6 +524,11 @@ cyclopsSpecialAttack()
     }
 }
 
+/**
+ * @brief Performs one kill-ball attack for a cyclops or a many_bosses boss
+ *
+ * @returns nothing
+ */
 doCyclopsSpecialAttack()
 {
     debugPrint("in _types::doCyclopsSpecialAttack()", "fn", level.nonVerbose);
@@ -453,6 +542,13 @@ doCyclopsSpecialAttack()
     }
 }
 
+/**
+ * @brief Ends an individual kill-ball attack after a certain time
+ *
+ * @param time integer The time in seconds a kill-ball should exist
+ *
+ * @returns nothing
+ */
 deleteKillBall(time)
 {
     debugPrint("in _types::deleteKillBall()", "fn", level.nonVerbose);
@@ -462,6 +558,13 @@ deleteKillBall(time)
     self delete();
 }
 
+/**
+ * @brief Handles the animations and player damage for a kill-ball attack
+ *
+ * @param player entity The player being attacked by the kill-ball
+ *
+ * @returns nothing
+ */
 killBall(player)
 {
     debugPrint("in _types::killBall()", "fn", level.nonVerbose);
@@ -515,8 +618,18 @@ killBall(player)
     }
 }
 
-
-/// @param type string The type of bot, not the type of special wave
+/**
+ * @brief Determines whether, and what, damage is done to a boss or cyclops zombie
+ *
+ * @param type string The type of zombie that was damaged
+ * @param sMeansOfDeath string The method that was used to damage the zombie
+ * @param sWeapon string The name of the weapon that damaged the zombie
+ * @param iDamage integer The amount of damage inflicted on the zombie
+ * @param eAttacker entity The entity that attacked the zombie. May not be the same
+ *                         as the entity that caused the damage.
+ *
+ * @returns boolean Whether to actually damage the zombie or not
+ */
 onDamage(type, sMeansOfDeath, sWeapon, iDamage, eAttacker)
 {
     debugPrint("in _types::onDamage()", "fn", level.fullVerbosity);
@@ -620,7 +733,6 @@ nextBossStatus()
             self suicide();
             return;
         } else if (level.waveType == "many_bosses") {
-            //level.bossStatus = "dead";
             level.bossOverlay fadeout(1);
             wait 0.1;
             return;
@@ -706,7 +818,14 @@ nextBossStatus()
     }
 }
 
-
+/**
+ * @brief Performs the boss/cyclops melee player toss
+ *
+ * @param type string The type of zombie that is attacking the player
+ * @param target entity The player being attacked
+ *
+ * @returns nothing
+ */
 onAttack(type, target)
 {
     debugPrint("in _types::onAttack()", "fn", level.medVerbosity);
@@ -718,12 +837,17 @@ onAttack(type, target)
             target thread scripts\players\_players::bounce(vectorNormalize(target.origin+(0,0,15)-self.origin));
             target shellShock("boss", 2);
         default:
-            return 1;
+            return 1; // unused value
     }
 }
 
-
-
+/**
+ * @brief Performs death effects when a zombie is killed
+ *
+ * @param type string The type of zombie that died
+ *
+ * @returns integer Represents the type of death effect being used
+ */
 onCorpse(type)
 {
     debugPrint("in _types::onCorpse()", "fn", level.veryHighVerbosity);
@@ -747,18 +871,26 @@ onCorpse(type)
     }
 }
 
-toxicCloud(org, time)
+/**
+ * @brief Creates the toxic cloud when toxic zombies die
+ *
+ * @param origin tuple The location where the zombie died
+ * @param time integer Unused parameter
+ *
+ * @returns nothing
+ */
+toxicCloud(origin, time)
 {
     debugPrint("in _types::toxicCloud()", "fn", level.nonVerbose);
 
-    ent = spawn("script_origin", org);
-    playfx(level.toxicFX, org);
+    ent = spawn("script_origin", origin);
+    playfx(level.toxicFX, origin);
     ent playsound("toxic_gas");
     self endon("death");
     for (t=0;t<40; t++) {
         for (i=0; i<level.players.size; i++) {
             if (!isDefined(level.players[i])) {continue;}
-            if (distance(level.players[i].origin, org) < 128) {
+            if (distance(level.players[i].origin, origin) < 128) {
                 if (!isDefined(!level.players[i].entoxicated)) {continue;}
                 if (!level.players[i].entoxicated) {
                     level.players[i].entoxicated = true;
@@ -771,7 +903,13 @@ toxicCloud(org, time)
     }
 }
 
-
+/**
+ * @brief Un-entoxicates a player after a delay
+ *
+ * @param time integer The delay in seconds before the player is unentoxicated
+ *
+ * @returns nothing
+ */
 unEntoxicate(time)
 {
     debugPrint("in _types::unEntoxicate()", "fn", level.nonVerbose);

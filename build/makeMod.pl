@@ -866,6 +866,10 @@ sub findFunctionDefinitions
         $line =~ m/((\w*)\(.*?\))[ {]{0,}\n/;
         $fnPrototype = $1;
         next unless ($fnPrototype);
+        # We don't need documentation on some functions
+        next if ($fnPrototype =~ /main\(\)/);
+        next if ($fnPrototype =~ /load_tradespawns\(\)/);
+        next if ($fnPrototype =~ /load_waypoints\(\)/);
 #         print "line number: $lineNumber  $fnPrototype\n";
         $fnName = $2;
         $file =~ m!.*/src/(.*)!;
