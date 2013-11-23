@@ -301,3 +301,16 @@ ROTU Change Log
   stuck on the roof.
 * Make 'Start New Server' menu item work as expected.  Uses the new config file
   startnewserver.cfg.
+* New 'Server Customization' credit and dvar for people making code changes, skins,
+  etc., on their server.
+* New release() function in makeMod.pl to build and package releases.
+* Admin promote/demote commands now do one rank or 750 rank points instead on 500
+  points, due to the larger points needed for each rank now.
+* UMI Map Editor shortcuts are disabled on real server to prevent an admin from
+  inadvertently borking a running map.
+* Implement the 'Scouting Drone' passive ability for scouts.
+* New UMI functions to remove built-in turrets from maps, and also for disambiguating
+  built-in barrels from the barrels available for purchase.
+* Initial waypoints and tradespawns for the map mp_caen.
+* Implement the admin command 'Spawn Spectator', which spawns a spectating player
+  as one of the randomly chosen unrestricted classes: soldier, scout, or armored.
