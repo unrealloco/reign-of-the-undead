@@ -327,14 +327,37 @@ pickSecondary(ability)
     }
 }
 
-acceptClass()
+/**
+ * @brief Accepts a player's choice of class and begins the spawning process
+ *
+ * @param forceSpawn boolean Whether to ovverride spawning restrictions.  Used only
+ *                           for _adminCommands::spawnPlayer().
+ *
+ * @returns nothing
+ */
+acceptClass(forceSpawn)
 {
     debugPrint("in _classes::acceptClass()", "fn", level.nonVerbose);
+
+    if (!isDefined(forceSpawn)) {forceSpawn = false;}
 
     // The class they chose isn't enabled anymore.  Update UI, have them pick another
     if(!isClassEnabled(self.class)) {
         enableClasses();
         self iprintlnbold("That class isn't available. Select another class!");
+        return;
+    }
+
+    // for _adminCommands::spawnPlayer() command
+    if (forceSpawn) {
+        self.curClass = self.class;
+        self setclientdvar("ui_loadout_class", self.curClass);
+        self.mayRespawn = true;
+        self thread scripts\players\_players::joinAllies();
+        self thread scripts\players\_players::spawnPlayer();
+        self closeMenu();
+        self closeInGameMenu();
+        self notify("menu_changeclass_allies_closed");
         return;
     }
 

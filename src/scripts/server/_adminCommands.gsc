@@ -1108,27 +1108,32 @@ spawnPlayer(admin)
 {
     debugPrint("in _adminCommands::spawnPlayer()", "fn", level.lowVerbosity);
 
-    if(isDefined(self) && !self.isAlive)
-    {
-        if((!isDefined(self.pers["team"])) ||
-           ((isDefined(self.pers["team"])) && (self.pers["team"] == "spectator")))
-        {
-            /// @todo implement me, this code is screwed up
-            //player braxi\_teams::setTeam( "allies" );
-            //player braxi\_mod::spawnPlayer();
-            admin thread informPlayerOfAdminAction(self, "nuetral", "You were respawned by the Admin");
-            admin thread adminActionConsoleMessage("^7 " + self.name + " ^7respawned.");
-            unlockPlayer(self);
-            return true;
-        } else {
-            unlockPlayer(self);
-            return false;
+    if (self.isSpectating) {
+        // choose one of the unrestricted classes to spawn the player as
+        class = "soldier";
+        switch(randomInt(3)) {
+            case 0:
+                class = "soldier";
+                break;
+            case 1:
+                class = "armored";
+                break;
+            case 2:
+                class = "scout";
+                break;
         }
+        self.class = class;
+        self scripts\players\_classes::acceptClass(true);
+        admin thread informPlayerOfAdminAction(self, "nuetral", "You were spawned by the Admin");
+        admin thread adminActionConsoleMessage("^7 " + self.name + " ^7spawned.");
+        unlockPlayer(self);
+        return true;
+    } else {
+        admin thread adminActionConsoleMessage("^7 Can't spawn a player that isn't spectating");
+        unlockPlayer(self);
+        return false;
     }
-    unlockPlayer(self);
 }
-
-
 
 /**
  * @brief Bounces a player

@@ -1918,9 +1918,9 @@ spawnPlayer(playerEntityNumber)
        (!isLocked(player, self.admin.playerName, "spawn")))
     {
         if (player thread scripts\server\_adminCommands::spawnPlayer(self)) {
-            displayAdminCommandFeedback("Implement Me: Player spawned.");
+            displayAdminCommandFeedback("Player spawned.");
         } else {
-            displayAdminCommandFeedback("Implement Me: Player not spawned.");
+            displayAdminCommandFeedback("Player not spawned.");
         }
     }
 }
