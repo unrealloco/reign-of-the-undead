@@ -354,6 +354,22 @@ deleteCtfEntities()
 }
 
 /**
+ * @brief UMI deletes built-in turrets from maps
+ *
+ * @returns nothing
+ * @since RotU 2.2.2
+ */
+deleteTurrets()
+{
+    debugPrint("in _umi::deleteTurrets()", "fn", level.nonVerbose);
+
+    ents = getentarray("misc_turret", "classname");
+    for (i=0; i<ents.size; i++) {
+        ents[i] delete();
+    }
+}
+
+/**
  * @brief UMI deletes from memory unused headquarters entities from maps
  *
  * On some maps, deleting unused spawnpoints and other entities can triple or
@@ -379,6 +395,30 @@ deleteHqEntities()
     }
     for (i=0; i<origins.size; i++) {
         deleteNearbyEntities(origins[i], 25, 35);
+    }
+}
+
+/**
+ * @brief UMI changes the model of barrels to be a blue rusty barrel
+ *
+ * @param targetname string The targetname parameter of the barrel entity
+ *
+ * Some maps have stock barrels that look like RotU's regular, exploding, or MG+Barrels.
+ * This function lets us change the model to a blue barrel so players don't get
+ * confused.
+ *
+ * Use maps\mp\_umiEditor::devDumpEntities() to dump entities to the server log.
+ *
+ * @returns nothing
+ * @since RotU 2.2.2
+ */
+disambiguateBarrelsByTargetname(targetname)
+{
+    debugPrint("in _umi::disambiguateBarrelsByTargetname()", "fn", level.nonVerbose);
+
+    ents = getentarray(targetname, "targetname");
+    for (i=0; i<ents.size; i++) {
+        ents[i] setmodel("com_barrel_blue_rust");
     }
 }
 

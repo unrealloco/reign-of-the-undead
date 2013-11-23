@@ -94,6 +94,9 @@ init()
     precacheModel("com_bottle3");
     precacheModel("com_bottle4");
 
+    // Used by UMI so stock barrels don't look like the barrels we use as barricades
+    precachemodel("com_barrel_blue_rust");
+
     currentMap = getdvar("mapname");
     currentMapName = scripts\server\_mapvoting22::mapTextName(currentMap);
     noticePrint("Starting map " + currentMapName + " (" + currentMap + ").");

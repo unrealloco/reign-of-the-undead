@@ -39,9 +39,9 @@ init()
 {
     debugPrint("in _barricades::init()", "fn", level.nonVerbose);
 
-    precachemodel("com_barrel_metal");
-    precachemodel("com_barrel_biohazard");
-    precachemodel("com_barrel_benzin");
+    precachemodel("com_barrel_metal");      // regular Barrel
+    precachemodel("com_barrel_biohazard");  // MG+Barrel
+    precachemodel("com_barrel_benzin");     // Exploding Barrel
     level.dynamic_barricades = [];
 
     PreCacheTurret("saw_bipod_stand_mp");

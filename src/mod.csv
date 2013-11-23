@@ -299,6 +299,7 @@ rawfile,vision/thunder.vision
 xmodel,com_barrel_metal
 xmodel,com_barrel_benzin
 xmodel,com_barrel_biohazard
+xmodel,com_barrel_blue_rust
 xmodel,weapon_saw_MG_setup
 fx,weather/lightning
 fx,fire/emb_burst_a
