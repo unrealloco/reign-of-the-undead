@@ -67,7 +67,7 @@ init()
     level.activePlayers = 0;
 
     level.gametype = toLower(getDvar("g_gametype"));
-    level.modversion = "RotU v2.2.1";
+    level.modversion = "RotU v2.2.2";
     level.dedicated = getDvar("dedicated");
 
     /**
