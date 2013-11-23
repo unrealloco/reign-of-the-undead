@@ -1,12 +1,10 @@
-rotu21 source by Bipo (xfire: bipoalarmonk) and Etheross (xfire: etheross)
+Reign of the Undead (RotU) - A CoD4 multiplayer mod
 
-installation instructions:
- - download the cod4 mod tools + patch
- - place the zone_source folder in your cod4 directory (it can be removed from the rotu21source folder)
- - place the rotu21source folder in your mods directory
- - execute the compileMod.bat
- - wait for it to complete
- - mod has been compiled
+Copyright by the authors, see AUTHORS.txt for a list.
+Licensed under the MIT license, see LICENSE.txt for details.
 
-disclaimer:
- Source code is free to be modified / ported to other game as long as credits are kept. All assets belong to Activision as can be read in their modtools eula.
+Project Website: https://code.google.com/p/reign-of-the-undead/
+Project Forum: http://forum.heavygunz.net/index.php?board=2.0
+
+For documentation on using RotU, please see the project wiki
+at https://code.google.com/p/reign-of-the-undead/w/list
