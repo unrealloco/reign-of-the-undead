@@ -752,13 +752,16 @@ increaseDemerits(amount, reason)
 
     switch(reason) {
         case "burning":
-            message += "Injuring Players by Killing a Burning Zombie";
+            if (amount == 0) {message = "Check Your Fire!";}
+            else {message += "Injuring Players by Killing a Burning Zombie";}
             break;
         case "wave_intermission_revive":
-            message += "Not Reviving Enough Players Between Waves";
+            if (amount == 0) {message = "Please revive other players!";}
+            else {message += "Not Reviving Enough Players Between Waves";}
             break;
         case "gone_zombie":
-            message += "Becoming a Zombie When You Could Have Bought a Cure";
+            if (amount == 0) {message = "Cure your infection before becoming a zombie!";}
+            else {message += "Becoming a Zombie When You Could Have Bought a Cure";}
             break;
     }
     self iPrintLnBold(message);
