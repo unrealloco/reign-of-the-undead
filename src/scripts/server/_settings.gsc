@@ -96,6 +96,7 @@ loadSettings()
     dvarFloat(  "game",     "turret_time",          120,    10,     99999); // [s]
     dvarFloat(  "game",     "spawn_requirement",    0.5,    0,      1);
     dvarString( "game",     "mapvote_style",        "2.2");
+    dvarInt(    "game",     "assistance_max_rank",  30,     15,      30);
 
     dvarBool(   "hud",      "survivors_left",       1);
     dvarBool(   "hud",      "survivors_down",       1);
