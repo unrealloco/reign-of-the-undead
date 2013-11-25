@@ -298,6 +298,11 @@ allowRaygun()
     }
 }
 
+/**
+ * @brief Creates the HUD elements for Survivors left, down and wave number
+ *
+ * @returns nothing
+ */
 survivorsHUD()
 {
     debugPrint("in _survival::survivorsHUD()", "fn", level.nonVerbose);
@@ -334,6 +339,11 @@ survivorsHUD()
     }
 }
 
+/**
+ * @brief Removes the suvivors left HUD before the credits so we don't run out of HUD elements
+ *
+ * @returns nothing
+ */
 destroySurvivorsLeft()
 {
     debugPrint("in _survival::destroySurvivorsLeft()", "fn", level.nonVerbose);
@@ -350,6 +360,11 @@ destroySurvivorsLeft()
     }
 }
 
+/**
+ * @brief Removes the suvivors down HUD before the credits so we don't run out of HUD elements
+ *
+ * @returns nothing
+ */
 destroySurvivorsDown()
 {
     debugPrint("in _survival::destroySurvivorsDown()", "fn", level.nonVerbose);
@@ -366,6 +381,11 @@ destroySurvivorsDown()
     }
 }
 
+/**
+ * @brief Removes the wave number HUD before the credits so we don't run out of HUD elements
+ *
+ * @returns nothing
+ */
 destroyWaveNumber()
 {
     debugPrint("in _survival::destroyWaveNumber()", "fn", level.nonVerbose);
@@ -382,6 +402,11 @@ destroyWaveNumber()
     }
 }
 
+/**
+ * @brief Updates the wave number HUD whena wave finishes
+ *
+ * @returns nothing
+ */
 waveNumber()
 {
     debugPrint("in _survival::waveNumber()", "fn", level.nonVerbose);
@@ -399,6 +424,11 @@ waveNumber()
     }
 }
 
+/**
+ * @brief Updates the survivors left HUD every second
+ *
+ * @returns nothing
+ */
 survivorLeft()
 {
     debugPrint("in _survival::survivorLeft()", "fn", level.nonVerbose);
@@ -410,6 +440,11 @@ survivorLeft()
     }
 }
 
+/**
+ * @brief Updates the survivors down HUD every second
+ *
+ * @returns nothing
+ */
 survivorDown()
 {
     debugPrint("in _survival::survivorDown()", "fn", level.nonVerbose);
@@ -418,6 +453,10 @@ survivorDown()
 
     while (1) {
         val = level.activePlayers-level.alivePlayers;
+
+        // don't show negative numbers if active/alive count is wrong.
+        // the counts will verify and correct themselves every 3 seconds.
+        if (val < 0) {val = 0;}
         self setText(val);
         wait 1;
     }
