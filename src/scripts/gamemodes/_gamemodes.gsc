@@ -414,9 +414,9 @@ endMap(endReasontext, showcredits)
     setdvar( "g_deadChat", 1 );
 
     players = getentarray("player", "classname");
-    message = "^1Do not leave the game until the next map loads!";
-    for(i = 0; i < players.size; i++)
-    {
+    message = "^1You may not leave the game until the next map loads!";
+    for(i = 0; i < players.size; i++) {
+        players[i] setclientdvar("canleavegame", 0);
         players[i] closeMenu();
         players[i] closeInGameMenu();
         players[i] iPrintlnBold(message);

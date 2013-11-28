@@ -134,6 +134,8 @@ Callback_PlayerConnect()
         level.players[level.players.size] =  self;
         level notify("connected", self);
 
+        self setclientdvar("canleavegame", 1);
+
         self thread scripts\players\_players::onPlayerConnect();
         self thread scripts\gamemodes\_hud::onPlayerConnect();
         self thread scripts\players\_players::joinAllies();
