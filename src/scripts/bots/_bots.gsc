@@ -268,20 +268,6 @@ spawnZombie(type, spawnpoint, bot)
     bot thread zomGroan();
     bot.readyToBeKilled = true;
 
-    /*if (level.zomTarget != "")
-    {
-        if (level.zomTarget == "player_closest")
-        {
-            ent = bot getClosestPlayer();
-            if (isdefined(ent))
-            bot zomSetTarget(ent.origin);
-        }
-        else
-        bot zomSetTarget(bot getClosestEntity(level.zomTarget).origin);
-    }*/
-    //if (isdefined(spawnpoint.target))
-    //bot zomSetTarget(bot getRandomEntity(spawnpoint.target).origin);
-
     return bot;
 }
 
@@ -309,8 +295,6 @@ endSpawnProt(time, decrease)
         self.incdammod = 1;
     }
 }
-
-
 
 
 // BOTS MAIN
@@ -376,6 +360,14 @@ Callback_BotDamage(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeap
     }
 }
 
+/**
+ * @brief Keeps track of damage done to zombie so we can give assist credit when zombie is finally killed
+ *
+ * @param player entity The player doing the damage
+ * @param damage integer The amount of damage this player just did to this zombie
+ *
+ * @returns nothing
+ */
 addToAssist(player, damage)
 {
     debugPrint("in _bots::addToAssist()", "fn", level.fullVerbosity);
@@ -484,45 +476,38 @@ Callback_BotKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDir, 
     level notify("bot_killed");
 }
 
+/**
+ * @brief Give rank and upgrade points to players that damaged a zombie but didn't kill it
+ *
+ * @param killer entity The player that finally killed the zombie
+ *
+ * @returns nothing
+ */
 giveAssists(killer)
 {
     debugPrint("in _bots::giveAssists()", "fn", level.highVerbosity);
 
-    for (i=0; i<self.damagedBy.size; i++)
-    {
+    for (i=0; i<self.damagedBy.size; i++) {
         struct = self.damagedBy[i];
-        if (isdefined(struct.player))
-        {
-            if (struct.player.isActive && struct.player != killer)
-            {
+        if (isdefined(struct.player)) {
+            if (struct.player.isActive && struct.player != killer) {
                 struct.player.assists ++;
-                if (struct.damage > 400)
-                {
+                if (struct.damage > 400) {
                     struct.player thread scripts\players\_rank::giveRankXP("assist5");
                     struct.player thread scripts\players\_players::incUpgradePoints(10*level.rewardScale);
-                }
-                else if (struct.damage > 200)
-                {
+                } else if (struct.damage > 200) {
                     struct.player thread scripts\players\_rank::giveRankXP("assist4");
                     struct.player thread scripts\players\_players::incUpgradePoints(7*level.rewardScale);
-                }
-                else if (struct.damage > 100)
-                {
+                } else if (struct.damage > 100) {
                     struct.player thread scripts\players\_rank::giveRankXP("assist3");
                     struct.player thread scripts\players\_players::incUpgradePoints(5*level.rewardScale);
-                }
-                else if (struct.damage > 50)
-                {
+                } else if (struct.damage > 50) {
                     struct.player thread scripts\players\_rank::giveRankXP("assist2");
                     struct.player thread scripts\players\_players::incUpgradePoints(3*level.rewardScale);
-                }
-                else if (struct.damage > 25)
-                {
+                } else if (struct.damage > 25) {
                     struct.player thread scripts\players\_rank::giveRankXP("assist1");
                     struct.player thread scripts\players\_players::incUpgradePoints(3*level.rewardScale);
-                }
-                else if (struct.damage > 0)
-                {
+                } else if (struct.damage > 0) {
                     struct.player thread scripts\players\_rank::giveRankXP("assist0");
                     struct.player thread scripts\players\_players::incUpgradePoints(2*level.rewardScale);
                 }
@@ -710,6 +695,13 @@ zomGoIdle()
     //iprintlnbold("IDLE!");
 }
 
+/**
+ * @brief Stuns a zombie
+ *
+ * An effect of the thundergun
+ *
+ * @returns nothing
+ */
 zomGoStunned()
 {
     debugPrint("in _bots::zomGoStunned()", "fn", level.fullVerbosity);
@@ -747,11 +739,9 @@ zomWaitToBeTriggered()
     // 17th most-called function (1% of all function calls).
     // Do *not* put a function entrance debugPrint statement here!
 
-    for (i=0; i<level.players.size; i++)
-    {
+    for (i=0; i<level.players.size; i++) {
         player = level.players[i];
-        if(self zomSpot(player))
-        {
+        if (self zomSpot(player)) {
             self zomGoTriggered();
             break;
         }
@@ -765,124 +755,87 @@ zomSpot(target)
 
     if (!isDefined(target)) {return false;}
     if (!target.isObj) {
-        if (!target.isAlive)
-        return false;
-
-        if (!target.isTargetable)
-        return false;
+        if (!target.isAlive) {return false;}
+        if (!target.isTargetable) {return false;}
     }
 
-    if (!target.visible)
-    return false;
+    if (!target.visible) {return false;}
 
     distance = distance(self.origin, target.origin);
+    if (distance > level.zombieSight) {return false;}
 
-    if (distance > level.zombieSight)
+    dot = 1.0;
+
+    // if nearest target hasn't attacked me, check to see if it's in front of me
+    fwdDir = anglestoforward(self getplayerangles());
+    dirToTarget = vectorNormalize(target.origin-self.origin);
+    dot = vectorDot(fwdDir, dirToTarget);
+
+    // in front of us and is being obvious
+    if(dot > -0.2) {
+        // do a ray to see if we can see the target
+        if (!target.isObj) {
+            visTrace = bullettrace(self.origin + (0,0,68), target getPlayerHeight(), false, self);
+        } else {
+            visTrace = bullettrace(self.origin + (0,0,68), target.origin +(0,0,20), false, self);
+        }
+        if(visTrace["fraction"] == 1) {
+            //line(self.origin + (0,0,68), visTrace["position"], (0,1.0,0));
+            return true;
+        } else {
+            if (isDefined(visTrace["entity"])) {
+                if (visTrace["entity"] == target) {return true;}
+            }
+            //line(self.origin + (0,0,68), visTrace["position"], (1,0,0));
+            return false;
+        }
+
+    }
+
     return false;
-
-  /*switch (target getStance())
-  {
-    case "stand":
-    if (distance < 256)
-    return 1;
-    break;
-    case "crouch":
-    if (distance < 148)
-    return 1;
-    break;
-    case "prone":
-    if (distance < 96)
-    return 1;
-    break;
-  }*/
-
-  /*speed = Length(target GetVelocity());
-
-  if (speed > 80 && distance < 256)
-  return 1;
-  if (speed > 160 && distance < 416)
-  return 1;
-  if (speed > 240 && distance < 672)
-  return 1;*/
-
-  dot = 1.0;
-
-  //if nearest target hasn't attacked me, check to see if it's in front of me
-   fwdDir = anglestoforward(self getplayerangles());
-   dirToTarget = vectorNormalize(target.origin-self.origin);
-   dot = vectorDot(fwdDir, dirToTarget);
-
-
-  //try see through smoke
-  /*if(!SmokeTrace(self GetEyePos(), self.bestTarget GetEyePos()))
-  {
-    return false;
-  }*/
-
-  //in front of us and is being obvious
-  if(dot > -0.2)
-  {
-    //do a ray to see if we can see the target
-    if (!target.isObj)
-    {
-        visTrace = bullettrace(self.origin + (0,0,68), target getPlayerHeight(), false, self);
-    }
-    else
-    {
-     visTrace = bullettrace(self.origin + (0,0,68), target.origin +(0,0,20), false, self);
-    }
-    if(visTrace["fraction"] == 1)
-    {
-           //line(self.origin + (0,0,68), visTrace["position"], (0,1.0,0));
-        return true;
-    }
-    else
-    {
-        if (isdefined(visTrace["entity"]))
-        if (visTrace["entity"] == target)
-        return true;
-        //line(self.origin + (0,0,68), visTrace["position"], (1,0,0));
-        return false;
-    }
-
-  }
-
-  return false;
 }
 
+/**
+ * @brief Sets the animation for a zombie by changing the zombie's weapon
+ *
+ * @param animation string The name of the animation type
+ *
+ * @returns nothing
+ */
 setAnim(animation)
 {
     // 6th most-called function (2% of all function calls).
     // Do *not* put a function entrance debugPrint statement here!
 
-    if (isdefined(self.animation[animation]))
-    {
+    if (isdefined(self.animation[animation])) {
         self.animWeapon = self.animation[animation];
         self TakeAllWeapons();
         self.pers["weapon"] = self.animWeapon;
         self giveweapon(self.pers["weapon"]);
         self givemaxammo(self.pers["weapon"]);
-        //self SetWeaponAmmoClip(self.pers["weapon"], 30);
-        //self SetWeaponAmmoStock(self.pers["weapon"], 0);
         self setspawnweapon(self.pers["weapon"]);
         self switchtoweapon(self.pers["weapon"]);
     }
 }
 
+/**
+ * @brief Gets the position of the top of the player based on their stance
+ *
+ * @returns tuple The origin of the top of the player
+ */
 getPlayerHeight()
 {
     // 16th most-called function (1% of all function calls).
     // Do *not* put a function entrance debugPrint statement here!
 
-      switch (self getStance())
-      {
-        case "stand":
+    switch (self getStance()) {
+    case "stand":
         return self.origin + (0,0,68);
-        case "crouch":
+    case "crouch":
         return self.origin + (0,0,40);
-        case "prone":
+    case "prone":
         return self.origin + (0,0,22);
-      }
+    }
 }
 
 zomMoveTowards(target_position)
@@ -893,62 +846,35 @@ zomMoveTowards(target_position)
     self endon("disconnect");
     self endon("death");
 
-    //self thread pushOutOfPlayers();
-
-    if (!isdefined(self.myWaypoint))
-    {
+    if (!isdefined(self.myWaypoint)) {
         self.myWaypoint = getNearestWp(self.origin);
     }
 
     targetWp = getNearestWp(target_position);
-
     nextWp = self.nextWp;
-
     direct = false;
-    //
-    //if (distancesquared(target_position, self.origin) <= distancesquared(level.Wp[targetWp].origin, self.origin) || targetWp == self.myWaypoint)
-    if (self.underway)
-    {
 
-    //if (targetWp == self.myWaypoint)
-    //
-        //if (distancesquared(target_position, self.origin) >= distancesquared(level.Wp[nextWp].origin, self.origin))
-        //direct = true;
-
-        if (targetWp == self.myWaypoint) //|| distancesquared(target_position, self.origin) <= distancesquared(level.Wp[nextWp].origin, self.origin)
-        {
+    if (self.underway) {
+        if (targetWp == self.myWaypoint) {
             direct = true;
             self.underway = false;
             self.myWaypoint = undefined;
-        }
-        else
-        {
-            if (!isdefined(nextWp))
-            return ;
-            if (targetWp == nextWp)
-            {
-
-                if (distancesquared(target_position, self.origin) <= distancesquared(level.Wp[nextWp].origin, self.origin))
-                {
+        } else {
+            if (!isdefined(nextWp)) {return;}
+            if (targetWp == nextWp) {
+                if (distancesquared(target_position, self.origin) <= distancesquared(level.Wp[nextWp].origin, self.origin)) {
                     direct = true;
                     self.underway = false;
                     self.myWaypoint = undefined;
                 }
             }
         }
-    }
-    else
-    {
-        //if (self.lastTargetWp != targetWp || self.myWaypoint == nextWp )
-        if (targetWp == self.myWaypoint)
-        {
-            //iprintln(level.wp[getNearestWp(self.origin)].origin+":"+level.wp[getNearestWp(target_position)].origin);
+    } else {
+        if (targetWp == self.myWaypoint) {
             direct = true;
             self.underway = false;
             self.myWaypoint = undefined;
-        }
-        else
-        {
+        } else {
             //time = GetTime();
             nextWp = AStarSearch(self.myWaypoint, targetWp);
             //newtime = GetTime()-time;
@@ -958,22 +884,16 @@ zomMoveTowards(target_position)
         }
     }
 
-    //self.lastTargetWp = targetWp;
-
     //TARGET SET! MOVING!
     //line(self.origin, target_position, (0,0,1));
-    if (direct)
-    {
+    if (direct) {
         moveToPoint(target_position, self.cur_speed);
         /*lineCol = (1,0,0);
         line(level.Wp[self.myWaypoint].origin, target_position, lineCol);*/
-    }
-    else
-    {
+    } else {
         /*lineCol = (1,0,0);
         line(level.Wp[self.myWaypoint].origin, level.Wp[nextWp].origin, lineCol);*/
-        if (isdefined(nextWp))
-        {
+        if (isdefined(nextWp)) {
             /// @todo BUG: massive runtime errors if not defined, try this hack as a temp fix. map specific?
             /// for some maps, level.wp.size == 0.  Legacy maps do not use the waypoints system
             if (!isDefined(level.Wp[nextWp])) {
@@ -982,38 +902,24 @@ zomMoveTowards(target_position)
                 //return;
             }
             moveToPoint(level.Wp[nextWp].origin, self.cur_speed);
-            if (distance(level.Wp[nextWp].origin, self.origin) <  64)
-            {
+            if (distance(level.Wp[nextWp].origin, self.origin) <  64) {
                 self.underway = false;
                 self.myWaypoint = nextWp;
-                //if (self.myWaypoint != nextWp)
-                //nextWp = AStarSearch(self.myWaypoint, targetWp);
-                //else
-                //break;
             }
         }
-        /*else
-
-            self zomGoIdle();
-        */
-
     }
 }
-
-
 
 zomMoveLockon(player, time, speed)
 {
     debugPrint("in _bots::zomMoveLockon()", "fn", level.veryHighVerbosity);
 
     intervals = int(time / level.zomInterval);
-    for (i=0; i<intervals; i++)
-    {
+    for (i=0; i<intervals; i++) {
         if (!isDefined(player)) {continue;}
         if (!isDefined(self)) {continue;}
         dis = distance(self.origin, player.origin);
-        if (dis > 48)
-        {
+        if (dis > 48) {
             pushOutDir = VectorNormalize((self.origin[0], self.origin[1], 0)-(player.origin[0], player.origin[1], 0));
             self moveToPoint(player.origin + pushOutDir * 32, speed);
             self pushOutOfPlayers();
@@ -1028,34 +934,21 @@ pushOutOfPlayers() // ON SELF
 {
     debugPrint("in _bots::pushOutOfPlayers()", "fn", level.absurdVerbosity);
 
-  //push out of other players
-  //players = level.players;
-  players = getentarray("player", "classname");
-  for(i = 0; i < players.size; i++)
-  {
-    player = players[i];
-
-    if(player == self || !isalive(player))
-      continue;
-    self thread pushout(player.origin);
-
-  }
-  for (i=0; i <level.dynamic_barricades.size; i++)
-  {
-    if (isdefined(level.dynamic_barricades[i]))
-    {
-        if (level.dynamic_barricades[i].hp > 0)
-        self thread pushout(level.dynamic_barricades[i].origin);
+    //push out of other players
+    //players = level.players;
+    players = getentarray("player", "classname");
+    for (i=0; i<players.size; i++) {
+        player = players[i];
+        if (player == self || !isalive(player)) {continue;}
+        self thread pushout(player.origin);
     }
-  }
-   /*for (i=0; i <level.barricades.size; i++)
-  {
-    if (isdefined(level.barricades[i]))
-    {
-        if (level.barricades[i].hp > 0)
-        self thread pushout(level.barricades[i].parts[0].startPosition);
+    for (i=0; i <level.dynamic_barricades.size; i++) {
+        if (isdefined(level.dynamic_barricades[i])) {
+            if (level.dynamic_barricades[i].hp > 0) {
+                self thread pushout(level.dynamic_barricades[i].origin);
+            }
+        }
     }
-  }*/
 }
 
 pushout(org)
@@ -1066,74 +959,57 @@ pushout(org)
     linkObj = self.linkObj;
     distance = distance(org, linkObj.origin);
     minDistance = 28;
-    if(distance < minDistance) //push out
-    {
-      pushOutDir = VectorNormalize((linkObj.origin[0], linkObj.origin[1], 0)-(org[0], org[1], 0));
-      pushoutPos = linkObj.origin + (pushOutDir * (minDistance-distance));
-      linkObj.origin = (pushoutPos[0], pushoutPos[1], self.origin[2]);
+    if (distance < minDistance) {
+        pushOutDir = VectorNormalize((linkObj.origin[0], linkObj.origin[1], 0)-(org[0], org[1], 0));
+        pushoutPos = linkObj.origin + (pushOutDir * (minDistance-distance));
+        linkObj.origin = (pushoutPos[0], pushoutPos[1], self.origin[2]);
     }
 }
 
+/**
+ * @brief Performs a melee attack on a player
+ *
+ * @returns nothing
+ */
 zomMelee()
 {
     debugPrint("in _bots::zomMelee()", "fn", level.veryHighVerbosity);
 
     self endon("disconnect");
     self endon("death");
+
     self.movementType = "melee";
-    /*if (self hasAnim("run"))
-    {
-        self setAnim("run2melee");
-        wait .4;
-    }
-    else
-    {
-        self setAnim("stand2melee");
-        wait .6;
-    }*/
     self setAnim("melee");
     wait .6;
-    if (self.quake)
-    Earthquake( 0.25, .2, self.origin, 380);
-    if (isalive(self))
-    {
+
+    if (self.quake) {Earthquake( 0.25, .2, self.origin, 380);}
+
+    if (isAlive(self)) {
         self zomDoDamage(70);
         self zomSound(0, "zom_attack", randomint(8));
     }
     wait .6;
-    /*wait .5;
-    if (isalive(self))
-    {
-        self zombieDoDamage(90, 30);
-        self zombieSound(0, "zom_attack", randomint(10));
-    }
-    wait .5;
-    if (isalive(self))
-    {
-        self zombieDoDamage(90, 30);
-        self zombieSound(0, "zom_attack", randomint(10));
-    }
-    wait .7;*/
-    self setAnim("stand");
-    //self.movementType = "walk";
 
-    //self setAnim("run");
-    //self thread zombieMelee();
+    self setAnim("stand");
 }
 
+/**
+ * @brief Decides whether to infect a player or not
+ *
+ * @param chance float The percentage chance of this type of zombie infecting a player
+ *
+ * @returns nothing
+ */
 infection(chance)
 {
     debugPrint("in _bots::infection()", "fn", level.medVerbosity);
 
-    if (self.infected)
-    return;
+    if (self.infected) {return;}
 
     chance = self.infectionMP * chance;
-    if (randomfloat(1)<chance)
-    {
+    if (randomfloat(1) < chance) {
         self thread scripts\players\_infection::goInfected();
     }
-
 }
 
 /**
@@ -1228,80 +1104,55 @@ zomDoDamage(range)
 
     meleeRange = range;
     closest = getClosestPlayerArray();
-    for (i=0; i<=closest.size; i++)
-    {
-                    target = closest[i];
-                    if (isdefined(target))
-                    {
-                        distance = distance(self.origin, target.origin);
-                        if (distance <meleeRange )
-                        {
-                            fwdDir = anglestoforward(self getplayerangles());
-                            dirToTarget = vectorNormalize(target.origin-self.origin);
-                            dot = vectorDot(fwdDir, dirToTarget);
-                            if (dot > .5)
-                            {
-                            target.isPlayer = true;
-                            //target.damageCenter = self.Mover.origin;
-                            target.entity = target;
-                            target damageEnt(
-                                    self, // eInflictor = the entity that causes the damage (e.g. a claymore)
-                                    self, // eAttacker = the player that is attacking
-                                    int(self.damage*level.dif_zomDamMod), // iDamage = the amount of damage to do
-                                    "MOD_MELEE", // sMeansOfDeath = string specifying the method of death (e.g. "MOD_PROJECTILE_SPLASH")
-                                    self.pers["weapon"], // sWeapon = string specifying the weapon used (e.g. "claymore_mp")
-                                    self.origin, // damagepos = the position damage is coming from
-                                    //(0,self GetPlayerAngles()[1],0) // damagedir = the direction damage is moving in
-                                    vectorNormalize(target.origin-self.origin)
-                                );
-                            self scripts\bots\_types::onAttack(self.type, target);
-                            if (level.dvar["zom_infection"])
-                            target infection(self.infectionChance);
-                            //target shellshock("zombiedamage", 1);
-                            break;
-                            }
-                        }
+    for (i=0; i<=closest.size; i++) {
+        target = closest[i];
+        if (isDefined(target)) {
+            distance = distance(self.origin, target.origin);
+            if (distance < meleeRange) {
+                fwdDir = anglestoforward(self getplayerangles());
+                dirToTarget = vectorNormalize(target.origin-self.origin);
+                dot = vectorDot(fwdDir, dirToTarget);
+                if (dot > .5) {
+                    target.isPlayer = true;
+                    //target.damageCenter = self.Mover.origin;
+                    target.entity = target;
+                    target damageEnt(
+                        self, // eInflictor = the entity that causes the damage (e.g. a claymore)
+                        self, // eAttacker = the player that is attacking
+                        int(self.damage*level.dif_zomDamMod), // iDamage = the amount of damage to do
+                        "MOD_MELEE", // sMeansOfDeath = string specifying the method of death (e.g. "MOD_PROJECTILE_SPLASH")
+                        self.pers["weapon"], // sWeapon = string specifying the weapon used (e.g. "claymore_mp")
+                        self.origin, // damagepos = the position damage is coming from
+                        //(0,self GetPlayerAngles()[1],0) // damagedir = the direction damage is moving in
+                        vectorNormalize(target.origin-self.origin)
+                        );
+                    self scripts\bots\_types::onAttack(self.type, target);
+                    if (level.dvar["zom_infection"]) {
+                        target infection(self.infectionChance);
                     }
-    }
-    /*for (i=0; i<level.attackable_obj.size; i++)
-    {
-        obj = level.attackable_obj[i];
-        distance = distance2d(self.origin, obj.origin);
-        if (distance <meleeRange )
-        {
-            fwdDir = anglestoforward(self getplayerangles());
-            dirToTarget = vectorNormalize(obj.origin-self.origin);
-            dot = vectorDot(fwdDir, dirToTarget);
-            if (dot > .5)
-            {
-                obj notify("damage", self.damage);
+                    //target shellshock("zombiedamage", 1);
+                    break;
+                }
             }
         }
+    }
 
-
-    }*/
-    for (i=0; i<level.barricades.size; i++)
-    {
+    for (i=0; i<level.barricades.size; i++) {
         ent = level.barricades[i];
         distance = distance2d(self.origin, ent.origin);
-        if (distance <meleeRange*2 )
-        {
+        if (distance < meleeRange * 2 ) {
             ent thread scripts\players\_barricades::doBarricadeDamage(self.damage*level.dif_zomDamMod);
             break;
         }
     }
-    for (i=0; i<level.dynamic_barricades.size; i++)
-    {
+    for (i=0; i<level.dynamic_barricades.size; i++) {
         ent = level.dynamic_barricades[i];
         distance = distance2d(self.origin, ent.origin);
-        if (distance <meleeRange )
-        {
+        if (distance < meleeRange) {
             ent thread scripts\players\_barricades::doBarricadeDamage(self.damage*level.dif_zomDamMod);
             break;
         }
     }
-
-
 }
 
 zomGroan()
@@ -1311,23 +1162,15 @@ zomGroan()
     self endon("death");
     self endon("disconnect");
 
-    if (self.soundType == "dog")
-    return ;
+    if (self.soundType == "dog") {return;}
 
-    for (;;)
-    {
-        //self zombieSound(randomfloat(.5), "zom_run", 0);
-        if (self.isDoingMelee == false)
-        {
-            if (self.alertLevel == 0)
-            {
-            }
-            else if (self.alertLevel < 200)
-            {
+    while (1) {
+        if (self.isDoingMelee == false) {
+            if (self.alertLevel == 0) {
+                // Do nothing
+            } else if (self.alertLevel < 200) {
                 self zomSound(randomfloat(.5), "zom_walk", randomint(7));
-            }
-            else
-            {
+            } else {
                 self zomSound(randomfloat(.5), "zom_run", randomint(6));
             }
         }
@@ -1344,8 +1187,7 @@ zomSound(delay, sound, random)
         wait delay;
     }
     sound = sound + random;
-    if (isalive(self))
-    self playSound( sound );
+    if (isalive(self)) {self playSound(sound);}
 }
 
 zomSetTarget(target)
@@ -1366,32 +1208,22 @@ checkForBarricade(targetposition)
     // Do *not* put a function entrance debugPrint statement here!
     debugPrint("in _bots::checkForBarricade()", "fn", level.lowVerbosity);
 
-    for (i=0; i<level.barricades.size; i++)
-    {
+    for (i=0; i<level.barricades.size; i++) {
         ent = level.barricades[i];
-        if (self istouching(ent) && ent.hp > 0)
-        {
+        if (self isTouching(ent) && ent.hp > 0) {
             fwdDir = vectorNormalize(targetposition-self.origin);
             dirToTarget = vectorNormalize(ent.origin-self.origin);
             dot = vectorDot(fwdDir, dirToTarget);
-            if (dot > 0 && dot < 1)
-            {
-                return 1;
-            }
+            if (dot > 0 && dot < 1) {return 1;}
         }
     }
-    for (i=0; i<level.dynamic_barricades.size; i++)
-    {
+    for (i=0; i<level.dynamic_barricades.size; i++) {
         ent = level.dynamic_barricades[i];
-        if (distance(self.origin, ent.origin) < 48 && ent.hp > 0)
-        {
+        if ((distance(self.origin, ent.origin) < 48) && (ent.hp > 0)) {
             fwdDir = vectorNormalize(targetposition-self.origin);
             dirToTarget = vectorNormalize(ent.origin-self.origin);
             dot = vectorDot(fwdDir, dirToTarget);
-            if (dot > 0 && dot < 1)
-            {
-                return 1;
-            }
+            if (dot > 0 && dot < 1) {return 1;}
         }
     }
     return 0;
@@ -1402,24 +1234,16 @@ alertZombies(origin, distance, alertPower, ignoreEnt)
     // 14th most-called function (1.5% of all function calls).
     // Do *not* put a function entrance debugPrint statement here!
 
-    for (i=0; i < level.bots.size; i++)
-    {
-        if (isdefined(ignoreEnt))
-        {
-            if (level.bots[i] == ignoreEnt)
-            continue;
+    for (i=0; i < level.bots.size; i++) {
+        if (isDefined(ignoreEnt)) {
+            if (level.bots[i] == ignoreEnt) {continue;}
         }
         dist = distance(origin, level.bots[i].origin);
-        if (dist < distance)
-        {
+        if (dist < distance) {
             zombie = level.bots[i];
-            if (isalive(zombie) && isdefined(zombie.status))
-            {
+            if (isalive(zombie) && isdefined(zombie.status)) {
                 zombie.alertLevel += alertPower;
-                //if (!isdefined(zombie.
-                //zombie.lastMemorizedPos = origin;
-                if (zombie.status == "idle")
-                zombie zomGoSearch();
+                if (zombie.status == "idle") {zombie zomGoSearch();}
             }
         }
     }
