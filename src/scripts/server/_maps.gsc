@@ -427,13 +427,21 @@ watchHurtTriggers(trigger)
         self waittill("trigger", player);
 
         if (self.origin != trigger.origin) {
+            // not the trigger we are waiting for
             wait 0.05;
             continue;
         }
 
-        player setOrigin(player.originalSpawnLocation);
-        player thread hurtPlayer();
-        wait 0.05;
+        if ((isDefined(player.isActive)) && (isDefined(player.isAlive)) &&
+            (player.isActive) && (player.isAlive))
+        {
+            player setOrigin(player.originalSpawnLocation);
+            player thread hurtPlayer();
+            wait 0.05;
+        } else {
+            // not actually a human player
+            wait 0.05;
+        }
     }
 }
 
