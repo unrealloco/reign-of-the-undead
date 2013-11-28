@@ -49,22 +49,30 @@ init()
     applyMapFixes();
 
     // enable some features found on non-rotu maps
-    for (i=0; i<level.glidePads.size; i++) {
-        level.glidePads[i].trigger thread watchGlidePad(level.glidePads[i]);
-    }
-
-    for (i=0; i<level.elevators.size; i++) {
-        for (j=0; j<level.elevators[i].triggers.size; j++) {
-            level.elevators[i].triggers[j] thread watchElevatorTrigger(level.elevators[i]);
+    if (isDefined(level.glidePads)) {
+        for (i=0; i<level.glidePads.size; i++) {
+            level.glidePads[i].trigger thread watchGlidePad(level.glidePads[i]);
         }
     }
 
-    for (i=0; i<level.mapTeleporters.size; i++) {
-        level.mapTeleporters[i].trigger thread watchMapTeleporters(level.mapTeleporters[i]);
+    if (isDefined(level.elevators)) {
+        for (i=0; i<level.elevators.size; i++) {
+            for (j=0; j<level.elevators[i].triggers.size; j++) {
+                level.elevators[i].triggers[j] thread watchElevatorTrigger(level.elevators[i]);
+            }
+        }
     }
 
-    for (i=0; i<level.mapHurtTriggers.size; i++) {
-        level.mapHurtTriggers[i].trigger thread watchHurtTriggers(level.mapHurtTriggers[i]);
+    if (isDefined(level.mapTeleporters)) {
+        for (i=0; i<level.mapTeleporters.size; i++) {
+            level.mapTeleporters[i].trigger thread watchMapTeleporters(level.mapTeleporters[i]);
+        }
+    }
+
+    if (isDefined(level.mapHurtTriggers)) {
+        for (i=0; i<level.mapHurtTriggers.size; i++) {
+            level.mapHurtTriggers[i].trigger thread watchHurtTriggers(level.mapHurtTriggers[i]);
+        }
     }
 }
 
