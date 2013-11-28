@@ -456,6 +456,168 @@ deleteSabotageEntities()
 }
 
 /**
+ * @brief Loads a glide pad specified in the map
+ *
+ * A glide pad, when triggered, moves a player from point to point to point, over time
+ *
+ * @param trigger string The targetname of the entity with a classname of 'trigger_multiple'
+ * @param origin1 string The targetname of the entity with a classname of 'script_origin'
+ * @param origin2 string The targetname of the entity with a classname of 'script_origin'
+ * @param origin3 string The targetname of the entity with a classname of 'script_origin'
+ * @param origin4 string The targetname of the entity with a classname of 'script_origin'
+ * @param origin5 string The targetname of the entity with a classname of 'script_origin'
+ * @param origin6 string The targetname of the entity with a classname of 'script_origin'
+ * @param velocity integer distance to move the player per second
+ *
+ * @returns nothing
+ */
+loadGlidePad(trigger, origin1, origin2, origin3, origin4, origin5, origin6, velocity)
+{
+    debugPrint("in _umi::loadGlidePad()", "fn", level.nonVerbose);
+
+    if (!isDefined(level.glidePads)) {level.glidePads = [];}
+
+    if (!isDefined(velocity)) {
+        velocity = 300; // units/s
+    }
+    if (velocity == 0) {velocity = 0.001;} // divide by zero guard
+
+    pad = spawnStruct();
+    ents = getEntArray(trigger, "targetname");
+    pad.trigger = ents[0];
+
+    // grab the points
+    if (isDefined(origin1)) {
+        ents = getEntArray(origin1, "targetname");
+        pad.origin1 = ents[0].origin;
+    }
+    if (isDefined(origin2)) {
+        ents = getEntArray(origin2, "targetname");
+        pad.origin2 = ents[0].origin;
+    }
+    if (isDefined(origin3)) {
+        ents = getEntArray(origin3, "targetname");
+        pad.origin3 = ents[0].origin;
+    }
+    if (isDefined(origin4)) {
+        ents = getEntArray(origin4, "targetname");
+        pad.origin4 = ents[0].origin;
+    }
+    if (isDefined(origin5)) {
+        ents = getEntArray(origin5, "targetname");
+        pad.origin5 = ents[0].origin;
+    }
+    if (isDefined(origin6)) {
+        ents = getEntArray(origin6, "targetname");
+        pad.origin6 = ents[0].origin;
+    }
+
+    if ((isDefined(pad.origin1)) && (isDefined(pad.origin2))){
+        dist = distance(pad.origin1, pad.origin2);
+        pad.time12 = dist / velocity;
+    }
+    if ((isDefined(pad.origin2)) && (isDefined(pad.origin3))){
+        dist = distance(pad.origin2, pad.origin3);
+        pad.time23 = dist / velocity;
+    }
+    if ((isDefined(pad.origin3)) && (isDefined(pad.origin4))){
+        dist = distance(pad.origin3, pad.origin4);
+        pad.time34 = dist / velocity;
+    }
+    if ((isDefined(pad.origin4)) && (isDefined(pad.origin5))){
+        dist = distance(pad.origin4, pad.origin5);
+        pad.time45 = dist / velocity;
+    }
+    if ((isDefined(pad.origin5)) && (isDefined(pad.origin6))){
+        dist = distance(pad.origin5, pad.origin6);
+        pad.time56 = dist / velocity;
+    }
+
+    level.glidePads[level.glidePads.size] = pad;
+}
+
+/**
+ * @brief Loads an elevator or moving platform form a map
+ *
+ * @param model string The targetname of the entity with a classname of 'script_brushmodel'
+ * @param trigger string The targetname of the entity with a classname of 'trigger_use_touch'
+ * @param positionA tuple The location of the elevator at position A
+ * @param positionB tuple The location of the elevator at position B
+ * @param velocity integer distance to move the elevator per second
+ *
+ * @returns nothing
+ */
+loadElevator(model, trigger, positionA, positionB, velocity)
+{
+    debugPrint("in _umi::loadElevator()", "fn", level.nonVerbose);
+
+    if (!isDefined(level.elevators)) {level.elevators = [];}
+
+    if (!isDefined(velocity)) {
+        velocity = 350; // units/s
+    }
+    if (velocity == 0) {velocity = 0.001;} // divide by zero guard
+
+    elevator = spawnStruct();
+
+    ents = getEntArray(model, "targetname");
+    elevator.model = ents[0];
+    ents = getEntArray(trigger, "targetname");
+    elevator.triggers = ents;
+    elevator.positionA = positionA;
+    elevator.positionB = positionB;
+    dist = distance(elevator.positionB, elevator.positionA);
+    elevator.time = dist / velocity;
+
+    level.elevators[level.elevators.size] = elevator;
+}
+
+/**
+ * @brief Loads a teleporter specified in a map
+ *
+ * @param trigger string The targetname of the entity with a classname of 'trigger_multiple'
+ * @param destination string The targetname of the entity with a classname of 'script_origin'
+ *
+ * @returns nothing
+ */
+loadMapTeleporter(trigger, destination)
+{
+    debugPrint("in _umi::loadMapTeleporter()", "fn", level.nonVerbose);
+
+    if (!isDefined(level.mapTeleporters)) {level.mapTeleporters = [];}
+
+    mapTeleporter = spawnStruct();
+    ents = getEntArray(trigger, "targetname");
+    mapTeleporter.trigger = ents[0];
+    ents = getEntArray(destination, "targetname");
+    mapTeleporter.destination = ents[0].origin;
+
+    level.mapTeleporters[level.mapTeleporters.size] = mapTeleporter;
+}
+
+/**
+ * @brief Loads a hurt trigger specified in a map
+ *
+ * @param trigger string The classname of the entities with a classname of 'trigger_hurt'
+ *
+ * @returns nothing
+ */
+loadHurtTriggers(trigger)
+{
+    debugPrint("in _umi::loadHurtTriggers()", "fn", level.nonVerbose);
+
+    if (!isDefined(level.mapHurtTriggers)) {level.mapHurtTriggers = [];}
+
+    ents = getEntArray("trigger_hurt", "classname");
+    for (i=0; i<ents.size; i++) {
+        hurtTrigger = spawnStruct();
+        hurtTrigger.trigger = ents[i];
+        hurtTrigger.origin = ents[i].origin;
+        level.mapHurtTriggers[level.mapHurtTriggers.size] = hurtTrigger;
+    }
+}
+
+/**
  * @brief UMI to build equipment stores by tradespawns
  *
  * @param equipmentShops string Space-separated list of tradespawn array indices,
