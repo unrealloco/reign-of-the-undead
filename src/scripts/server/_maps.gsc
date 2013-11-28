@@ -317,7 +317,7 @@ watchGlidePad(pad)
     while (1) {
         self waittill("trigger", player);
 
-        pad glidePlayer(player);
+        pad thread glidePlayer(player);
         wait 0.05;
     }
 }
