@@ -50,7 +50,7 @@ init()
     level.zomInterval = .2;
     level.zomSpeedScale = .2/level.zomInterval;
     level.zomPreference = 64 * 64;
-    level.zombieSight = 2048;
+    level.zombieSightDistance = 2048;
     level.zomIdleBehavior = "";
     level.zomTarget = "player_closest";
     level.loadBots = 1;
@@ -472,7 +472,6 @@ Callback_BotKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDir, 
     self.hasSpawned = false;
     level.botsAlive -= 1;
 
-    //level.zom_deaths ++;
     level notify("bot_killed");
 }
 
@@ -762,7 +761,7 @@ zomSpot(target)
     if (!target.visible) {return false;}
 
     distance = distance(self.origin, target.origin);
-    if (distance > level.zombieSight) {return false;}
+    if (distance > level.zombieSightDistance) {return false;}
 
     dot = 1.0;
 

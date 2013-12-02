@@ -274,6 +274,9 @@ devCycleWaypointType()
             newType = "climb";
             break;
         case "climb":
+            newType = "clamp";
+            break;
+        case "clamp":
             newType = "undefined";
             break;
         default:

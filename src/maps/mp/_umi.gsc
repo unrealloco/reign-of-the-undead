@@ -836,8 +836,11 @@ convertToNativeWaypoints()
 
         // RotU doesn't use .type, but read it in so we can preserve the info
         // for _umiEditor::devSaveWaypoints
-        if (isDefined(level.waypoints[i].type)) { // stand, jump, mantle, climb
+        if (isDefined(level.waypoints[i].type)) { // stand, jump, mantle, climb/clamp
             waypoint.type = level.waypoints[i].type;
+        }
+        if (isDefined(level.waypoints[i].clamp) && (level.waypoints[i].clamp)) {
+            waypoint.type = "clamp";
         }
         // RotU doesn't use .angles, but read it in so we can preserve the info
         // for _umiEditor::devSaveWaypoints
