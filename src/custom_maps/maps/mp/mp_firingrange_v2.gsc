@@ -36,14 +36,12 @@
 main()
 {
     maps\mp\_load::main();
-//     maps\mp\mp_firingrange_v2_fx::main(); // compile error
 
     deletePickupItems();
     deleteSabotageEntities();
     deleteHqEntities();
     deleteCtfEntities();
     deleteUnusedSpawnpoints(true, true, true, true);
-    /// @todo implement cycling objects in _umi.gsc to make the targets move
 
     maps\mp\_compass::setupMiniMap("compass_map_mp_firingrange_v2");
     visionSetNaked("mp_firingrange_v2");
@@ -65,6 +63,8 @@ main()
     thread maps\mp\mp_firingrange_v2_tradespawns::load_tradespawns();
     convertToNativeWaypoints();
 
+    loadAnimations();
+
     waitUntilFirstPlayerSpawns();
 
     umiEditorMode = false; // toggle true/false to switch between editor and game mode
@@ -83,4 +83,118 @@ main()
     } else {
         startGame();
     }
+}
+
+loadAnimations()
+{
+    // animate the targets
+    steps = [];
+    step = spawnStruct();
+    step.origin = (7644, -2393, 7);
+    step.destination = (7644, -2640, 7);
+    step.velocity = 50;
+    step.delay = 0;
+    steps[steps.size] = step;
+    loadCyclicalAnimation("bobbing_fr1", "linear", steps, true, 0.1);
+
+    steps = [];
+    step = spawnStruct();
+    step.origin = (7455, -2403, -4);
+    step.destination = (7455, -2145, -4);
+    step.velocity = 50;
+    step.delay = 0;
+    steps[steps.size] = step;
+    loadCyclicalAnimation("bobbing_fr2", "linear", steps, true, 0.1);
+
+    steps = [];
+    step = spawnStruct();
+    step.origin = (7249, -2142, -8);
+    step.destination = (7249, -2375, -8);
+    step.velocity = 50;
+    step.delay = 0;
+    steps[steps.size] = step;
+    loadCyclicalAnimation("bobbing_fr3", "linear", steps, true, 0.1);
+
+    steps = [];
+    step = spawnStruct();
+    step.origin = (7645, -2095, 7);
+    step.destination = (7645, -2346, 7);
+    step.velocity = 50;
+    step.delay = 0;
+    steps[steps.size] = step;
+    loadCyclicalAnimation("bobbing_fr4", "linear", steps, true, 0.1);
+
+    steps = [];
+    step = spawnStruct();
+    step.origin = (7249, -2706, -8);
+    step.destination = (7249, -2930, -8);
+    step.velocity = 50;
+    step.delay = 0;
+    steps[steps.size] = step;
+    loadCyclicalAnimation("bobbing_fr5", "linear", steps, true, 0.1);
+
+    steps = [];
+    step = spawnStruct();
+    step.origin = (4935, -1764, 39);
+    step.destination = (5060, -1764, 39);
+    step.velocity = 50;
+    step.delay = 0;
+    steps[steps.size] = step;
+    loadCyclicalAnimation("bobbing_fr6", "linear", steps, true, 0.1);
+
+    steps = [];
+    step = spawnStruct();
+    step.origin = (6511, -2966, 118);
+    step.destination = (6511, -2855, 118);
+    step.velocity = 50;
+    step.delay = 0;
+    steps[steps.size] = step;
+    loadCyclicalAnimation("bobbing_fr7", "linear", steps, true, 0.1);
+
+    steps = [];
+    step = spawnStruct();
+    step.origin = (6376, -2855, 118);
+    step.destination = (6376, -2966, 118);
+    step.velocity = 50;
+    step.delay = 0;
+    steps[steps.size] = step;
+    loadCyclicalAnimation("bobbing_fr8", "linear", steps, true, 0.1);
+
+    steps = [];
+    step = spawnStruct();
+    step.origin = (6515, -2154, -17);
+    step.destination = (6515, -2280, -17);
+    step.velocity = 50;
+    step.delay = 0;
+    steps[steps.size] = step;
+    loadCyclicalAnimation("bobbing_fr9", "linear", steps, true, 0.1);
+
+    // bobbing_fr10 excluded as it isn't clear what kind of mostion it is supposed to have
+
+    steps = [];
+    step = spawnStruct();
+    step.origin = (3968, -2236, 41);
+    step.destination = (3751, -2236, 41);
+    step.velocity = 50;
+    step.delay = 0;
+    steps[steps.size] = step;
+    loadCyclicalAnimation("bobbing_fr11", "linear", steps, true, 0.1);
+
+    steps = [];
+    step = spawnStruct();
+    step.origin = (3940, -1604, 35);
+    step.destination = (3820, -1604, 35);
+    step.velocity = 50;
+    step.delay = 0;
+    steps[steps.size] = step;
+    loadCyclicalAnimation("bobbing_fr12", "linear", steps, true, 0.1);
+
+    steps = [];
+    step = spawnStruct();
+    step.origin = (4444, -2364, 90);
+    step.destination = (4412, -2277, 90);
+    step.velocity = 50;
+    step.delay = 0;
+    steps[steps.size] = step;
+    loadCyclicalAnimation("bobbing_h4", "linear", steps, true, 0.1);
 }

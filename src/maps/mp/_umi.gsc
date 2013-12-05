@@ -470,6 +470,7 @@ deleteSabotageEntities()
  * @param velocity integer distance to move the player per second
  *
  * @returns nothing
+ * @since RotU 2.2.3
  */
 loadGlidePad(trigger, origin1, origin2, origin3, origin4, origin5, origin6, velocity)
 {
@@ -537,6 +538,62 @@ loadGlidePad(trigger, origin1, origin2, origin3, origin4, origin5, origin6, velo
 }
 
 /**
+ * @brief Loads a continuous animation
+ *
+ * @param model string The targetname of the entity with a classname of 'script_brushmodel'
+ * @param type string The type of motion. One of [linear|rotate]
+ * @param steps array An array of step structs
+ *      If \c type is "linear", the step struct has members:
+ *          .origin
+ *          .destination
+ *          .velocity, a distance to travel per second
+ *          .delay, how long to wait before doing the next step
+ *      If \c type is "rotate", the step struct has members:
+ *          .fromAngles
+ *          .toAngles
+ *          .velocity, in degrees per second
+ *          .delay, how long to wait before doing the next step
+ * @param reversible boolean Should the animation be reversed between each cycle?
+ * @param delay integer time in seconds to wait before doing the next iteration of the animation
+ *
+ * @returns nothing
+ * @since RotU 2.2.3
+ */
+loadCyclicalAnimation(model, type, steps, reversible, delay)
+{
+    debugPrint("in _umi::loadCyclicalAnimation()", "fn", level.nonVerbose);
+
+    if (!isDefined(level.mapAnimations)) {level.mapAnimations = [];}
+
+    if (!isDefined(delay)) {
+        delay = 0; // s
+    }
+    if (!isDefined(reversible)) {
+        reversible = false; // s
+    }
+
+    for (i=0; i<steps.size; i++) {
+        if (steps[i].velocity == 0) {steps[i].velocity = 0.01;}
+        if (type == "linear") {
+            steps[i].time = distance(steps[i].origin, steps[i].destination) / steps[i].velocity;
+        } else if (type == "rotate") {
+            theta = scripts\players\_turrets::angleBetweenTwoVectors(steps[i].toAngles, steps[i].fromAngles);
+            steps[i].time = theta / steps[i].velocity;
+        }
+    }
+
+    animation = spawnStruct();
+    ents = getEntArray(model, "targetname");
+    animation.model = ents[0];
+    animation.reversible = reversible;
+    animation.delay = delay;
+    animation.type = type;
+    animation.steps = steps;
+
+    level.mapAnimations[level.mapAnimations.size] = animation;
+}
+
+/**
  * @brief Loads an elevator or moving platform form a map
  *
  * @param model string The targetname of the entity with a classname of 'script_brushmodel'
@@ -546,6 +603,7 @@ loadGlidePad(trigger, origin1, origin2, origin3, origin4, origin5, origin6, velo
  * @param velocity integer distance to move the elevator per second
  *
  * @returns nothing
+ * @since RotU 2.2.3
  */
 loadElevator(model, trigger, positionA, positionB, velocity)
 {
@@ -579,6 +637,7 @@ loadElevator(model, trigger, positionA, positionB, velocity)
  * @param destination string The targetname of the entity with a classname of 'script_origin'
  *
  * @returns nothing
+ * @since RotU 2.2.3
  */
 loadMapTeleporter(trigger, destination)
 {
@@ -601,6 +660,7 @@ loadMapTeleporter(trigger, destination)
  * @param trigger string The classname of the entities with a classname of 'trigger_hurt'
  *
  * @returns nothing
+ * @since RotU 2.2.3
  */
 loadHurtTriggers(trigger)
 {
@@ -1104,6 +1164,10 @@ waitUntilFirstPlayerSpawns()
 startGame()
 {
     debugPrint("in _umi::startGame()", "fn", level.nonVerbose);
+
+    if (level.zombieAiDevelopment) {
+        scripts\bots\bots::findAdditionalSpawnpoints();
+    }
 
     scripts\gamemodes\_survival::beginGame();
 }
