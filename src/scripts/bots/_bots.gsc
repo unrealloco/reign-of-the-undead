@@ -846,10 +846,10 @@ zomMoveTowards(target_position)
     self endon("death");
 
     if (!isdefined(self.myWaypoint)) {
-        self.myWaypoint = getNearestWp(self.origin);
+        self.myWaypoint = nearestWaypoint(self.origin);
     }
 
-    targetWp = getNearestWp(target_position);
+    targetWp = nearestWaypoint(target_position);
     nextWp = self.nextWp;
     direct = false;
 
