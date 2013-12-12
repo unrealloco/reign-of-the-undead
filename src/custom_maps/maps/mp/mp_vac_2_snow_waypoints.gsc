@@ -8,6 +8,9 @@
 // =============================================================================
 //
 // This file contains the waypoints for the map 'mp_vac_2_snow'
+//
+// N.B. You will need to delete the timecodes at the beginning of these lines!
+//
 load_waypoints()
 {
     level.waypoints = [];
@@ -201,7 +204,7 @@ load_waypoints()
     level.waypoints[22].children[3] = 30;
     level.waypoints[22].children[4] = 84;
     level.waypoints[23] = spawnstruct();
-    level.waypoints[23].origin = (-246.525,-105.862,-119);
+    level.waypoints[23].origin = (-246.525,-105.862,-119.001);
     level.waypoints[23].type = "stand";
     level.waypoints[23].childCount = 6;
     level.waypoints[23].children[0] = 21;
@@ -608,7 +611,7 @@ load_waypoints()
     level.waypoints[75].children[3] = 64;
     level.waypoints[75].children[4] = 74;
     level.waypoints[76] = spawnstruct();
-    level.waypoints[76].origin = (184,87.8714,-57.875);
+    level.waypoints[76].origin = (184.001,87.8714,-57.875);
     level.waypoints[76].type = "stand";
     level.waypoints[76].childCount = 1;
     level.waypoints[76].children[0] = 77;
@@ -950,11 +953,12 @@ load_waypoints()
     level.waypoints[119] = spawnstruct();
     level.waypoints[119].origin = (-1467.09,562.873,-123.955);
     level.waypoints[119].type = "stand";
-    level.waypoints[119].childCount = 4;
+    level.waypoints[119].childCount = 5;
     level.waypoints[119].children[0] = 110;
     level.waypoints[119].children[1] = 121;
     level.waypoints[119].children[2] = 124;
     level.waypoints[119].children[3] = 125;
+    level.waypoints[119].children[4] = 232;
     level.waypoints[120] = spawnstruct();
     level.waypoints[120].origin = (-1487.4,252.145,-121.204);
     level.waypoints[120].type = "stand";
@@ -999,7 +1003,7 @@ load_waypoints()
     level.waypoints[125] = spawnstruct();
     level.waypoints[125].origin = (-1451.3,981.26,-121.033);
     level.waypoints[125].type = "stand";
-    level.waypoints[125].childCount = 8;
+    level.waypoints[125].childCount = 9;
     level.waypoints[125].children[0] = 119;
     level.waypoints[125].children[1] = 123;
     level.waypoints[125].children[2] = 124;
@@ -1008,6 +1012,7 @@ load_waypoints()
     level.waypoints[125].children[5] = 133;
     level.waypoints[125].children[6] = 133;
     level.waypoints[125].children[7] = 134;
+    level.waypoints[125].children[8] = 234;
     level.waypoints[126] = spawnstruct();
     level.waypoints[126].origin = (-1546.22,1103,-122.001);
     level.waypoints[126].type = "stand";
@@ -1038,23 +1043,26 @@ load_waypoints()
     level.waypoints[130] = spawnstruct();
     level.waypoints[130].origin = (-1795.44,1490.26,-120.285);
     level.waypoints[130].type = "stand";
-    level.waypoints[130].childCount = 2;
+    level.waypoints[130].childCount = 3;
     level.waypoints[130].children[0] = 129;
     level.waypoints[130].children[1] = 131;
+    level.waypoints[130].children[2] = 136;
     level.waypoints[131] = spawnstruct();
     level.waypoints[131].origin = (-1639.3,1518.82,-115.284);
     level.waypoints[131].type = "stand";
-    level.waypoints[131].childCount = 2;
+    level.waypoints[131].childCount = 3;
     level.waypoints[131].children[0] = 130;
     level.waypoints[131].children[1] = 132;
+    level.waypoints[131].children[2] = 136;
     level.waypoints[132] = spawnstruct();
     level.waypoints[132].origin = (-1453.05,1441.66,-122.001);
     level.waypoints[132].type = "stand";
-    level.waypoints[132].childCount = 4;
+    level.waypoints[132].childCount = 5;
     level.waypoints[132].children[0] = 125;
     level.waypoints[132].children[1] = 126;
     level.waypoints[132].children[2] = 131;
     level.waypoints[132].children[3] = 133;
+    level.waypoints[132].children[4] = 136;
     level.waypoints[133] = spawnstruct();
     level.waypoints[133].origin = (-1406.07,1151.26,-122.001);
     level.waypoints[133].type = "stand";
@@ -1079,8 +1087,11 @@ load_waypoints()
     level.waypoints[136] = spawnstruct();
     level.waypoints[136].origin = (-1658.74,1582.03,-100.875);
     level.waypoints[136].type = "stand";
-    level.waypoints[136].childCount = 1;
-    level.waypoints[136].children[0] = 137;
+    level.waypoints[136].childCount = 4;
+    level.waypoints[136].children[0] = 130;
+    level.waypoints[136].children[1] = 131;
+    level.waypoints[136].children[2] = 132;
+    level.waypoints[136].children[3] = 137;
     level.waypoints[137] = spawnstruct();
     level.waypoints[137].origin = (-1668.84,1692.7,-113.875);
     level.waypoints[137].type = "stand";
@@ -1815,11 +1826,12 @@ load_waypoints()
     level.waypoints[231].children[2] = 233;
     level.waypoints[231].children[3] = 235;
     level.waypoints[232] = spawnstruct();
-    level.waypoints[232].origin = (-1334.96,541.773,-57.875);
+    level.waypoints[232].origin = (-1370.82,548.336,-57.875);
     level.waypoints[232].type = "stand";
-    level.waypoints[232].childCount = 2;
-    level.waypoints[232].children[0] = 231;
-    level.waypoints[232].children[1] = 233;
+    level.waypoints[232].childCount = 3;
+    level.waypoints[232].children[0] = 119;
+    level.waypoints[232].children[1] = 231;
+    level.waypoints[232].children[2] = 233;
     level.waypoints[233] = spawnstruct();
     level.waypoints[233].origin = (-1344.18,691.132,-57.875);
     level.waypoints[233].type = "stand";
@@ -1828,11 +1840,12 @@ load_waypoints()
     level.waypoints[233].children[1] = 232;
     level.waypoints[233].children[2] = 234;
     level.waypoints[234] = spawnstruct();
-    level.waypoints[234].origin = (-1316.43,852.103,-57.875);
+    level.waypoints[234].origin = (-1367.25,902.148,-57.875);
     level.waypoints[234].type = "stand";
-    level.waypoints[234].childCount = 2;
-    level.waypoints[234].children[0] = 233;
-    level.waypoints[234].children[1] = 236;
+    level.waypoints[234].childCount = 3;
+    level.waypoints[234].children[0] = 125;
+    level.waypoints[234].children[1] = 233;
+    level.waypoints[234].children[2] = 236;
     level.waypoints[235] = spawnstruct();
     level.waypoints[235].origin = (-1173.16,689.765,-57.875);
     level.waypoints[235].type = "stand";
