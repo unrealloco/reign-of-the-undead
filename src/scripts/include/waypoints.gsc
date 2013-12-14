@@ -47,11 +47,19 @@ loadWaypoints()
     level.useKdWaypointTree = false;
     initStatic(); // initialize my hack to enable static member variables
 
+    level.astarCalls = 0;
+    level.astarDistanceCalls = 0;
+    level.savedAStarCalls = 0;
+
+    // level thread printAStarData();
+
     if ((isDefined(level.Wp)) && (level.Wp.size > 0)) {
         // waypoints were already loaded externally, so don't look for internal ones
 
         // intialize the k-dimensional waypoint tree
         initKdWaypointTree();
+        loadWaypointLinkDistances();
+
         return;
     }
 
@@ -86,7 +94,7 @@ loadWaypoints()
     }
     // intialize the k-dimensional waypoint tree
     initKdWaypointTree();
-
+    loadWaypointLinkDistances();
 }
 
 /**
@@ -765,8 +773,328 @@ nearestWaypoint(origin)
     return nearestWp;
 }
 
-// A* PATHFINDING ALGORITHM: CREDITS GO TO PEZBOTS!
-AStarSearch(startWp, goalWp)
+
+/**
+ * @brief Pre-compute and save distances between linked waypoints to optimize A*
+ * We compute and store each distance twice to minimize the work A* has to do to
+ * find the distance
+ *
+ * @returns nothing
+ */
+loadWaypointLinkDistances()
+{
+    for (i=0; i<level.Wp.size; i++) {
+        for (j=0; j<level.Wp[i].linked.size; j++) {
+            level.Wp[i].distance[j] = distance(level.Wp[i].origin, level.Wp[level.Wp[i].linked[j].ID].origin);
+        }
+    }
+}
+
+/**
+ * @brief Writes some data to the server log about A* performance
+ *
+ * @returns nothing
+ */
+printAStarData()
+{
+    while (1) {
+        wait 120;
+        noticePrint("A* (calls, saved calls, distance() calls): (" + level.astarCalls + ", " + level.savedAStarCalls + ", " + level.astarDistanceCalls + ")");
+    }
+}
+
+/**
+ * @brief Perfoms testing comparing the old A* algorithm and the new A* alorithm
+ *
+ * @param n integer The number of tests to run
+ *
+ * @returns nothing
+ */
+validateAStar(n)
+{
+    right = 0;
+    wrong = 0;
+
+    for (i=0; i<n; i++) {
+        waypoints = randomWaypointPairIndices();
+        startWp = waypoints.start;
+        goalWp = waypoints.goal;
+
+        oldAStar = AStarOriginal(startWp, goalWp);
+        newAStarNodes = AStarNew(startWp, goalWp);
+        newAStar = newAStarNodes[newAStarNodes.size - 1];
+
+        if (oldAStar == newAStar) {right++;}
+        else {
+            wrong++;
+            noticePrint("old: " + oldAStar + " new: " + newAStar);
+        }
+    }
+
+    noticePrint("A* validity (right, wrong): (" + right + ", " + wrong + ")");
+}
+
+/**
+ * @brief Generate a random pair of waypoints
+ *
+ * @returns struct containing .start and .goal integer members
+ */
+randomWaypointPairIndices()
+{
+    start = 0;
+    goal = 0;
+    while (start == goal) {
+        start = randomInt(level.Wp.size);
+        goal = randomInt(level.Wp.size);
+    }
+    pair = spawnStruct();
+    pair.start = start;
+    pair.goal = goal;
+    return pair;
+}
+
+/**
+ * @brief Finds the best path between two waypoints
+ *
+ * @param startWp integer The index of the waypoint to begin the path at
+ * @param goalWp integer The index of the waypoint to where the path ends
+ *
+ * @returns An integer stack of up to the first five waypoints in the path
+ */
+AStarNew(startWp, goalWp)
+{
+    // 20th most-called function (0.4% of all function calls).
+    // Do *not* put a function entrance debugPrint statement here!
+    level.astarCalls++;
+
+    pathNodes = [];
+
+    pQOpen = [];
+    pQSize = 0;
+    closedList = [];
+    listSize = 0;
+    s = spawnstruct();
+    s.g = 0; //start node
+    s.h = distance(level.Wp[startWp].origin, level.Wp[goalWp].origin);
+    level.astarDistanceCalls++;
+    s.f = s.g + s.h;
+    s.wpIdx = startWp;
+    s.parent = spawnstruct();
+    s.parent.wpIdx = -1;
+
+    // push s on Open
+    pQOpen[pQSize] = spawnstruct();
+    pQOpen[pQSize] = s; //push s on Open
+    pQSize++;
+
+    // while Open is not empty
+    while (pQSize > 0) {
+        //pop node n from Open  // n has the lowest f
+        n = pQOpen[0];
+        highestPriority = 9999999999;
+        bestNode = -1;
+        for (i=0; i<pQSize; i++) {
+            if (pQOpen[i].f < highestPriority) {
+                bestNode = i;
+                highestPriority = pQOpen[i].f;
+            }
+        }
+
+        if (bestNode != -1) {
+            n = pQOpen[bestNode];
+            //remove node from queue
+            for (i=bestNode; i<pQSize-1; i++) {
+                pQOpen[i] = pQOpen[i+1];
+            }
+            pQSize--;
+        } else {
+            errorPrint("AStarNew(" + startWp + ", " + goalWp + ") on map " + getdvar("mapname") + " failed to find a path.");
+            return -1;
+        }
+
+        //if n is a goal node; construct path, return success
+        if (n.wpIdx == goalWp) {
+            x = n;
+            path = "";
+            while (x.parent.wpIdx != -1) {
+                path = path + x.wpIdx + " ";
+                pathNodes[pathNodes.size] = x.wpIdx; // push the node onto the stack
+                // process the next node
+                x = x.parent;
+            }
+            if (pathNodes.size == 0) {
+                // Can't happen, unless perhaps a map-maker screws up the waypoints
+                // and creates unreachable nodes
+                errorPrint("AStarNew(" + startWp + ", " + goalWp + ") on map " + getdvar("mapname") + " failed to find a path.");
+                return -1;
+            }
+
+            // grab up to 5 nodes to return as a stack
+            pathStack = [];
+            start = pathNodes.size - 5;     // return up to five nodes
+            if (start < 0) {start = 0;}     // don't fall off the front of the array
+            index = 0;
+            for (i=start; i<pathNodes.size; i++) {
+                pathStack[index] = pathNodes[i];
+                index++;
+            }
+
+            return pathStack;
+        }
+
+        //for each successor nc of n
+        for (i=0; i<level.Wp[n.wpIdx].linkedCount; i++) {
+            //newg = n.g + cost(n,nc)
+            newg = n.g + level.Wp[n.wpIdx].distance[i];
+
+            // if nc is in Open or Closed, and nc.g <= newg then skip this iteration
+            ncFound = false;
+            // if nc is in open list, grab a copy of it
+            nc = spawnstruct();
+            for (p=0; p<pQSize; p++) {
+                if (pQOpen[p].wpIdx == level.Wp[n.wpIdx].linked[i].ID) {
+                    nc = pQOpen[p];
+                    ncFound = true;
+                    break;
+                }
+            }
+            if ((ncFound) && (nc.g <= newg)) {continue;}
+            if (!ncFound) { // nc wasn't in the open list
+                // if nc is in closed list, grab a copy of it
+                ncFound = false;
+                nc = spawnstruct();
+                for (p=0; p<listSize; p++) {
+                    if (closedList[p].wpIdx == level.Wp[n.wpIdx].linked[i].ID) {
+                        nc = closedList[p];
+                        ncFound = true;
+                        break;
+                    }
+                }
+                if ((ncFound) && (nc.g <= newg)) {continue;}
+            }
+//             nc.parent = n
+//             nc.g = newg
+//             nc.h = GoalDistEstimate( nc )
+//             nc.f = nc.g + nc.h
+
+            nc = spawnstruct();
+            nc.parent = spawnstruct();
+            nc.parent = n;
+            nc.g = newg;
+            nc.h = distance(level.Wp[level.Wp[n.wpIdx].linked[i].ID].origin, level.Wp[goalWp].origin);
+            level.astarDistanceCalls++;
+            nc.f = nc.g + nc.h;
+            nc.wpIdx = level.Wp[n.wpIdx].linked[i].ID;
+
+            // if nc is in Closed, remove it without changing the order of elements in Closed
+            for (p=0; p<listSize; p++) {
+                if (closedList[p].wpIdx == nc.wpIdx) {
+                    // we found nc, so remove it without changing the order of closed
+                    for (j=p; j<listSize - 1; j++) {
+                        // shift elements greater than nc to the left
+                        closedList[j] = closedList[j+1];
+                    }
+                    listSize--;
+                    break;
+                }
+            }
+
+            //if nc is not yet in Open,
+            if (!PQExists(pQOpen, nc.wpIdx, pQSize)) {
+                //push nc on Open
+                pQOpen[pQSize] = spawnstruct();
+                pQOpen[pQSize] = nc;
+                pQSize++;
+            }
+        }
+
+        //Done with children, push n onto Closed
+        if (!ListExists(closedList, n.wpIdx, listSize)) {
+            closedList[listSize] = spawnstruct();
+            closedList[listSize] = n;
+            listSize++;
+        }
+    }
+}
+
+/**
+ * @brief Determines if an array is empty
+ * @deprecated This is only used by the deprecated AStarOriginal(), which is only used for testing
+ *
+ * @param Q the array to inspect
+ * @param QSize the size of the array
+ *
+ * @returns boolean indicating whether the array is empty or not
+ */
+PQIsEmpty(Q, QSize)
+{
+    /// Why are we passing in Q if we aren't using it?
+    // 5th most-called function (5% of all function calls).
+    // Do *not* put a function entrance debugPrint statement here!
+
+    if (QSize <= 0) {return true;}
+
+    return false;
+}
+
+/**
+ * @brief Determines if an element is in an array
+ *
+ * @param Q the array to inspect
+ * @param n the element to search for
+ * @param QSize the size of the array
+ *
+ * @returns boolean indicating whether the element is in the array or not
+ */
+PQExists(Q, n, QSize)
+{
+    // 2nd most-called function (22% of all function calls).
+    // Do *not* put a function entrance debugPrint statement here!
+
+    for (i=0; i<QSize; i++) {
+        if(Q[i].wpIdx == n) {return true;}
+    }
+
+    return false;
+}
+
+/**
+ * @brief Determines if an element is in an array
+ * N.B. This function is identical to PQExists(Q, n, QSize), but I'm leaving
+ * it here for the AStarOriginal() function.
+ *
+ * @param list the array to inspect
+ * @param n the element to search for
+ * @param listSize the size of the array
+ *
+ * @returns boolean indicating whether the element is in the array or not
+ */
+ListExists(list, n, listSize)
+{
+    // 1st most-called function (26% of all function calls).
+    // Do *not* put a function entrance debugPrint statement here!
+
+    for (i=0; i<listSize; i++) {
+        if (list[i].wpIdx == n) {return true;}
+    }
+
+    return false;
+}
+
+/**
+ * @brief Finds the best path between two waypoints
+ * @deprecated This function is only used for comparing with better A* implemetations
+ *
+ * This is the original A* algorithm from Bipo/Pezbots.  It is terribly inefficient
+ * and a complete waste of resources, and as such, it should never be used.  For anything.
+ * Ever. Except maybe to compare it to a better A* implementation.
+ *
+ * @param startWp integer The index of the waypoint to begin the path at
+ * @param goalWp integer The index of the waypoint to where the path ends
+ *
+ * @returns integer The first waypoint in the path
+ */
+AStarOriginal(startWp, goalWp)
 {
     // 20th most-called function (0.4% of all function calls).
     // Do *not* put a function entrance debugPrint statement here!
@@ -819,7 +1147,7 @@ AStarSearch(startWp, goalWp)
             for (z = 0; z < 1000; z++) {
                 parent = x.parent;
                 if(parent.parent.wpIdx == -1) {return x.wpIdx;}
-//                 line(level.Wp[x.wpIdx].origin, level.Wp[parent.wpIdx].origin, (0,1,0));
+                //                 line(level.Wp[x.wpIdx].origin, level.Wp[parent.wpIdx].origin, (0,1,0));
                 x = parent;
             }
             return -1;
@@ -855,10 +1183,10 @@ AStarSearch(startWp, goalWp)
                     if(nc.g <= newg) {continue;}
                 }
             }
-//             nc.parent = n
-//             nc.g = newg
-//             nc.h = GoalDistEstimate( nc )
-//             nc.f = nc.g + nc.h
+            //             nc.parent = n
+            //             nc.g = newg
+            //             nc.h = GoalDistEstimate( nc )
+            //             nc.f = nc.g + nc.h
 
             nc = spawnstruct();
             nc.parent = spawnstruct();
@@ -902,50 +1230,3 @@ AStarSearch(startWp, goalWp)
         }
     }
 }
-
-
-
-////////////////////////////////////////////////////////////
-// PQIsEmpty, returns true if empty
-////////////////////////////////////////////////////////////
-PQIsEmpty(Q, QSize)
-{
-    // 5th most-called function (5% of all function calls).
-    // Do *not* put a function entrance debugPrint statement here!
-
-    if (QSize <= 0) {return true;}
-
-    return false;
-}
-
-
-////////////////////////////////////////////////////////////
-// returns true if n exists in the pQ
-////////////////////////////////////////////////////////////
-PQExists(Q, n, QSize)
-{
-    // 2nd most-called function (22% of all function calls).
-    // Do *not* put a function entrance debugPrint statement here!
-
-    for (i=0; i<QSize; i++) {
-        if(Q[i].wpIdx == n) {return true;}
-    }
-
-    return false;
-}
-
-////////////////////////////////////////////////////////////
-// returns true if n exists in the list
-////////////////////////////////////////////////////////////
-ListExists(list, n, listSize)
-{
-    // 1st most-called function (26% of all function calls).
-    // Do *not* put a function entrance debugPrint statement here!
-
-    for (i=0; i<listSize; i++) {
-        if (list[i].wpIdx == n) {return true;}
-    }
-
-    return false;
-}
-
