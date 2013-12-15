@@ -45,6 +45,8 @@ loadWaypoints()
     debugPrint("in waypoints::loadWaypoints()", "fn", level.nonVerbose);
 
     level.useKdWaypointTree = false;
+    if (!isDefined(level.waypointsInvalid)) {level.waypointsInvalid = false;}
+
     initStatic(); // initialize my hack to enable static member variables
 
     level.astarCalls = 0;
@@ -88,8 +90,9 @@ loadWaypoints()
         }
 
         // Error catching
-        if (!isdefined(waypoint.linked)) {
-            iprintlnbold("^1UNLINKED WAYPOINT: " + waypoint.ID + " AT: " +  waypoint.origin);
+        if (!isDefined(waypoint.linked)) {
+            errorPrint("Unlinked Waypoint: " + waypoint.ID + " at: " +  waypoint.origin + " on map " + getdvar("mapname"));
+            level.waypointsInvalid = true;
         }
     }
     // intialize the k-dimensional waypoint tree
@@ -783,6 +786,8 @@ nearestWaypoint(origin)
  */
 loadWaypointLinkDistances()
 {
+    if (level.waypointsInvalid) {return;}
+
     for (i=0; i<level.Wp.size; i++) {
         for (j=0; j<level.Wp[i].linked.size; j++) {
             level.Wp[i].distance[j] = distance(level.Wp[i].origin, level.Wp[level.Wp[i].linked[j].ID].origin);

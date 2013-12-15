@@ -877,23 +877,30 @@ zomMoveTowards(target_position)
             self.underway = false;
             self.myWaypoint = undefined;
         } else {
-            if ((self.lastAStarTargetWp != targetWp) ||     // our target wp has changed since our last A* call
-                (self.myWaypoint != self.lastAStarWp) ||    // our current wp is not the waypoint we were supposed to go to
-                (self.pathNodes.size == 0))                 // we are out of path nodes
-            {
-                // invalidate the pathNodes stack and get a fresh stack from A*
-                self.pathNodes = AStarNew(self.myWaypoint, targetWp);
-                self.lastAStarTargetWp = targetWp;
+            if (level.waypointsInvalid) {
+                // HACK: Make maps with invalid waypoints work, at least somewhat
+                direct = true;
+                self.underway = false;
+                self.myWaypoint = undefined;
             } else {
-                level.savedAStarCalls++;
-            }
-            // pop the next wp to head towards off the stack
-            nextWp = self.pathNodes[self.pathNodes.size - 1];
-            self.pathNodes[self.pathNodes.size - 1] = undefined;
-            self.lastAStarWp = nextWp;
+                if ((self.lastAStarTargetWp != targetWp) ||     // our target wp has changed since our last A* call
+                    (self.myWaypoint != self.lastAStarWp) ||    // our current wp is not the waypoint we were supposed to go to
+                    (self.pathNodes.size == 0))                 // we are out of path nodes
+                {
+                    // invalidate the pathNodes stack and get a fresh stack from A*
+                    self.pathNodes = AStarNew(self.myWaypoint, targetWp);
+                    self.lastAStarTargetWp = targetWp;
+                } else {
+                    level.savedAStarCalls++;
+                }
+                // pop the next wp to head towards off the stack
+                nextWp = self.pathNodes[self.pathNodes.size - 1];
+                self.pathNodes[self.pathNodes.size - 1] = undefined;
+                self.lastAStarWp = nextWp;
 
-            self.nextWp = nextWp;
-            self.underway = true;
+                self.nextWp = nextWp;
+                self.underway = true;
+            }
         }
     }
 

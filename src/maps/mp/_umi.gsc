@@ -923,8 +923,9 @@ convertToNativeWaypoints()
             //             noticePrint("waypoint: " + i + " is linked to waypoint " + level.waypoints[i].children[j]);
         }
         // Error catching
-        if (!isdefined(waypoint.linked)) {
-            iprintlnbold("^1UNLINKED WAYPOINT: " + waypoint.ID + " AT: " +  waypoint.origin);
+        if (!isDefined(waypoint.linked)) {
+            errorPrint("Unlinked Waypoint: " + waypoint.ID + " at: " +  waypoint.origin + " on map " + getdvar("mapname"));
+            level.waypointsInvalid = true;
         }
     }
 
