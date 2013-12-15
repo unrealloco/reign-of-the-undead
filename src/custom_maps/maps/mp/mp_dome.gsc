@@ -42,9 +42,16 @@ main()
     deleteHqEntities();
     deleteCtfEntities();
     deleteUnusedSpawnpoints(true, true, true, true);
+    disambiguateBarrelsByTargetname("explodable_barrel");
 
-    ambientPlay("ambient_backlot_ext");
-    maps\mp\_compass::setupMiniMap("compass_map_mp_fallout");
+    maps\createart\mp_dome_art::main();
+    maps\mp\_ac_fan_script::main();
+    maps\mp\_rotatemebitch::main();
+    maps\mp\mp_dome_fx::main();
+    maps\mp\mp_dome_sound_fx::main();
+
+    ambientPlay("ambient_middleeast_ext");
+    maps\mp\_compass::setupMiniMap("compass_map_mp_dome");
 
     game["allies"] = "marines";
     game["axis"] = "opfor";
@@ -57,10 +64,10 @@ main()
     setdvar("r_glowbloomintensity0",".25");
     setdvar("r_glowbloomintensity1",".25");
     setdvar("r_glowskybleedintensity0",".3");
-    setdvar("compassmaxrange","1800");
+    setdvar("compassmaxrange","1700");
 
-    thread maps\mp\mp_fallout_waypoints::load_waypoints();
-    thread maps\mp\mp_fallout_tradespawns::load_tradespawns();
+    thread maps\mp\mp_dome_waypoints::load_waypoints();
+    thread maps\mp\mp_dome_tradespawns::load_tradespawns();
     convertToNativeWaypoints();
 
     waitUntilFirstPlayerSpawns();
@@ -70,12 +77,12 @@ main()
     if (umiEditorMode) {
         devDrawAllPossibleSpawnpoints();
         maps\mp\_umiEditor::initMapEditor();
-        maps\mp\_umiEditor::initWeaponShopEditor("0 2 4 6 8 10 12 14 16 18");
-        maps\mp\_umiEditor::initEquipmentShopEditor("1 3 5 7 9 11 13 15 17 19");
-//         maps\mp\_umiEditor::devDumpEntities();
+        maps\mp\_umiEditor::initWeaponShopEditor("0 2 4 6");
+        maps\mp\_umiEditor::initEquipmentShopEditor("1 3 5 7");
+        maps\mp\_umiEditor::devDumpEntities();
     } else {
-        buildWeaponShopsByTradespawns("0 2 4 6 8 10 12 14 16 18");
-        buildShopsByTradespawns("1 3 5 7 9 11 13 15 17 19");
+        buildWeaponShopsByTradespawns("0 2 4 6");
+        buildShopsByTradespawns("1 3 5 7");
     }
 
     buildZombieSpawnsByClassname("mp_dm_spawn");
