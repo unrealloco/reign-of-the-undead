@@ -71,7 +71,8 @@ catchBot()
     if(self getStat(512) == 100) {
         level.loadBots = 0;
         self.isBot = true;
-        self thread scripts\bots\_bots::loadBot();
+        noticePrint("_clients::catchBot, trying to reload a bot, why?");
+//         self thread scripts\bots\_bots::loadBot();
 
         return 1;
     }
@@ -180,11 +181,7 @@ Callback_PlayerKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDi
     debugPrint("in _clients::Callback_PlayerKilled()", "fn", level.veryHighVerbosity);
 
     if (self.isBot) {
-        if (level.zombieAiDevelopment) {
-            self thread scripts\bots\bots::botKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, psOffsetTime, deathAnimDuration);
-        } else {
-            self thread scripts\bots\_bots::Callback_BotKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, psOffsetTime, deathAnimDuration);
-        }
+        self thread scripts\bots\_bot::killed(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, psOffsetTime, deathAnimDuration);
     } else {
         self thread scripts\players\_players::onPlayerKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, psOffsetTime, deathAnimDuration);
     }

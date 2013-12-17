@@ -191,7 +191,7 @@ getDamageModifier(weapon, means, target, damage)
         if (!WeaponIsBoltAction(weapon) && !WeaponIsSemiAuto(weapon) && means == "MOD_HEAD_SHOT") {
             MP += .45;
         }
-        if (!target scripts\bots\_bots::zomSpot(self)) {
+        if (!target scripts\bots\_bot::canSeeTarget(self)) {
             MP += .15;
         }
     }

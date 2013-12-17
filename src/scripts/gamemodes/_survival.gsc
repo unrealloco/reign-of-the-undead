@@ -925,9 +925,7 @@ spawnZombie(override, spawntype)
     if (!isdefined(spawntype)) {spawntype = 0;}
 
     if (spawntype==1) { // soul spawn
-        if (level.zombieAiDevelopment) {
-            bot = scripts\bots\bots::availableBot();
-        } else {bot = scripts\bots\_bots::getAvailableBot();}
+        bot = scripts\bots\_bots::availableBot();
         if (!isDefined(bot)) {return undefined;}
 
         bot.hasSpawned = true;
@@ -937,9 +935,7 @@ spawnZombie(override, spawntype)
         thread soulSpawn(type, spawn, bot);
         return bot;
     } else if (spawntype==2) { // ground spawn
-        if (level.zombieAiDevelopment) {
-            bot = scripts\bots\bots::availableBot();
-        } else {bot = scripts\bots\_bots::getAvailableBot();}
+        bot = scripts\bots\_bots::availableBot();
         if (!isdefined(bot)) {return undefined;}
 
         bot.hasSpawned = true;

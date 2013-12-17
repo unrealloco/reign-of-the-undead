@@ -370,7 +370,7 @@ thunderBlast(dam, realdam, bot)
         bot finishPlayerDamage(self, self, dam, 0, "MOD_PROJECTILE", "thundergun_mp", direction, direction, "none", 0);
     } else {
         // bot gets stunned, and damage is done
-        bot thread scripts\bots\_bots::zomGoStunned();
+        bot thread scripts\bots\_bot::stun();
         bot thread [[level.callbackPlayerDamage]](
             self, // eInflictor The entity that causes the damage.(e.g. a turret)
             self, // eAttacker The entity that is attacking.

@@ -134,6 +134,9 @@ getClosestPlayerArray()
     return nearPlayers;
 }
 
+/**
+ * @deprecated
+ */
 getClosestTarget()
 {
     debugPrint("in entities::getClosestTarget()", "fn", level.highVerbosity);

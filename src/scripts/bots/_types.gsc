@@ -164,18 +164,18 @@ initZomTypes()
     debugPrint("in _types::initZomTypes()", "fn", level.nonVerbose);
 
     level.zom_types = [];
-    addZomType("zombie", "zombie", "zombie", "zombie",        18, 46, 20,  96, 40,   200, .8, 1, 0.075); // Default zombie
-    addZomType("burning", "zombie_all", "zombie", "zombie",   18, 36, 20,  96, 40,   200, .8, 1, 0.0); // Code handled
-    addZomType("toxic", "quad", "quad", "zombie",             18, 36, 26, 104, 50,   180, .6, 1, 0.55); // Code handled
-    addZomType("fat", "fat", "zombie", "zombie",              16, 42, 16, 100, 40,   275, .8, 0, 0.05);
-    addZomType("fast", "fast", "zombiefast", "zombie",        30, 68, 34,  96, 40,   150, .7, 0, 0.075);
-    addZomType("runners", "fast", "zombiefast", "zombie",     30, 68, 34,  96, 40,   150, .7, 1, 0.075);
-    addZomType("tank", "tank", "zombie", "zombie",            16, 40, 20, 100, 30,   800, .8, 0, 0.05);
-    addZomType("burning_tank", "tank", "zombie", "zombie",    16, 40, 20, 100, 30,   800, .8, 0, 0.05); // burning tank (hell) zombies
-    addZomType("dog", "dog", "dog", "dog",                    18, 58, 30,  96, 30,   125, .8, 1, 0.1); // Dog zombie
-    addZomType("burning_dog", "dog", "dog", "dog",            18, 53, 30,  96, 30,   125, .8, 1, 0.1); // Burning dog zombie
-    addZomType("boss", "boss", "boss", "zombie",              20, 58, 30, 160, 80, 10000, .8, 1, 0.0);
-    addZomType("cyclops", "boss", "boss", "zombie",           20, 45, 30, 160, 60,  3500, .8, 1, 0.0); // cyclops, damaged by everything
+    addZomType("zombie", "zombie", "zombie", "zombie",        18, 46, 20,  96, 40,   200, .8, 1, 1, 0.075); // Default zombie
+    addZomType("burning", "zombie_all", "zombie", "zombie",   18, 36, 20,  96, 40,   200, .8, 1, 1, 0.0); // Code handled
+    addZomType("toxic", "quad", "quad", "zombie",             18, 36, 26, 104, 50,   180, .6, 1, 0, 0.55); // Code handled
+    addZomType("fat", "fat", "zombie", "zombie",              16, 42, 16, 100, 40,   275, .8, 0, 1, 0.05);
+    addZomType("fast", "fast", "zombiefast", "zombie",        30, 68, 34,  96, 40,   150, .7, 0, 1, 0.075);
+    addZomType("runners", "fast", "zombiefast", "zombie",     30, 68, 34,  96, 40,   150, .7, 1, 1, 0.075);
+    addZomType("tank", "tank", "zombie", "zombie",            16, 40, 20, 100, 30,   800, .8, 0, 1, 0.05);
+    addZomType("burning_tank", "tank", "zombie", "zombie",    16, 40, 20, 100, 30,   800, .8, 0, 1, 0.05); // burning tank (hell) zombies
+    addZomType("dog", "dog", "dog", "dog",                    18, 58, 30,  96, 30,   125, .8, 1, 0, 0.1); // Dog zombie
+    addZomType("burning_dog", "dog", "dog", "dog",            18, 53, 30,  96, 30,   125, .8, 1, 0, 0.1); // Burning dog zombie
+    addZomType("boss", "boss", "boss", "zombie",              20, 58, 30, 160, 80, 10000, .8, 1, 1, 0.0);
+    addZomType("cyclops", "boss", "boss", "zombie",           20, 45, 30, 160, 60,  3500, .8, 1, 1, 0.0); // cyclops, damaged by everything
 }
 
 /**
@@ -193,11 +193,12 @@ initZomTypes()
  * @param maxHealth integer The health the zombie has before being damaged
  * @param meleeTime float The duration in seconds of a melee attack
  * @param sprintOnly boolean Is the zombie prevented from walking
+ * @param isBipedal boolean Is this zombie bipedal?
  * @param infectionChance float The percentage chance of the zombie infecting a player
  *
  * @returns nothing
  */
-addZomType(name, modelType, animTree, soundType, walkSpeed, runSpeed, meleeSpeed, meleeRange, damage, maxHealth, meleeTime, sprintOnly, infectionChance)
+addZomType(name, modelType, animTree, soundType, walkSpeed, runSpeed, meleeSpeed, meleeRange, damage, maxHealth, meleeTime, sprintOnly, isBipedal, infectionChance)
 {
     debugPrint("in _types::addZomType()", "fn", level.nonVerbose);
 
@@ -213,6 +214,7 @@ addZomType(name, modelType, animTree, soundType, walkSpeed, runSpeed, meleeSpeed
     struct.maxHealth = maxHealth;
     struct.meleeTime = meleeTime;
     struct.sprintOnly = sprintOnly;
+    struct.isBipedal = isBipedal;
     struct.infectionChance = infectionChance;
     struct.soundType = soundType;
     struct.barricadeDamage = damage;
@@ -374,6 +376,7 @@ loadZomStats(type)
     self.barricadeDamage = struct.barricadeDamage;
     self.meleeTime = struct.meleeTime;
     self.sprintOnly = struct.sprintOnly;
+    self.isBipedal = struct.isBipedal;
     self.maxHealth = int(struct.maxHealth);
     self.infectionChance = struct.infectionChance;
     self.soundType = struct.soundType;

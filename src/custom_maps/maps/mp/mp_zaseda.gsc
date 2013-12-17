@@ -75,7 +75,6 @@ main()
         maps\mp\_umiEditor::initWeaponShopEditor("0 2 4 6 8 10 12 14");
         maps\mp\_umiEditor::initEquipmentShopEditor("1 3 5 7 9 11 13 15");
 //         maps\mp\_umiEditor::devDumpEntities();
-
     } else {
         buildWeaponShopsByTradespawns("0 2 4 6 8 10 12 14");
         buildShopsByTradespawns("1 3 5 7 9 11 13 15");

@@ -59,7 +59,7 @@ init()
     scripts\bots\_types::initZomModels();
     level.botsLoaded = true;
     thread monitorBotSlots();
-    thread findAdditionalSpawnpoints();
+    thread maps\mp\_umi::findAdditionalSpawnpoints();
 }
 
 
@@ -224,248 +224,14 @@ monitorBotSlots()
 
         if (botDelta >= tolerance) {
             // add bots
-            noticePrint("Adaptive Slot System: Adding " + botDelta + " bots.");
+            noticePrint("Flexible Slot System: Adding " + botDelta + " bots.");
             instantiateBots(botDelta);
         } else if (botDelta <= (-1 * tolerance)) {
             // remove bots
-            noticePrint("Adaptive Slot System: Removing " + (-1 * botDelta) + " bots.");
+            noticePrint("Flexible Slot System: Removing " + (-1 * botDelta) + " bots.");
             deleteBots(botDelta);
         }
     }
-}
-
-/**
- * @brief Loads zombie spawnpoints from a map
- *
- * @param targetname string The targetname of the spawnpoint entity
- * @param priority integer The relative priority of this spawnpoint
- *
- * @returns nothing
- */
-addSpawnpoints(targetname, priority)
-{
-    debugPrint("in bots::addSpawnpoints()", "fn", level.nonVerbose);
-
-    if (!isDefined(priority)) {priority = 1;}
-
-    spawns = getentarray(targetname, "targetname");
-    for (i=0; i<spawns.size; i++) {
-        spawnpoint = spawnStruct();
-        spawnpoint.origin = spawns[i].origin;
-        if (isDefined(spawns[i].angles)) {spawnpoint.angles = spawns[i].angles;}
-        else {spawnpoint.angles = (0,0,0);}
-        noticePrint("spawnpoint.angles: " + spawnpoint.angles);
-        spawnpoint.priority = priority;
-        spawnpoint.children = 0;
-
-        level.botSpawnpoints[level.botSpawnpoints.size] = spawnpoint;
-    }
-}
-
-/**
- * @brief Finds and loads additional zombie spawnpoints, and loads the spawnpoint queue
- *
- * @returns nothing
- */
-findAdditionalSpawnpoints()
-{
-    debugPrint("in bots::findAdditionalSpawnpoints()", "fn", level.fullVerbosity);
-
-    potentialSpawnpoints = [];
-    wait 3;
-
-    // For each zombie spawnpoint spec'd in the map by the author, we look for
-    // additional spawnpoints near it.  We check four positions releative to the spec'd
-    // spawnpoint: 40 units in front, 40 units 35 degrees left of front, 40 units
-    // 35 degrees right of front, and 40 units behind.
-    for (i=0; i<level.botSpawnpoints.size; i++) {
-        spawnpoint = level.botSpawnpoints[i];
-
-        // unit vectors
-        anglesLeft = spawnpoint.angles + (0,-35,0);
-        anglesRight = spawnpoint.angles + (0,35,0);
-        anglesForward = anglesToForward(spawnpoint.angles);
-        anglesUp = anglesToUp(spawnpoint.angles);
-
-        // the four positions we will check
-        leftOrigin = spawnpoint.origin + (anglesToForward(anglesLeft) * 40);
-        rightOrigin = spawnpoint.origin + (anglesToForward(anglesRight) * 40);
-        forwardOrigin = spawnpoint.origin + (anglesForward * 40);
-        backwardOrigin = spawnpoint.origin + (anglesForward * 40) * -1;
-
-        // a laser at the origin and angles of the original spawnpoint
-        maps\mp\_umiEditor::devDrawLaser("green", spawnpoint.origin + (0,0,20), anglesForward);
-//         maps\mp\_umiEditor::devDrawLaser("red", leftOrigin + (0,0,20), anglesUp);
-//         maps\mp\_umiEditor::devDrawLaser("blue", forwardOrigin + (0,0,20), anglesUp);
-//         maps\mp\_umiEditor::devDrawLaser("yellow", rightOrigin + (0,0,20), anglesUp);
-//         maps\mp\_umiEditor::devDrawLaser("cyan", backwardOrigin + (0,0,20), anglesUp);
-
-        // check the four points, and if OK, consider them to be potential new spawnpoints
-        left = isSpawnpointOk(leftOrigin);
-        forward = isSpawnpointOk(forwardOrigin);
-        right = isSpawnpointOk(rightOrigin);
-        backward = isSpawnpointOk(backwardOrigin);
-        if (isDefined(left)) {
-            potentialSpawnpoint = spawnStruct();
-            potentialSpawnpoint.origin = left;
-            potentialSpawnpoint.angles = spawnpoint.angles;
-            potentialSpawnpoint.parent = i;
-            potentialSpawnpoint.priority = 1;
-            potentialSpawnpoint.children = 0;
-            potentialSpawnpoints[potentialSpawnpoints.size] = potentialSpawnpoint;
-        }
-        if (isDefined(forward)) {
-            potentialSpawnpoint = spawnStruct();
-            potentialSpawnpoint.origin = forward;
-            potentialSpawnpoint.angles = spawnpoint.angles;
-            potentialSpawnpoint.parent = i;
-            potentialSpawnpoint.priority = 1;
-            potentialSpawnpoint.children = 0;
-            potentialSpawnpoints[potentialSpawnpoints.size] = potentialSpawnpoint;
-        }
-        if (isDefined(right)) {
-            potentialSpawnpoint = spawnStruct();
-            potentialSpawnpoint.origin = right;
-            potentialSpawnpoint.angles = spawnpoint.angles;
-            potentialSpawnpoint.parent = i;
-            potentialSpawnpoint.priority = 1;
-            potentialSpawnpoint.children = 0;
-            potentialSpawnpoints[potentialSpawnpoints.size] = potentialSpawnpoint;
-        }
-        if (isDefined(backward)) {
-            potentialSpawnpoint = spawnStruct();
-            potentialSpawnpoint.origin = backward;
-            potentialSpawnpoint.angles = spawnpoint.angles;
-            potentialSpawnpoint.parent = i;
-            potentialSpawnpoint.priority = 1;
-            potentialSpawnpoint.children = 0;
-            potentialSpawnpoints[potentialSpawnpoints.size] = potentialSpawnpoint;
-        }
-    }
-
-    // test each potential new spawnpoint against all other spawnpoints to ensure
-    // they are at least 30 units from each other.  If so, add it as a real spawnpoint.
-    added = 0;
-    for (i=0; i<potentialSpawnpoints.size; i++) {
-        isGood = true;
-        for (j=0; j<level.botSpawnpoints.size; j++) {
-            dist = distance(potentialSpawnpoints[i].origin, level.botSpawnpoints[j].origin);
-            if (dist < 30) {
-                // discard this potential spawnpoint
-                isGood = false;
-                break;
-            }
-        }
-        if (isGood) {
-            // add this as a new spawnpoint
-            added++;
-            level.botSpawnpoints[level.botSpawnpoints.size] = potentialSpawnpoints[i];
-            level.botSpawnpoints[potentialSpawnpoints[i].parent].children++;
-            anglesUp = anglesToUp(potentialSpawnpoints[i].angles);
-            maps\mp\_umiEditor::devDrawLaser("red", potentialSpawnpoints[i].origin + (0,0,20), anglesUp);
-        }
-    }
-
-    // Now distribute each spawnpoint's priority amongst itself and its children
-    // to preserve the overall priority the map author intended.
-    // This math is not correct, but it does give us a close enough approximation.
-    lowestPriority = 500;
-    for (i=0; i<level.botSpawnpoints.size; i++) {
-        level.botSpawnpoints[i].priority = int((level.botSpawnpoints[i].priority * 20) / (level.botSpawnpoints[i].children + 1));
-        if (level.botSpawnpoints[i].priority < lowestPriority) {
-            lowestPriority = level.botSpawnpoints[i].priority;
-        }
-    }
-    // scale lowestPriority to 1
-    for (i=0; i<level.botSpawnpoints.size; i++) {
-        level.botSpawnpoints[i].priority = int(level.botSpawnpoints[i].priority / lowestPriority);
-    }
-    // now give children their parent's reduced priority
-    for (i=0; i<level.botSpawnpoints.size; i++) {
-        if (!isDefined(level.botSpawnpoints[i].parent)) {continue;}
-        level.botSpawnpoints[i].priority = level.botSpawnpoints[level.botSpawnpoints[i].parent].priority;
-    }
-    noticePrint("Added " + added + " extra spawnpoints");
-
-    // build a non-randomized queue with the right priorities
-    queue = [];
-    for (i=0; i<level.botSpawnpoints.size; i++) {
-        for (j=0; j<level.botSpawnpoints[i].priority; j++) {
-            queue[queue.size] = i;
-        }
-    }
-
-    // build a filled randomized circular queue we will use to supply spawnpoints
-    // for zombies in the game
-    while (queue.size > 0) {
-        index = randomInt(queue.size);
-        level.botSpawnpointsQueue[level.botSpawnpointsQueue.size] = queue[index];
-        if (index == queue.size - 1) {
-            // is already last element
-            queue[index] = undefined;
-        } else {
-            // copy last element to index, then undefine last element
-            queue[index] = queue[queue.size - 1];
-            queue[queue.size - 1] = undefined;
-        }
-    }
-
-    // rebuild level.botSpawnpoints without the now unneeded information
-    spawnpoints = level.botSpawnpoints;
-    level.botSpawnpoints = [];
-    for (i=0; i<spawnpoints.size; i++) {
-        sp = spawnStruct();
-        sp.origin = spawnpoints[i].origin;
-        sp.angles = spawnpoints[i].angles;
-        level.botSpawnpoints[i] = sp;
-    }
-
-    noticePrint("level.botSpawnpoints.size: " + level.botSpawnpoints.size);
-    noticePrint("level.botSpawnpointsQueue.size: " + level.botSpawnpointsQueue.size);
-    // free unused memory
-    potentialSpawnpoints = undefined;
-}
-
-/**
- * @brief Tests a potential spawnpoint for obstructions
- *
- * @param origin tuple The location to test
- *
- * @returns The possibly adjusted origin if it is OK, otherwise undefined
- */
-isSpawnpointOk(origin)
-{
-    debugPrint("in bots::isSpawnpointOk()", "fn", level.fullVerbosity);
-
-    // the spec'd spawnpoint may be in the air, with overhead cover, such that
-    // we will hit the ceiling when we check for obstructions.  So first we try
-    // to find the ground
-    trace = bulletTrace(origin + (0,0,20), origin + (0,0,-50), false, undefined);
-    if (trace["fraction"] != 1) {
-        origin = trace["position"];
-    }
-
-    spawnpointClear = true;
-    length = 15; // radius of the bot cylinder
-    for (h = 5; h<85; h = h + 10) {
-        for (i=0; i<360; i = i + 15) {
-            center = origin + (0, 0, 45);
-            end = origin + (length * cos(i), length * sin(i), h);
-            if (!sightTracePassed(center, end, false, undefined)) {
-                spawnpointClear = false;
-                break;
-            }
-        }
-        if(!spawnpointClear) {break;}
-    }
-    if (spawnpointClear) {
-        // no obstructions detected, see if we are in mid-air
-        trace = bulletTrace(origin + (0,0,50), origin + (0,0,-50), false, undefined);
-        if (trace["fraction"] == 1) {
-            // we are in midair!
-            return undefined;
-        } else {return trace["position"];}
-    } else {return undefined;}
 }
 
 /**
@@ -526,7 +292,7 @@ spawnZombie(zombieType, spawnpoint, bot)
     bot setspawnweapon(bot.pers["weapon"]);
     bot switchtoweapon(bot.pers["weapon"]);
 
-    if (isdefined(spawnpoint.angles)) {
+    if (isDefined(spawnpoint.angles)) {
         bot spawn(spawnpoint.origin, spawnpoint.angles);
     } else {
         bot spawn(spawnpoint.origin, (0,0,0));

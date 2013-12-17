@@ -259,7 +259,7 @@ teleOut( teleporter, origin, angles )
     {
         self.myWaypoint = undefined;
         self.underway = false;
-        self.linkObj.origin = origin;
+        self.mover.origin = origin;
     }
     else
     {

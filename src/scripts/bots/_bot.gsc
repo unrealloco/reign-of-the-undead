@@ -41,7 +41,7 @@
  */
 instantiate()
 {
-    debugPrint("in bot::instantiate()", "fn", level.nonVerbose);
+    debugPrint("in _bot::instantiate()", "fn", level.nonVerbose);
 
     bot = addTestClient();
 
@@ -69,21 +69,21 @@ instantiate()
     // when we want to move the bot, we link it to this entity, then move the
     // entity, and the bot gets taken along for the ride.
     bot.mover = spawn("script_model", (0,0,0));
-    // [un]filled circular queue of movement orders, i.e. params for the moveTo() function
-    bot.movement = spawnStruct();
-    bot.movement.first = 0;
-    bot.movement.next = 0;
-    bot.movement.last = 0;
-    bot.movement.orders = [];
-    // we assume one order every 0.05s, for 0.2s until we reevaluate movement
-    for (i=0; i<5; i++) {
-        order = spawnStruct();
-        order.origin = (0,0,0);
-        order.time = 0; //s
-        order.angles = (0,0,0);
-        bot.movement.orders[i] = order;
-    }
-    bot.isFollowingWapypoints = false;
+//     // [un]filled circular queue of movement orders, i.e. params for the moveTo() function
+//     bot.movement = spawnStruct();
+//     bot.movement.first = 0;
+//     bot.movement.next = 0;
+//     bot.movement.last = 0;
+//     bot.movement.orders = [];
+//     // we assume one order every 0.05s, for 0.2s until we reevaluate movement
+//     for (i=0; i<5; i++) {
+//         order = spawnStruct();
+//         order.origin = (0,0,0);
+//         order.time = 0; //s
+//         order.angles = (0,0,0);
+//         bot.movement.orders[i] = order;
+//     }
+//     bot.isFollowingWapypoints = false;
 
     bot.index = level.bots.size;
 
@@ -102,7 +102,7 @@ instantiate()
  */
 remove(botsToRemove)
 {
-    debugPrint("in bot::remove()", "fn", level.nonVerbose);
+    debugPrint("in _bot::remove()", "fn", level.nonVerbose);
 
     // move the bots to be removed to the end of the array
     for (i=0; i<botsToRemove.size; i++) {
@@ -132,7 +132,7 @@ remove(botsToRemove)
  */
 makeBotAvailable(bot)
 {
-    debugPrint("in bot::makeBotAvailable()", "fn", level.fullVerbosity);
+    debugPrint("in _bot::makeBotAvailable()", "fn", level.fullVerbosity);
 
     // push the bot's index onto the availableBots stack
     level.availableBots[level.availableBots.size] = bot.index;
@@ -149,7 +149,7 @@ makeBotAvailable(bot)
  */
 playSoundOnBot(delay, sound, random)
 {
-    debugPrint("in bot::playSoundOnBot()", "fn", level.fullVerbosity);
+    debugPrint("in _bot::playSoundOnBot()", "fn", level.fullVerbosity);
 
     if (delay > 0) {
         self endon("death");
@@ -157,7 +157,7 @@ playSoundOnBot(delay, sound, random)
     }
     // concatenate sound name: zom_death1, zom_attack6, etc
     sound = sound + random;
-    if (isalive(self)) {self playSound(sound);}
+    if (isAlive(self)) {self playSound(sound);}
 }
 
 /**
@@ -169,7 +169,7 @@ playSoundOnBot(delay, sound, random)
  */
 giveAssists(killer)
 {
-    debugPrint("in bot::giveAssists()", "fn", level.highVerbosity);
+    debugPrint("in _bot::giveAssists()", "fn", level.highVerbosity);
 
     for (i=0; i<self.damagedBy.size; i++) {
         struct = self.damagedBy[i];
@@ -231,7 +231,7 @@ setAnimation(type)
  */
 idle()
 {
-    debugPrint("in bot::idle()", "fn", level.fullVerbosity);
+    debugPrint("in _bot::idle()", "fn", level.fullVerbosity);
 
     self setAnimation("stand");
     self.cur_speed = 0;
@@ -240,9 +240,17 @@ idle()
     //iprintlnbold("IDLE!");
 }
 
+search()
+{
+    debugPrint("in _bot::search()", "fn", level.fullVerbosity);
+
+    self.status = "searching";
+    //iprintlnbold("SEARCHING!");
+}
+
 run()
 {
-    debugPrint("in bot::run()", "fn", level.highVerbosity);
+    // Do *not* put a function entrance debugPrint statement here!
 
     self setAnimation("sprint");
     self.cur_speed = self.runSpeed;
@@ -253,7 +261,7 @@ run()
 
 walk()
 {
-    debugPrint("in bot::walk()", "fn", level.highVerbosity);
+    // Do *not* put a function entrance debugPrint statement here!
 
     self setAnimation("walk");
     self.cur_speed = self.walkSpeed;
@@ -271,7 +279,7 @@ walk()
  */
 stun()
 {
-    debugPrint("in bot::stun()", "fn", level.fullVerbosity);
+    debugPrint("in _bot::stun()", "fn", level.fullVerbosity);
 
     // no stunning in final wave!
     if (level.currentWave < level.totalWaves) {
@@ -285,7 +293,7 @@ stun()
 
 groan()
 {
-    debugPrint("in bot::groan()", "fn", level.veryHighVerbosity);
+    debugPrint("in _bot::groan()", "fn", level.veryHighVerbosity);
 
     self endon("death");
     self endon("disconnect");
@@ -355,7 +363,7 @@ canSeeTarget(target)
 
 findPathToTarget()
 {
-    debugPrint("in bot::bestTarget()", "fn", level.highVerbosity);
+    debugPrint("in _bot::bestTarget()", "fn", level.highVerbosity);
 
     if (self.isFollowingWapypoints) {
     } else {
@@ -394,7 +402,7 @@ findPathToTarget()
 
 findLinearPath(origin, destination, distance)
 {
-    debugPrint("in bot::findLinearPath()", "fn", level.highVerbosity);
+    debugPrint("in _bot::findLinearPath()", "fn", level.highVerbosity);
 
     position = self findGround(destination);
     if (isPathNavigable(origin, position)) {
@@ -412,7 +420,7 @@ findLinearPath(origin, destination, distance)
 
 isPathNavigable(origin, destination)
 {
-    debugPrint("in bot::isPathNavigable()", "fn", level.highVerbosity);
+    debugPrint("in _bot::isPathNavigable()", "fn", level.highVerbosity);
 
     // assume the mapmaker didn't put a waypoint link through a solid object
     if (self.isFollowingWapypoints) {return true;}
@@ -444,7 +452,7 @@ isPathNavigable(origin, destination)
 
 enqueueMovement(origin, time, facing)
 {
-    debugPrint("in bot::enqueueMovement()", "fn", level.highVerbosity);
+    debugPrint("in _bot::enqueueMovement()", "fn", level.highVerbosity);
 
     self.movement.orders[self.movement.last].origin = origin;
     self.movement.orders[self.movement.last].time = time;
@@ -455,7 +463,7 @@ enqueueMovement(origin, time, facing)
 
 findGround(position)
 {
-    debugPrint("in bot::findGround()", "fn", level.highVerbosity);
+    debugPrint("in _bot::findGround()", "fn", level.highVerbosity);
 
     top = position + (0,0,50);
     bottom = position + (0,0,-100);
@@ -465,7 +473,7 @@ findGround(position)
 
 bestTarget()
 {
-    debugPrint("in bot::bestTarget()", "fn", level.highVerbosity);
+    debugPrint("in _bot::bestTarget()", "fn", level.highVerbosity);
 
     // the best target is the closest player the bot can see
     targets = self sortTargetsByDistance();
@@ -480,14 +488,14 @@ bestTarget()
 
 closestTarget()
 {
-    debugPrint("in bot::closestTarget()", "fn", level.highVerbosity);
+    debugPrint("in _bot::closestTarget()", "fn", level.highVerbosity);
 
     return self sortTargetsByDistance()[0].player;
 }
 
 sortTargetsByDistance()
 {
-    debugPrint("in bot::sortTargetsByDistance()", "fn", level.highVerbosity);
+    debugPrint("in _bot::sortTargetsByDistance()", "fn", level.highVerbosity);
 
     players = level.players;
     data = [];
@@ -514,7 +522,7 @@ sortTargetsByDistance()
 
 main()
 {
-    debugPrint("in bot::main()", "fn", level.highVerbosity);
+    debugPrint("in _bot::main()", "fn", level.highVerbosity);
 
     wait 1.2; // wait until bot is standing up before he starts to move
     target = bestTarget();
@@ -527,7 +535,7 @@ main()
 
 move()
 {
-    debugPrint("in bot::move()", "fn", level.highVerbosity);
+    debugPrint("in _bot::move()", "fn", level.highVerbosity);
 
     self endon("disconnect");
     self endon("death");
@@ -563,7 +571,7 @@ move()
  */
 watchTargetedPlayer()
 {
-    debugPrint("in bot::watchTargetedPlayer()", "fn", level.highVerbosity);
+    debugPrint("in _bot::watchTargetedPlayer()", "fn", level.highVerbosity);
 
     self endon("disconnect");
     self endon("death");
@@ -580,7 +588,7 @@ watchTargetedPlayer()
  */
 onTargetedPlayerDeath()
 {
-    debugPrint("in bot::onTargetedPlayerDeath()", "fn", level.highVerbosity);
+    debugPrint("in _bot::onTargetedPlayerDeath()", "fn", level.highVerbosity);
 
     self endon("disconnect");
     self endon("death");
@@ -597,7 +605,7 @@ onTargetedPlayerDeath()
  */
 newTarget()
 {
-    debugPrint("in bot::newTarget()", "fn", level.highVerbosity);
+    debugPrint("in _bot::newTarget()", "fn", level.highVerbosity);
 
     self endon("disconnect");
     self endon("death");
@@ -618,7 +626,7 @@ newTarget()
  */
 melee()
 {
-    debugPrint("in bot::melee()", "fn", level.veryHighVerbosity);
+    debugPrint("in _bot::melee()", "fn", level.veryHighVerbosity);
 
     self endon("disconnect");
     self endon("death");
@@ -631,10 +639,175 @@ melee()
     if (self.quake) {Earthquake( 0.25, .2, self.origin, 380);}
 
     if (isAlive(self)) {
-//         self zomDoDamage(70);
+        self damage(70);
         self playSoundOnBot(0, "zom_attack", randomint(8));
     }
     wait .6;
 
     self setAnimation("stand");
+}
+
+/**
+ * @brief Decides whether to infect a player or not
+ *
+ * @param chance float The percentage chance of this type of zombie infecting a player
+ *
+ * @returns nothing
+ */
+infect(chance)
+{
+    debugPrint("in _bot::infect()", "fn", level.medVerbosity);
+
+    if (self.infected) {return;}
+
+    chance = self.infectionMP * chance;
+    if (randomfloat(1) < chance) {
+        self thread scripts\players\_infection::goInfected();
+    }
+}
+
+damage(meleeRange)
+{
+    debugPrint("in _bot::damage()", "fn", level.highVerbosity);
+
+    meleeRangeSquared = meleeRange * meleeRange;
+    damage = int(self.damage * level.dif_zomDamMod);
+
+    // damage player
+    targets = self sortTargetsByDistance();
+    for (i=0; i<targets.size; i++) {
+        target = targets[i].player;
+        distance = targets[i].distance; // a squared distance
+        if (distance < meleeRangeSquared) {
+            fwdDir = anglesToForward(self getPlayerAngles());
+            dirToTarget = vectorNormalize(target.origin - self.origin);
+            dot = vectorDot(fwdDir, dirToTarget);
+            if (dot > .5) {
+                target.isPlayer = true;
+                target.entity = target;
+                target scripts\include\entities::damageEnt(self, self, damage,
+                                 "MOD_MELEE", self.pers["weapon"], self.origin, dirToTarget);
+                self scripts\bots\_types::onAttack(self.type, target);
+                if (level.dvar["zom_infection"]) {target infect(self.infectionChance);}
+                // only damage the first suitable player we find
+                break;
+            }
+        } else {
+            // no other player targets within range
+            break;
+        }
+    }
+
+    // damage a barricade
+    for (i=0; i<level.barricades.size; i++) {
+        barricade = level.barricades[i];
+        distance = distance2d(self.origin, barricade.origin);
+        range = meleeRange * 2;
+        if (distance < range) {
+            barricade thread scripts\players\_barricades::doBarricadeDamage(damage);
+            break;
+        }
+    }
+
+    // damage a dynamic barricade
+    for (i=0; i<level.dynamic_barricades.size; i++) {
+        barricade = level.dynamic_barricades[i];
+        distance = distance2d(self.origin, barricade.origin);
+        if (distance < meleeRange) {
+            barricade thread scripts\players\_barricades::doBarricadeDamage(damage);
+            break;
+        }
+    }
+}
+
+killed(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, psOffsetTime, deathAnimDuration)
+{
+    debugPrint("in _bot::killed()", "fn", level.veryHighVerbosity);
+
+    self unlink();
+
+    if(self.sessionteam == "spectator") {return;}
+
+    if(sHitLoc == "head" && sMeansOfDeath != "MOD_MELEE") {
+        sMeansOfDeath = "MOD_HEAD_SHOT";
+    }
+
+    if (level.dvar["zom_orbituary"]) {
+        obituary(self, attacker, sWeapon, sMeansOfDeath);
+    }
+
+    self.sessionstate = "dead";
+
+    isBadKill = false;
+
+    if (isplayer(attacker) && attacker != self) {
+        if ((self.type == "burning") ||
+            (self.type == "burning_dog") ||
+            (self.type == "burning_tank"))
+        {
+            // No demerits if weapon is claymore or defense turrets, since player
+            // has no control over when it detonates/fires
+            switch (sWeapon) {
+                case "claymore_mp":     // Fall through
+                case "turret_mp":
+                case "none":            // minigun and grenade turrets are "none"
+                    // Do nothing
+                break;
+                default:
+                    players = level.players;
+                    for (i=0; i<players.size; i++) {
+                        if (!isDefined(players[i])) {continue;}
+                        if (attacker != players[i]) {
+                            if ((!players[i].isDown) &&
+                                (distance(self.origin, players[i].origin) < 150)) {
+                                attacker thread scripts\players\_rank::increaseDemerits(level.burningZombieDemeritSize, "burning");
+                            isBadKill = true;
+                                }
+                        }
+                    }
+                    break;
+            }
+        }
+        if (!isBadKill) {
+            // No credit for kills that hurt teammates
+            attacker.kills++;
+
+            attacker thread scripts\players\_rank::giveRankXP("kill");
+            attacker thread scripts\players\_spree::checkSpree();
+
+            if (attacker.curClass=="stealth") {
+                attacker scripts\players\_abilities::rechargeSpecial(10);
+            }
+            attacker scripts\players\_players::incUpgradePoints(10*level.rewardScale);
+            giveAssists(attacker);
+        }
+    }
+
+    corpse = self scripts\bots\_types::onCorpse(self.type);
+    if (self.soundType == "zombie") {
+        self playSoundOnBot(0, "zom_death", randomint(6));
+    }
+
+    if (corpse > 0) {
+        if (self.type=="toxic") {
+            deathAnimDuration = 20;
+        }
+
+        body = self clonePlayer(deathAnimDuration);
+
+        if (corpse > 1) {
+            thread scripts\include\physics::delayStartRagdoll( body, sHitLoc, vDir, sWeapon, eInflictor, sMeansOfDeath );
+        }
+    } else {
+        self setOrigin((0,0,-10000));
+    }
+
+    level.dif_killedLast5Sec++;
+
+    wait 1;
+    self.hasSpawned = false;
+    level.botsAlive -= 1;
+
+    makeBotAvailable(self);
+    level notify("bot_killed");
 }

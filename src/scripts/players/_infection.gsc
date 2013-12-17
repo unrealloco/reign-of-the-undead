@@ -256,20 +256,20 @@ playerGoZombie()
 
     self FreezeControls(true);
 
-    self.linkObj = spawn("script_origin", self.origin);
-    self.linkObj.origin = self.origin;
-    self.linkObj.angles = self.angles;
+    self.mover = spawn("script_origin", self.origin);
+    self.mover.origin = self.origin;
+    self.mover.angles = self.angles;
 
     self updateHealthHud(1);
 
     wait 0.05;
 
     self thread createKillZombieObjective();
-    self linkto(self.linkObj);
-    self scripts\bots\_bots::zomGoIdle();
+    self linkto(self.mover);
+    self scripts\bots\_bot::idle();
     self thread scripts\bots\_bots::zomMain();
 
-    ent = self getClosestTarget();
+    ent = self scripts\bots\_bot::closestTarget();
     if (isdefined(ent)) {
         self scripts\bots\_bots::zomSetTarget(ent.origin);
     }

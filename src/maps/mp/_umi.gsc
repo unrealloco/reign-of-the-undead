@@ -1378,10 +1378,6 @@ startGame()
 {
     debugPrint("in _umi::startGame()", "fn", level.nonVerbose);
 
-    if (level.zombieAiDevelopment) {
-        scripts\bots\bots::findAdditionalSpawnpoints();
-    }
-
     scripts\gamemodes\_survival::beginGame();
 }
 
