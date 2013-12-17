@@ -43,9 +43,14 @@ init()
 
     precache();
 
-    loadWaypoints();
+    scripts\include\waypoints::loadWaypoints();
 
     level.bots = [];
+
+    level.botSpawnpointsQueue = [];     // filled circular queue
+    level.nextBotSpawnpointPointer = 0; // pointer to the 'next' position in botSpawnpointsQueue
+    level.botSpawnpoints = [];          // bot spawnpoints. data in botSpawnpointsQueue is index of spawnpoint in this array
+
     level.botsAlive = 0;
     level.zomInterval = .2;
     level.zomSpeedScale = .2/level.zomInterval;
@@ -68,6 +73,7 @@ init()
     scripts\bots\_types::initZomModels();
 
     level.botsLoaded = true;
+    thread maps\mp\_umi::findAdditionalSpawnpoints();
 }
 
 
@@ -75,51 +81,42 @@ precache()
 {
     debugPrint("in _bots::precache()", "fn", level.nonVerbose);
 
-    // weapons used for animations
-    precacheitem("bot_zombie_walk_mp");
-    precacheitem("bot_zombie_stand_mp");
-    precacheitem("bot_zombie_run_mp");
-    precacheitem("bot_zombie_melee_mp");
-    precacheitem("bot_dog_idle_mp");
-    precacheitem("bot_dog_run_mp");
-    precacheitem("defaultweapon_mp");
+    // precache the weapons used for animations
+    precacheItem("bot_zombie_walk_mp");
+    precacheItem("bot_zombie_stand_mp");
+    precacheItem("bot_zombie_run_mp");
+    precacheItem("bot_zombie_melee_mp");
+    precacheItem("bot_dog_idle_mp");
+    precacheItem("bot_dog_run_mp");
+    precacheItem("defaultweapon_mp");
 
-    /*precachemodel("body_sp_russian_loyalist_a_dead");
-    precachemodel("body_sp_russian_loyalist_b_dead");
-    precachemodel("body_sp_russian_loyalist_c_dead");
-    precachemodel("body_sp_russian_loyalist_d_dead");*/
+    // precache the xmodels we use for zombies
+    precacheModel("tag_origin");
+    precacheModel("izmb_zombie1_body");
+    precacheModel("izmb_zombie2_body");
+    precacheModel("izmb_zombie2_head");
+    precacheModel("izmb_zombie3");
+    precacheModel("body_complete_sp_zakhaevs_son");
+    precacheModel("bo_quad");
+    precacheModel("cyclops");
+    precacheModel("body_complete_sp_vip");
+    precacheModel("body_complete_sp_russian_farmer");
+    precacheModel("german_sheperd_dog");
+    precacheModel("body_hellknight");
+    precacheModel("cyclops");
 
-    precachemodel("izmb_zombie1_body");
-    precachemodel("izmb_zombie2_body");
-    precachemodel("izmb_zombie2_head");
-    precachemodel("izmb_zombie3");
-    precachemodel("body_complete_sp_zakhaevs_son");
+    // precache the shellshocks we use
+    precacheShellShock("boss");
+    precacheShellShock("toxic_gas_mp");
 
-    precachemodel("bo_quad");
-
-    precachemodel("cyclops");
-    //precachemodel("zombie_wolf");
-
-    precachemodel("body_complete_sp_vip");
-    precachemodel("body_complete_sp_russian_farmer");
-
-    precachemodel("tag_origin");
-
-    precachemodel("german_sheperd_dog");
-    precachemodel("body_hellknight");
-    precachemodel("cyclops");
-
-    //PreCacheShellShock("zombiedamage");
-    preCacheShellShock("boss");
-    precacheshellshock("toxic_gas_mp");
-
-    level.burningFX = loadfx("fire/firelp_med_pm");
-    level.burningDogFX = loadfx("fire/firelp_small_pm_rotu");
-    level.toxicFX = loadfx("misc/toxic_gas");
-    level.explodeFX = Loadfx("explosions/pyromaniac");
-    level.soulFX = loadfx("misc/soul");
-    level.goundSpawnFX = loadfx("misc/ground_rising");
-    level.soulspawnFX = loadfx("misc/soulspawn");
+    // load the fx we use for zombies into memory
+    level.explodeFX     = loadFx("explosions/pyromaniac");
+    level.burningFX     = loadFx("fire/firelp_med_pm");
+    level.burningDogFX  = loadFx("fire/firelp_small_pm_rotu");
+    level.toxicFX       = loadFx("misc/toxic_gas");
+    level.soulFX        = loadFx("misc/soul");
+    level.goundSpawnFX  = loadFx("misc/ground_rising");
+    level.soulspawnFX   = loadFx("misc/soulspawn");
 }
 
 loadBots(amount)

@@ -207,13 +207,13 @@ spawnTeleporter(origin, angles, spawnDelay)
 
         // Teleport user to destination
         if (user.isBot) {
-            if ((isDefined(level.wp.size)) && (level.wp.size > 0)) {
+            if ((isDefined(level.wp.size)) && (level.wp.size > 9)) {
                 // This map uses waypoints
                 wp = level.wp[randomint(level.wp.size)];
                 user thread teleOut(self, wp.origin, user.angles);
             } else {
                 // This is a legacy map that doesn't use waypoints
-                spawn = scripts\gamemodes\_survival::getRandomSpawn();
+                spawn = scripts\gamemodes\_survival::randomSpawnpoint();
                 user thread teleOut(self, spawn.origin, user.angles);
             }
         }

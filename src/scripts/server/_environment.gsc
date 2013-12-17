@@ -121,14 +121,14 @@ emberFX()
     while(1) {
         // Some legacy maps (e.g. mp_surv_overrun) seem to not use waypoints, so level.wp.size is zero.
         // In these cases, we just get a random spawn point and use that for the origin
-        if (level.wp.size == 0) {
-            spawn = scripts\gamemodes\_survival::getRandomSpawn();
-            org = spawn.origin;
+        if (level.wp.size < 9) {
+            index = randomInt(level.botSpawnpoints.size);
+            origin = level.botSpawnpoints[index].origin;
         } else {
-            org = level.wp[randomint(level.wp.size)].origin;
+            origin = level.wp[randomint(level.wp.size)].origin;
         }
-        playfx(level.ember_fx, org);
-        Earthquake( 0.25, 2, org, 512);
+        playfx(level.ember_fx, origin);
+        Earthquake( 0.25, 2, origin, 512);
         wait .2 + randomfloat(.2);
     }
 }

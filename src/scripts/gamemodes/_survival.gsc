@@ -134,55 +134,26 @@ dvarDefault(dvar, def)
     if (getdvar(dvar) == "") {setdvar(dvar,def);}
 }
 
-addSpawn(targetname, priority)
+/**
+ * @brief Gets a random zombie spawnpoint
+ *
+ * @returns struct containing the spawnpoint .origin and .angles
+ */
+randomSpawnpoint()
 {
-    debugPrint("in _survival::addSpawn()", "fn", level.nonVerbose);
+    debugPrint("in _survival::randomSpawnpoint()", "fn", level.absurdVerbosity);
 
-    if (level.zombieAiDevelopment) {
-        scripts\bots\bots::addSpawnpoints(targetname, priority);
-        return;
+    // force using a single spawnpoint for AI development
+    // id = level.botSpawnpointsQueue[level.nextBotSpawnpointPointer];
+    // iPrintLnBold("using spawnpoint ID: " + id);
+    // spawnpoint = level.botSpawnpoints[51];
+    // return spawnpoint;
+    spawnpoint = level.botSpawnpoints[level.botSpawnpointsQueue[level.nextBotSpawnpointPointer]];
+    level.nextBotSpawnpointPointer++;
+    if (level.nextBotSpawnpointPointer == level.botSpawnpointsQueue.size) {
+        level.nextBotSpawnpointPointer = 0;
     }
-    if (!isdefined(level.survSpawns)) {return -1;}
-
-    if (!isdefined(priority)) {priority = 1;}
-
-    spawns = getentarray(targetname, "targetname");
-
-    if (spawns.size > 0) {
-        noticePrint("Adding " + spawns.size + " spawnpoints with tn: " + targetname);
-        index = level.survSpawns.size;
-        level.survSpawnsPriority[index] = priority;
-        level.survSpawnsTotalPriority = level.survSpawnsTotalPriority + priority;
-        level.survSpawns[index] = targetname;
-    }
-}
-
-getRandomSpawn()
-{
-    debugPrint("in _survival::getRandomSpawn()", "fn", level.absurdVerbosity);
-
-    if (level.zombieAiDevelopment) {
-        spawnpoint = level.botSpawnpoints[level.botSpawnpointsQueue[level.nextBotSpawnpointPointer]];
-        level.nextBotSpawnpointPointer++;
-        if (level.nextBotSpawnpointPointer == level.botSpawnpointsQueue.size) {
-            level.nextBotSpawnpointPointer = 0;
-        }
-        return spawnpoint;
-    }
-
-    spawn = undefined;
-    random = randomint(level.survSpawnsTotalPriority);
-    for (i=0; i<level.survSpawns.size; i++) {
-        random = random - level.survSpawnsPriority[i];
-        if (random < 0) {
-            spawn = level.survSpawns[i];
-            break;
-        }
-    }
-    if (isDefined(spawn)) {
-        array = getentarray(spawn, "targetname");
-        return array[randomint(array.size)];
-    }
+    return spawnpoint;
 }
 
 /**
@@ -200,10 +171,9 @@ specialSpawn()
         // actually returns a wp struct, not a spawnpoint
         return level.wp[randomint(level.wp.size)]; /// @todo use a filled random queue here?
     } else {
-        return getRandomSpawn();
+        return randomSpawnpoint();
     }
 }
-
 
 /**
  * @brief Calculates the number of zombies in a wave based on the wave system
@@ -981,13 +951,13 @@ spawnZombie(override, spawntype)
     } else {
         if (isdefined(override)) {
             type = override;
-            spawn = getRandomSpawn();
+            spawn = randomSpawnpoint();
             if (level.zombieAiDevelopment) {
                 return scripts\bots\bots::spawnZombie(type, spawn);
             } else {return scripts\bots\_bots::spawnZombie(type, spawn);}
         } else {
             type = scripts\gamemodes\_gamemodes::getRandomType();
-            spawn = getRandomSpawn();
+            spawn = randomSpawnpoint();
             if (level.zombieAiDevelopment) {
                 return scripts\bots\bots::spawnZombie(type, spawn);
             } else {return scripts\bots\_bots::spawnZombie(type, spawn);}
