@@ -426,6 +426,11 @@ endMap(endReasontext, showcredits)
     scripts\server\_environment::stopAmbient(2);
 
     wait 2;
+    noPlayersInGame = false;
+    if (level.players.size == 0) {
+        noPlayersInGame = true;
+        showcredits = false; // no need to show credits!
+    }
 
     if (showcredits) {
         thread playCreditsSound();
@@ -464,15 +469,12 @@ endMap(endReasontext, showcredits)
     level.end_text.foreground = true;
 
 
-    if (showcredits)
-    {
+    if (showcredits) {
         level.blackscreen fadeOverTime(7.5);
         level.blackscreen.alpha = 1;
         level.end_text setPulseFX( 95, int(7000), 1000 );
         wait 10;
-    }
-    else
-    {
+    } else {
         level.blackscreen fadeOverTime(10);
         level.blackscreen.alpha = 1;
         level.end_text setPulseFX( 150, int(10000), 1000 );
@@ -480,52 +482,7 @@ endMap(endReasontext, showcredits)
     }
     level.end_text destroy();
 
-    if (showcredits)
-    {
-
-//         thread showMovieStyleCredit("Developer", "Mark A. Taff");
-//         wait 0.4;
-//         thread showMovieStyleCredit("Original Developer", "Bipo");
-//         wait 0.4;
-//         thread showMovieStyleCredit("Original Scripters", "Bipo\nBrax (medkit)");
-//         wait 0.6;
-//         thread showMovieStyleCredit("2D Art", "Mr-X");
-//         wait 0.4;
-//         thread showMovieStyleCredit("Rigging & Ripping", "Etheross (most stuff)\nHacker 22 (hellknight & crossbow)");
-//         wait 0.6;
-//         thread showMovieStyleCredit("Original Mappers", "Viking\nCoverop\nEtheross\nMr-X\nBipo");
-//         wait 1.4;
-//         if (level.dvar["server_provider"]!="")
-//         {
-//             credits = level.dvar["server_provider"];
-//             tokens = scripts\include\strings::split(credits, ";");
-//             credit = "";
-//             if (tokens.size == 0) {
-//                 // no semi-colons found
-//                 credit = credits;
-//             } else {
-//                 for (i=0; i<tokens.size; i++) {
-//                     if (i == tokens.size - 1){
-//                         credit += tokens[i];
-//                     } else {
-//                         credit += tokens[i] + "\n";
-//                     }
-//                 }
-//             }
-//             thread showMovieStyleCredit("Server provider", credit);
-//             // adjust timing based on number of people in server provider credit
-//             time = 1.1 + (0.2 * tokens.size);
-//             wait time;
-//         }
-//
-//         fontScale = 2.0;
-//
-//         thread showCenteredCredit("Thanks for playing Rotu2.2.pre-alpha!", fontScale);
-//         wait 0.4;
-//         thread showCenteredCredit("Rotu 2.2 is public domain software.", fontScale);
-//
-//         wait level.creditTime + 1;
-
+    if (showcredits) {
         temp = buildMovieCreditText();
         labelText = temp[0];
         creditText = temp[1];
@@ -538,10 +495,11 @@ endMap(endReasontext, showcredits)
         level notify("credits_finished");
     }
 
-
     level.blackscreen destroy();
-
-    [[level.onChangeMap]]();
+    if (noPlayersInGame) {
+        // we don't need to vote!
+        scripts\server\_maps::changeMap(getdvar("mapname"));
+    } else {[[level.onChangeMap]]();}
 }
 
 buildMovieCreditText()

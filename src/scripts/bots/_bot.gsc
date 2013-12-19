@@ -46,10 +46,24 @@ instantiate()
     bot = addTestClient();
 
     if (!isDefined(bot)) {
-        warnPrint("Failed to instatiate a bot!");
+        warnPrint("Failed to instantiate a bot!");
         wait 0.5;
         return false;
     }
+
+    return initialize(bot);
+}
+
+/**
+ * @brief Initializes a bot so it can be used for zombies
+ *
+ * @param bot The bot to initialize
+ *
+ * @return boolean assumes the bot was properly initialized
+ */
+initialize(bot)
+{
+    debugPrint("in _bot::initialize()", "fn", level.nonVerbose);
 
     bot.isBot = true;
     bot.hasSpawned = false;
@@ -77,7 +91,7 @@ instantiate()
 //     bot.movement.orders = [];
 //     // we assume one order every 0.05s, for 0.2s until we reevaluate movement
 //     for (i=0; i<5; i++) {
-//         order = spawnStruct();
+    //         order = spawnStruct();
 //         order.origin = (0,0,0);
 //         order.time = 0; //s
 //         order.angles = (0,0,0);
@@ -91,6 +105,18 @@ instantiate()
 
     level.bots[bot.index] = bot;
     return true;
+}
+
+/**
+ * @brief Reconnects a bot when the map is restarted without a server restart
+ *
+ * @returns nothing
+ */
+reconnect()
+{
+    debugPrint("in _bot::reconnect()", "fn", level.nonVerbose);
+
+    initialize(self);
 }
 
 /**
@@ -108,13 +134,17 @@ remove(botsToRemove)
     for (i=0; i<botsToRemove.size; i++) {
         if (botsToRemove[i] == level.bots.size - 1) {
             // bot is already the last element, just undefine it
+            bot = level.bots[level.bots.size - 1];
             level.bots[level.bots.size - 1] = undefined;
+            kick(bot getEntityNumber());  // cheating bots! :-) really a temp ban
             continue;
         } else {
             // copy last bot into botToBeRemoved's index, then undefine the last element
             level.bots[botsToRemove[i]] = level.bots[level.bots.size - 1];
             level.bots[botsToRemove[i]].index = botsToRemove[i]; // update the bot's index
-            level.bots[level.bots.size - 1] = undefined;         // undefine the last element
+            bot = level.bots[level.bots.size - 1];
+            level.bots[level.bots.size - 1] = undefined;
+            kick(bot getEntityNumber()); // cheating bots! :-)
         }
     }
     // now update availableBots to ensure their indices are correct
@@ -477,6 +507,8 @@ bestTarget()
 
     // the best target is the closest player the bot can see
     targets = self sortTargetsByDistance();
+    if (!isDefined(targets[0])) {return undefined;}
+
     for (i=0; i<targets.size; i++) {
         if (self canSeeTarget(targets[i].player)) {
             return targets[i].player;
@@ -490,7 +522,10 @@ closestTarget()
 {
     debugPrint("in _bot::closestTarget()", "fn", level.highVerbosity);
 
-    return self sortTargetsByDistance()[0].player;
+    targets = self sortTargetsByDistance();
+    if (!isDefined(targets[0])) {return undefined;}
+
+    return targets[0].player;
 }
 
 sortTargetsByDistance()

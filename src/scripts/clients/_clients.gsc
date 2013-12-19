@@ -67,12 +67,12 @@ catchBot()
 {
     debugPrint("in _clients::catchBot()", "fn", level.nonVerbose);
 
-    //RELOADING ZOMBIE :]
-    if(self getStat(512) == 100) {
+    // Reconnecting bot
+    if (self getStat(512) == 100) {
         level.loadBots = 0;
         self.isBot = true;
-        noticePrint("_clients::catchBot, trying to reload a bot, why?");
-//         self thread scripts\bots\_bots::loadBot();
+        // This happens when the map is restarted without the server being restarted
+        self thread scripts\bots\_bot::reconnect();
 
         return 1;
     }

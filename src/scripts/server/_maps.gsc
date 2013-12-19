@@ -199,7 +199,7 @@ logPlayersAtGameEnd()
     level endon("starting_map_change");
 
     flag = true;
-    while(flag) {
+    while (flag) {
         level waittill("game_ended");
         noticePrint("Players in the game when the game ended:");
         for (i=0; i<level.players.size; i++) {

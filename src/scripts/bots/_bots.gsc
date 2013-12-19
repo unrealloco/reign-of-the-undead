@@ -47,6 +47,15 @@ init()
 
     scripts\include\waypoints::loadWaypoints();
 
+    if (getDvarInt("use_flexible_slots") != 1) {level.useFlexibleSlots = false;}
+    else {level.useFlexibleSlots = true;}
+
+    // temp disable flexible slot system until we get it working as well as possible.
+    // There are unresolvable issues where we can't reconnect a bot that was kicked
+    // unless there has been a full server restart.  This means we can remove bots
+    // at will, but we are severely limited in adding them back in.
+    level.useFlexibleSlots = false;
+
     level.bots = [];
     level.availableBots = [];           // stack
 
@@ -69,15 +78,19 @@ init()
 
 
     wait 1;
-    if (level.loadBots) {instantiateBots(level.dvar["bot_count"]);}
+    if (level.loadBots) {
+        // this is a server restart, so create bots
+        instantiateBots(level.dvar["bot_count"]);
+    } else {
+        // this is a map restart, so existing bots will reconnect
+        if (level.useFlexibleSlots) {resetFlexibleSlots();}
+    }
 
     scripts\bots\_types::initZomTypes();
-
     scripts\bots\_types::initZomModels();
 
     level.botsLoaded = true;
     thread monitorBotSlots();
-    thread maps\mp\_umi::findAdditionalSpawnpoints();
 }
 
 
@@ -191,12 +204,11 @@ deleteBots(botCount)
  */
 monitorBotSlots()
 {
-    debugPrint("in bots::monitorBotSlots()", "fn", level.fullVerbosity);
+    debugPrint("in _bots::monitorBotSlots()", "fn", level.fullVerbosity);
 
     level endon("game_ended");
 
-    useFlexibleSlots = getDvarInt("use_flexible_slots");
-    if (useFlexibleSlots != 1) {return;}
+    if (!level.useFlexibleSlots) {return;}
 
     totalSlots = getDvarInt("ui_maxclients");
     maxBots = getDvarInt("max_bots");                           // never have more bots than this
@@ -232,6 +244,28 @@ monitorBotSlots()
         }
     }
 }
+/**
+ * @brief Resets bot count to bot_count dvar when a map is reloaded without a server restart
+ *
+ * @returns nothing
+ */
+resetFlexibleSlots()
+{
+    debugPrint("in _bots::resetFlexibleSlots()", "fn", level.fullVerbosity);
+
+    botCount = getDvarInt("bot_count");
+
+    botDelta = botCount - level.bots.size;
+    if (botDelta < 0) {
+        // remove bots
+        noticePrint("Flexible Slot System: Removing " + (botDelta * -1) + " bots.");
+        deleteBots(botDelta * -1);
+    } else if (botDelta > 0) {
+        // add bots
+        noticePrint("Flexible Slot System: Adding " + botDelta + " bots.");
+        instantiateBots(botDelta);
+    }
+}
 
 /**
  * @brief Finds a bot that is available for spawning
@@ -242,7 +276,7 @@ availableBot()
 {
     debugPrint("in _bots::availableBot()", "fn", level.fullVerbosity);
 
-    noticePrint(level.availableBots.size + " bots available.");
+    //noticePrint(level.availableBots.size + " bots available.");
     if (level.availableBots.size == 0) {
         errorPrint("No available bots!");
         return undefined;

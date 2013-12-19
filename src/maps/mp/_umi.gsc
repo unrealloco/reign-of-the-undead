@@ -1378,6 +1378,7 @@ startGame()
 {
     debugPrint("in _umi::startGame()", "fn", level.nonVerbose);
 
+    findAdditionalSpawnpoints();
     scripts\gamemodes\_survival::beginGame();
 }
 

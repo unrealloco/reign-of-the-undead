@@ -643,7 +643,6 @@ playerVisuals()
     self.playerVoteFeedbackIconHud setText(""); // init
     self.playerVoteFeedbackIconHud.parent = self;
     self.playerVoteFeedbackIconHud.hideWhenInMenu = true;
-
 }
 
 
@@ -705,7 +704,6 @@ updateVotingResults()
         } else {
             // Do nothing if the vote totals aren't dirty
         }
-        /// @bug Temp make this 0.2 instaed of 0.1 to limit max number of strings created
         wait 0.2;
     }
 }
