@@ -500,6 +500,7 @@ zomMain()
 
     self endon("disconnect");
     self endon("death");
+    level endon("game_ended");
 
     self.lastTargetWp = -2;
     self.nextWp = -2;

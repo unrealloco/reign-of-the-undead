@@ -75,8 +75,8 @@ main()
         devDrawAllPossibleSpawnpoints();
         maps\mp\_umiEditor::initMapEditor();
     } else {
-        buildWeaponShopsByTradespawns("0 2 4 6 8 10 12 14 16 18 20 22 24");
-        buildShopsByTradespawns("1 3 5 7 9 11 13 15 17 19 21 23 25");
+        buildWeaponShopsByTradespawns("0 2 4 6 8");
+        buildShopsByTradespawns("1 3 5 7 9");
     }
 
     buildZombieSpawnsByClassname("mp_dm_spawn");
