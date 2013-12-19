@@ -303,6 +303,9 @@ devLinkWaypoint()
 {
     debugPrint("in _umiEditor::devLinkWaypoint()", "fn", level.nonVerbose);
 
+    // don't start a waypoint link while in waypoint mode
+    if (level.giveWaypointMode) {return;}
+
     level.linkingFlag.waypointId = level.currentWaypoint;
     level.linkingInProgress = true;
 
@@ -612,6 +615,11 @@ devGetAvailableUnlinkedWaypointFlag()
 devUiDeleteWaypoint()
 {
     debugPrint("in _umiEditor::devUiDeleteWaypoint()", "fn", level.nonVerbose);
+
+    // don't delete a waypoint while in waypoint mode
+    if (level.giveWaypointMode) {return;}
+    // don't delete a waypoint while in the process of linking a waypoint
+    if (level.linkingInProgress) {return;}
 
     waypointId = level.currentWaypoint;
     devUnflagWaypoint(waypointId);
