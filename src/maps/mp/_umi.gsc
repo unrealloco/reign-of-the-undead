@@ -594,7 +594,7 @@ loadCyclicalAnimation(model, type, steps, reversible, delay)
 }
 
 /**
- * @brief Loads an elevator or moving platform form a map
+ * @brief Loads an elevator or moving platform from a map
  *
  * @param model string The targetname of the entity with a classname of 'script_brushmodel'
  * @param trigger string The targetname of the entity with a classname of 'trigger_use_touch'
