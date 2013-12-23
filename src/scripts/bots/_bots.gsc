@@ -190,6 +190,7 @@ deleteBots(botCount)
         while (!isDefined(bot)) {
             wait 0.1;
             bot = availableBot();
+            noticePrint("trying to pop a bot off the stack so we can delete it.");
         }
         botsToRemove[botsToRemove.size] = bot.index;
     }
@@ -276,9 +277,17 @@ availableBot()
 {
     debugPrint("in _bots::availableBot()", "fn", level.fullVerbosity);
 
-    //noticePrint(level.availableBots.size + " bots available.");
     if (level.availableBots.size == 0) {
-        errorPrint("No available bots!");
+        if (false) {
+            // for debugging.  this usually only happens when we all of our bot slots are
+            // already zombies, but the game would make more zombies if we had more slots
+            spawnedBots = 0;
+            for (i=0; i<level.bots.size; i++) {
+                if (level.bots[i].hasSpawned) {spawnedBots++;}
+            }
+            errorPrint("No available bots!");
+            noticePrint("Already " + spawnedBots + " alive");
+        }
         return undefined;
     } else {
         // pop a bot off the stack and return it
@@ -303,6 +312,7 @@ spawnZombie(zombieType, spawnpoint, bot)
     debugPrint("in _bots::spawnZombie()", "fn", level.fullVerbosity);
 
     if (!isDefined(bot)) {
+//         noticePrint("asking for a bot so we can spawn a zombie");
         bot = availableBot();
         if (!isDefined(bot)) {return undefined;}
     }
@@ -702,15 +712,29 @@ zomMoveTowards(target_position)
 
     self endon("disconnect");
     self endon("death");
+    self endon("dying");
 
     if (!isDefined(self.lastAStarTargetWp)) {self.lastAStarTargetWp = -1;}
     if (!isDefined(self.lastAStarWp)) {self.lastAStarWp = -1;}
 
+    /**
+     * @todo we only need unobstructed paths if we were off-waypoint.
+     */
     if (!isdefined(self.myWaypoint)) {
-        self.myWaypoint = nearestWaypoint(self.origin);
+        self.myWaypoint = nearestWaypoint(self.origin, true, self);
     }
 
-    targetWp = nearestWaypoint(target_position);
+    targetWp = nearestWaypoint(target_position, true, self.bestTarget);
+
+    if ((self.myWaypoint == -2) || (targetWp == -2)) {
+        // we hit our own corpse!
+        return;
+    }
+    if ((self.myWaypoint < 0) || (targetWp < 0)) {
+        errorPrint("self.myWaypoint: " + self.myWaypoint + " targetWp: " + targetWp);
+        return;
+    }
+
     nextWp = self.nextWp;
     direct = false;
 

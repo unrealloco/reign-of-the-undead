@@ -185,6 +185,7 @@ spawnTeleporter(origin, angles, spawnDelay)
     teleporter.angles = angles;
     teleporter.trigger = spawn("trigger_radius", teleporter.origin, 0, 40, 128);
     teleporter setcontents(2);
+    teleporter.isTeleporter = true;
 
     // Loop sound
     // Don't play.  Sound file is missing, besides, it was *really* irritating.

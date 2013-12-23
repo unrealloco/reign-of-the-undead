@@ -77,6 +77,7 @@ giveBarrel(type)
 
     self.carryObj linkto(self);
     self.carryObj.type = type;
+    self.carryObj.isBarrel = true;
 
     // track whether the barrel is currently being killed
     self.carryObj.isBeingKilled = false;

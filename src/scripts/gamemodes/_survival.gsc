@@ -861,6 +861,7 @@ killBuggedZombies()
                 level.bots[i] suicide();
                 wait 0.05;
             }
+            wait .1;
         }
     }
 }
@@ -936,7 +937,7 @@ spawnZombie(override, spawntype)
         return bot;
     } else if (spawntype==2) { // ground spawn
         bot = scripts\bots\_bots::availableBot();
-        if (!isdefined(bot)) {return undefined;}
+        if (!isDefined(bot)) {return undefined;}
 
         bot.hasSpawned = true;
 

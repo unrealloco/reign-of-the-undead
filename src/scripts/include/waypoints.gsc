@@ -45,6 +45,7 @@ loadWaypoints()
     debugPrint("in waypoints::loadWaypoints()", "fn", level.nonVerbose);
 
     level.useKdWaypointTree = false;
+
     if (!isDefined(level.waypointsInvalid)) {level.waypointsInvalid = false;}
 
     initStatic(); // initialize my hack to enable static member variables
@@ -61,6 +62,8 @@ loadWaypoints()
         // intialize the k-dimensional waypoint tree
         initKdWaypointTree();
         loadWaypointLinkDistances();
+
+//         kdNearestVisibleWpTest(5000, true);
 
         return;
     }
@@ -425,6 +428,216 @@ printArray(array, axis, pivotIndex)
     return data;
 }
 
+printTrace(trace, from, to, ignoreEntity)
+{
+    fraction = trace["fraction"];
+    position = trace["position"];
+    entity = trace["entity"];
+    surface = trace["surfacetype"];
+    switch (surface) {
+        case "wood":       // fall through
+        case "metal":      // fall through
+        case "brick":      // fall through
+        case "plaster":      // fall through
+        case "plastic":      // fall through
+        case "asphalt":      // fall through
+        case "dirt":      // fall through
+        case "rubber":      // fall through
+        case "concrete":
+//             return;
+    }
+    normal = trace["normal"];
+    name = "";
+    if (!isDefined(entity)) {entity = "undefined";}
+    else {
+        if ((isDefined(trace["entity"].isBot)) && (trace["entity"].isBot)) {entity = "bot";}
+        else if (isPlayer(trace["entity"])) {entity = "player";}
+        else if ((isDefined(trace["entity"].isCorpse)) && (trace["entity"].isCorpse)) {entity = "corpse";}
+        else {
+            entity = "defined";
+//             number = trace["entity"] getEntityNumber();
+//             ignoreNumber = ignoreEntity getEntityNumber();
+//             if (number == ignoreNumber) {
+//                 noticePrint("hit entity is the ignore entity.  number: " + number);
+//             }
+        }
+        if (isDefined(trace["entity"].name)) {name = trace["entity"].name;}
+    }
+    if (trace["fraction"] == 0) {
+    }
+
+    noticePrint("trace(from, to, fraction, position, entity, name, surface, normal): (" + from + ", " + to + ", " + fraction + ", " + position + ", " + entity + ", " + name + ", " + surface + ", " + normal + ")");
+}
+
+isPathClear(from, to, ignoreEntity)
+{
+    origin = from;
+    originalEntity = ignoreEntity;
+    originalTo = to;
+    from = from + (0,0,40);
+    to = to + (0,0,40);
+    count = 0;
+
+    // this is the case when crawlers and hell zombies first spawn.
+    if (from == to) {return 1;}
+
+    trace = undefined;
+    direction = vectorNormalize(to - from);
+
+    while ((from != to) && (count < 10)) {
+        count++;
+        trace = bullettrace(from, to, false, ignoreEntity);
+        if (trace["fraction"] == 1) {
+            return 1;
+        } else {
+            // We did not complete our trace
+            if (!isDefined(trace["entity"])) {
+                // we hit something other than an entity
+                return -1;
+            }
+            // We hit an entity
+
+            // bail if we hit our own corpse!
+            if ((isDefined(trace["entity"].isCorpse)) && (trace["entity"].isCorpse)) {
+                if (trace["entity"].origin == origin) {return -2;}
+            }
+
+            if (((isDefined(trace["entity"].isCorpse)) && (trace["entity"].isCorpse)) ||    // ignore corpses other than ours
+                ((isDefined(trace["entity"].isBot)) && (trace["entity"].isBot)) ||          // ignore other bots
+                ((isDefined(trace["entity"].isBarrel)) && (trace["entity"].isBarrel)) ||    // ignore barrels
+                ((isDefined(trace["entity"].isBarricade)) && (trace["entity"].isBarricade)) || // ignore barricades
+                ((isDefined(trace["entity"].isTurret)) && (trace["entity"].isTurret)) ||    // ignore defense turrets
+                ((isDefined(trace["entity"].isTeleporter)) && (trace["entity"].isTeleporter))) // ignore teleporters
+            {
+                if (trace["fraction"] < 0.01) {
+                    distance = distanceSquared(trace["position"], to);
+                    if (distance < 9) {
+                        // close enough!
+                        return 1;
+                    } else if (distance > 225) {
+                        // if we are more than 15 units from 'to', add 15 units to try and get past this corpse
+                        ignoreEntity = trace["entity"];
+                        from = trace["position"] + (15 * direction);
+                    } else if (distance > 81) {
+                        ignoreEntity = trace["entity"];
+                        from = trace["position"] + (9 * direction);
+                    } else {
+                        ignoreEntity = trace["entity"];
+                        from = trace["position"] + (3 * direction);
+                    }
+                } else {
+                    ignoreEntity = trace["entity"];
+                    from = trace["position"];
+                }
+            } else {
+                // we hit something solid that should stop us, like a wall, ceiling, etc.
+                return -1;
+            }
+            // at this point, we have either returned, or we have changed ignoreEntity
+            // and from to prepare for the next trace
+        } // ends trace["fraction"] < 1
+    } // end while
+
+    if (count >= 10) {
+        errorPrint("could not complete a trace within 10 tries, debugging");
+        iPrintLnBold("Limit Error");
+        debugIsPathClear(origin, originalTo, originalEntity);
+        clearDistance = distance(origin + (0,0,40), trace["position"]);
+        return clearDistance;
+    } else {
+        errorPrint("reached end of function without returning, debugging. count: " + count);
+        iPrintLnBold("Return Error");
+        debugIsPathClear(origin, originalTo, originalEntity);
+    }
+
+    // this represents a bug!
+    return -3;
+}
+
+debugIsPathClear(from, to, ignoreEntity)
+{
+    origin = from;
+    originalEntity = ignoreEntity;
+    from = from + (0,0,40);
+    to = to + (0,0,40);
+    count = 0;
+
+    trace = undefined;
+    direction = vectorNormalize(to - from);
+
+    while ((from != to) && (count < 10)) {
+        count++;
+        trace = bullettrace(from, to, false, ignoreEntity);
+        printTrace(trace, from, to, ignoreEntity);
+        if (trace["fraction"] == 1) {
+            return 1;
+        } else {
+            // We did not complete our trace
+            if (!isDefined(trace["entity"])) {
+                // we hit something other than an entity
+                return -1;
+            }
+            // We hit an entity
+
+            // bail if we hit our own corpse!
+            if ((isDefined(trace["entity"].isCorpse)) && (trace["entity"].isCorpse)) {
+                if (trace["entity"].origin == origin) {return -2;}
+            }
+
+            if ((isDefined(trace["entity"].isCorpse)) && (trace["entity"].isCorpse)) {
+                noticePrint("hit a corpse");
+            } else if ((isDefined(trace["entity"].isBot)) && (trace["entity"].isBot)) {
+                noticePrint("hit another bot");
+            } else if ((isDefined(trace["entity"].isBarrel)) && (trace["entity"].isBarrel)) {
+                noticePrint("hit a barrel");
+            } else if ((isDefined(trace["entity"].isBarricade)) && (trace["entity"].isBarricade)) {
+                noticePrint("hit a barricade");
+            } else if ((isDefined(trace["entity"].isTurret)) && (trace["entity"].isTurret)) {
+                noticePrint("hit a turret");
+            } else if ((isDefined(trace["entity"].isTeleporter)) && (trace["entity"].isTeleporter)) {
+                noticePrint("hit a teleporter");
+            } else {
+                // we hit something solid that should stop us, like a wall, ceiling, etc.
+                noticePrint("hit entity is defined, but it isn't one we should ignore");
+            }
+
+            if (((isDefined(trace["entity"].isCorpse)) && (trace["entity"].isCorpse)) ||    // ignore corpses other than ours
+                ((isDefined(trace["entity"].isBot)) && (trace["entity"].isBot)) ||          // ignore other bots
+                ((isDefined(trace["entity"].isBarrel)) && (trace["entity"].isBarrel)) ||    // ignore barrels
+                ((isDefined(trace["entity"].isBarricade)) && (trace["entity"].isBarricade)) || // ignore barricades
+                ((isDefined(trace["entity"].isTurret)) && (trace["entity"].isTurret)) ||    // ignore defense turrets
+                ((isDefined(trace["entity"].isTeleporter)) && (trace["entity"].isTeleporter))) // ignore teleporters
+            {
+                if (trace["fraction"] < 0.01) {
+                    distance = distanceSquared(trace["position"], to);
+                    if (distance < 9) {
+                        // close enough!
+                        return 1;
+                    } else if (distance > 225) {
+                        // if we are more than 15 units from 'to', add 15 units to try and get past this corpse
+                        ignoreEntity = trace["entity"];
+                        from = trace["position"] + (15 * direction);
+                    } else if (distance > 81) {
+                        ignoreEntity = trace["entity"];
+                        from = trace["position"] + (9 * direction);
+                    } else {
+                        ignoreEntity = trace["entity"];
+                        from = trace["position"] + (3 * direction);
+                    }
+                } else {
+                    ignoreEntity = trace["entity"];
+                    from = trace["position"];
+                }
+            } else {
+                // we hit something solid that should stop us, like a wall, ceiling, etc.
+                return -1;
+            }
+            // at this point, we have either returned, or we have changed ignoreEntity
+            // and from to prepare for the next trace
+        } // ends trace["fraction"] < 1
+    } // end while
+}
+
 /**
  * @brief Performs a Nearest Neighbor search on the k-dimensional waypoint tree
  *
@@ -433,13 +646,14 @@ printArray(array, axis, pivotIndex)
  * @param root node The node to begin the search at
  * @param origin the point we want to find the closest waypoint to
  * @param staticIndex integer the index in level.static that will hold the bestDistance
+ * @param unobstructedPath boolean Must the path from \c origin to the waypoint be unobstructed?
  * @param parent node the parent of the current node
  * @param depth integer the current depth of the tree
  * @param bestNode node the node that corresponds to the bestDistance
  *
  * @returns node the node representing the nearest waypoint
  */
-kdWaypointNearestNeighbor(root, origin, staticIndex, parent, depth, bestNode)
+kdWaypointNearestNeighbor(root, origin, staticIndex, unobstructedPath, ignoreEntity, parent, depth, bestNode)
 {
     // 10th most-called function (2% of all function calls).
     // Do *not* put a function entrance debugPrint statement here!
@@ -448,11 +662,9 @@ kdWaypointNearestNeighbor(root, origin, staticIndex, parent, depth, bestNode)
         return bestNode;
     }
 
-    if ((root.id == level.Wp.size) || (root.id == level.Wp.size + 1)) {
-        // ignore the two fake waypoints that define the hypercube
-        return bestNode;
-    }
+    if (level.static[staticIndex] == -2) {return undefined;}
 
+    if (!isDefined(unobstructedPath)) {unobstructedPath = false;}
     if (!isDefined(depth)) {depth = 0;}
 
     k = 3;              // our waypoints are in R^3
@@ -473,8 +685,29 @@ kdWaypointNearestNeighbor(root, origin, staticIndex, parent, depth, bestNode)
     level.kdTreeDistanceCount++;
 
     if (distance < level.static[staticIndex]) { // level.static[staticIndex] holds bestDistance
-        level.static[staticIndex] = distance;
-        bestNode = root;
+        if (unobstructedPath) {
+            result = isPathClear(origin, level.Wp[root.id].origin, ignoreEntity);
+            if (result == 1) {
+                // path is clear
+                level.static[staticIndex] = distance;
+                bestNode = root;
+            } else if (result == -1) {
+                // path is not clear.  This is not a visible node, so
+                // Do Nothing
+            } else if (result == -2) {
+                // we hit our own dead body, so stop looking for a nearest neighbor
+                level.static[staticIndex] = -2;
+                return undefined;
+            } else if (result == -3) {
+                // we hit the end of the function without otherwise returning.
+                errorPrint("isPathClear() returned -3");
+            } else {
+                noticePrint("unobstructed path distance is " + result + " units.");
+            }
+        } else {
+            level.static[staticIndex] = distance;
+            bestNode = root;
+        }
     }
 
     // walk the tree until we get to the correct leaf node. If the dimensional coordinate
@@ -482,9 +715,9 @@ kdWaypointNearestNeighbor(root, origin, staticIndex, parent, depth, bestNode)
     // corresponding to a positive dimDelta, then we proceed to the left child,
     // otherwise we proceed to the right child.
     if (dimDelta > 0) {
-        bestNode = kdWaypointNearestNeighbor(root.leftChild, origin, staticIndex, root, depth+1, bestNode);
+        bestNode = kdWaypointNearestNeighbor(root.leftChild, origin, staticIndex, unobstructedPath, ignoreEntity, root, depth+1, bestNode);
     } else {
-        bestNode = kdWaypointNearestNeighbor(root.rightChild, origin, staticIndex, root, depth+1, bestNode);
+        bestNode = kdWaypointNearestNeighbor(root.rightChild, origin, staticIndex, unobstructedPath, ignoreEntity, root, depth+1, bestNode);
     }
     // At this point, we have the closest waypoint to the search point that we found
     // in our walk to the leaf node
@@ -508,9 +741,9 @@ kdWaypointNearestNeighbor(root, origin, staticIndex, parent, depth, bestNode)
         // hypersphere crosses hyperplane, so recurse into other branch to search for
         // a potentially closer node
         if (dimDelta > 0) {
-            bestNode = kdWaypointNearestNeighbor(root.rightChild, origin, staticIndex, root, depth+1, bestNode);
+            bestNode = kdWaypointNearestNeighbor(root.rightChild, origin, staticIndex, unobstructedPath, ignoreEntity, root, depth+1, bestNode);
         } else {
-            bestNode = kdWaypointNearestNeighbor(root.leftChild, origin, staticIndex, root, depth+1, bestNode);
+            bestNode = kdWaypointNearestNeighbor(root.leftChild, origin, staticIndex, unobstructedPath, ignoreEntity, root, depth+1, bestNode);
         }
     } else {
         // hypersphere doesn't intersect hyperplane, so we can rule out this node's
@@ -617,7 +850,7 @@ kdNearestWpTest(n, useMapExtents)
     level.kdTreeDistanceCount = 0;
     treeSize = level.nodes;
     maxDistError = 0;
-    minDistError = 9999999999;
+    minDistError = level.maxInt; // 2147483647, 32-bit ints
     meanDistError = 0;
     totalDistError = 0;
 
@@ -626,8 +859,8 @@ kdNearestWpTest(n, useMapExtents)
 
         // iterative method
         nearestWp = -1;
-        nearestDistance = 9999999999;
-        for(j=0; j < level.WpCount; j++) {
+        nearestDistance = level.maxInt; // 2147483647, 32-bit ints
+        for (j=0; j<level.WpCount; j++) {
             distance = distanceSquared(origin, level.Wp[j].origin);
             iterativeDistanceCount++;
             if(distance < nearestDistance) {
@@ -639,7 +872,7 @@ kdNearestWpTest(n, useMapExtents)
         // kd-tree method
         // get an available static member
         index = availableStatic();
-        level.static[index] = 9999999999;
+        level.static[index] = level.maxInt; // 2147483647, 32-bit ints
 
         bestNode = kdWaypointNearestNeighbor(level.kdWpTree, origin, index);
 
@@ -681,6 +914,111 @@ kdNearestWpTest(n, useMapExtents)
     noticePrint("Distance Errors (min, max, mean): (" + minDistError + ", " + maxDistError + ", " + meanDistError + ")");
     noticePrint("-------------------------------------------------------------------------------");
 }
+
+/**
+ * @brief Tests the validity and compares the results from visible NN search and brute-force
+ *
+ * @param n integer the number of random 3D points fo find the nearest waypoint for
+ * @param useMapExtents boolean limit search points to points *within* the 3D volume subtended by the waypoints?
+ *
+ * @returns nothing
+ */
+kdNearestVisibleWpTest(n, useMapExtents)
+{
+    debugPrint("in waypoints::kdNearestVisibleWpTest()", "fn", level.nonVerbose);
+
+    // n == 100,000 takes a few seconds, but works
+    // n == 500,000 takes about 37 seconds, but works
+    right = 0;
+    wrong = 0;
+    percentageRight = 0;
+    iterativeDistanceCount = 0;
+    level.kdTreeDistanceCount = 0;
+    treeSize = level.nodes;
+    maxDistError = 0;
+    minDistError = level.maxInt; // 2147483647, 32-bit ints
+    meanDistError = 0;
+    totalDistError = 0;
+    skipped = 0;
+    obstructedPathCount = 0;
+
+    for (i=0; i<n; i++) {
+        origin = random3dPoint(useMapExtents);   // if true, generate points within 3D volume covered by waypoints
+
+        // iterative method for nearest waypoint
+        nearestWp = -1;
+        nearestDistance = level.maxInt; // 2147483647, 32-bit ints
+        for (j=0; j<level.WpCount; j++) {
+            distance = distanceSquared(origin, level.Wp[j].origin);
+            iterativeDistanceCount++;
+            if(distance < nearestDistance) {
+                nearestDistance = distance;
+                nearestWp = j;
+            }
+        }
+
+        // iterative method for nearest visible waypoint
+        nearestVisibleWp = nearestVisibleWaypoint(origin);
+        if (nearestVisibleWp == -1) {
+            skipped++;
+            continue;
+        }
+
+        // kd-tree method
+        // get an available static member
+        index = availableStatic();
+        level.static[index] = level.maxInt; // 2147483647, 32-bit ints
+
+        bestNode = kdWaypointNearestNeighbor(level.kdWpTree, origin, index, true);
+
+        // recycle the static member
+        level.static[index] = 0;
+        level.staticStack[level.staticStack.size] = index;
+
+        kdNearestVisibleWp = bestNode.id;
+
+        if (nearestWp != nearestVisibleWp) {
+            // the path to the nearest waypoint is obstructed
+            obstructedPathCount++;
+            if (kdNearestVisibleWp == nearestVisibleWp) {right++;}
+            else {
+                wrong++;
+                correctDistance = distance(origin, level.Wp[nearestVisibleWp].origin);
+                wrongDistance = distance(origin, level.Wp[kdNearestVisibleWp].origin);
+                error = wrongDistance - correctDistance;
+                if (error < 0) {error = error * -1;}
+                noticePrint("(nearestWp, nearestVisibleWp, kdNearestVisibleWp): (" + nearestWp + ", " + nearestVisibleWp + ", " + kdNearestVisibleWp + ") error distance: " + error);
+                if (error > maxDistError) {maxDistError = error;}
+                if (error < minDistError) {minDistError = error;}
+                if (n < 5001) { // don't overflow integer
+                    totalDistError += error;
+                }
+            }
+        }
+    }
+    if (wrong == 0) {minDistError = 0;}
+    else {meanDistError = totalDistError / wrong;}
+
+    // results
+    if (obstructedPathCount == 0) {obstructedPathCount = 0.01;}
+    percentageRight = (right / obstructedPathCount) * 100;
+
+    noticePrint("-------------------------------------------------------------------------------");
+    noticePrint("Waypoint Count: " + level.Wp.size + " Tree Size: " + treeSize);
+    if (useMapExtents) {
+        noticePrint("Tested " + n + " random 3D points within the map extents.");
+    } else {
+        noticePrint("Tested " + n + " random 3D points.");
+    }
+    noticePrint("Skipped " + skipped + " 3D points.");
+    noticePrint("Obstructed Path Count " + obstructedPathCount);
+    noticePrint("Accuracy (right, wrong): (" + right + ", " + wrong + ") " + percentageRight + " percent correct.");
+    noticePrint("Total distance() calls (iterative, kdtree): (" + iterativeDistanceCount + ", " + level.kdTreeDistanceCount + ")");
+    noticePrint("Average distance() calls (iterative, kdtree): (" + iterativeDistanceCount / n + ", " + level.kdTreeDistanceCount / n + ")");
+    noticePrint("Distance Errors (min, max, mean): (" + minDistError + ", " + maxDistError + ", " + meanDistError + ")");
+    noticePrint("-------------------------------------------------------------------------------");
+}
+
 
 /**
  * @brief Generates a pseudo-random 3D point
@@ -741,41 +1079,101 @@ findWaypointExtents()
  * Uses the k-dimensional waypoint tree when it exists, otherwise falls back to using brute-force
  *
  * @param origin tuple representing the 3D point to find the nearest waypoint to
+ * @param unobstructedPath boolean Must the path from \c origin to the waypoint be unobstructed?
  *
  * @returns integer the index of the nearest waypoint
  */
-nearestWaypoint(origin)
+nearestWaypoint(origin, unobstructedPath, ignoreEntity)
 {
     // 10th most-called function (2% of all function calls).
     // Do *not* put a function entrance debugPrint statement here!
+
+    if (!isDefined(unobstructedPath)) {unobstructedPath = false;}
 
     nearestWp = -1; // not sure why Bipo inits this to -1, will investigate in the new AI
 
     if (level.useKdWaypointTree) { // be intelligent :-)
         // get an available static member
         index = availableStatic();
-        level.static[index] = 9999999999;
+        level.static[index] = level.maxInt; // 2147483647, 32-bit ints
 
-        bestNode = kdWaypointNearestNeighbor(level.kdWpTree, origin, index);
-        nearestWp = bestNode.id;
+        bestNode = kdWaypointNearestNeighbor(level.kdWpTree, origin, index, unobstructedPath, ignoreEntity);
+        if (isDefined(bestNode)) {
+            nearestWp = bestNode.id;
+        } else {
+            nearestWp = level.static[index]; // return codes, -2 means we hit our own corpse
+            if (nearestWp == level.maxInt) {nearestWp = -3;}
+            else if (nearestWp >= level.Wp.size) {nearestWp = -4;}
+        }
 
         // recycle the static member
         level.static[index] = 0;
         level.staticStack[level.staticStack.size] = index;
     } else {    // use brute-force
-        nearestDistance = 9999999999;
-        for(i = 0; i < level.WpCount; i++) {
+        nearestDistance = level.maxInt; // 2147483647, 32-bit ints
+        for (i=0; i<level.WpCount; i++) {
             distance = distancesquared(origin, level.Wp[i].origin);
-            if(distance < nearestDistance) {
+            if (distance < nearestDistance) {
+                if (unobstructedPath) {
+                    result = isPathClear(origin, level.Wp[i].origin, ignoreEntity);
+                    if (result == 1) {
+                        nearestDistance = distance;
+                        nearestWp = i;
+                    } else if (result == -2) {
+                        // we hit our own corpse, ergo we don't need to look for a nearest waypoint
+                        return -2;
+                    }
+                } else {
+                    nearestDistance = distance;
+                    nearestWp = i;
+                }
+            }
+        }
+    }
+
+    if (nearestWp < 0) {
+        // this is very rare, and can happen when the point is under the map surface,
+        // e.g. when using random test points.  If it happens in a real game, log the error
+        errorPrint("Failed to find nearest waypoint to " + origin + " unobstructedPath: " + unobstructedPath + " on map " + getdvar("mapname"));
+    }
+
+    return nearestWp;
+}
+
+/**
+ * @brief Finds the nearest visible waypoint to an arbitrary point
+ * We want the nearest waypoint a bot can get to without going through walls, or
+ * the closest waypoint to a targeted player the bot can get to without going through
+ * walls.
+ *
+ * Only used for testing and validation.  Use kdWaypointNearestNeighbor() for production code
+ *
+ * @param origin tuple representing the 3D point to find the nearest waypoint to
+ *
+ * @returns integer the index of the nearest waypoint
+ */
+nearestVisibleWaypoint(origin, ignoreEntity)
+{
+    nearestWp = -1;
+
+    // brute-force method, used for comparison and validation
+    nearestDistance = level.maxInt; // 2147483647, 32-bit ints
+    for (i=0; i<level.WpCount; i++) {
+        distance = distanceSquared(origin, level.Wp[i].origin);
+        if (distance < nearestDistance) {
+            result = isPathClear(origin, level.Wp[i].origin, ignoreEntity);
+            if (result == 1) {
                 nearestDistance = distance;
                 nearestWp = i;
+            } else if (result == -2) {
+                // we hit our own corpse, ergo we don't need to look for a nearest waypoint
+                return -2;
             }
         }
     }
 
     return nearestWp;
 }
-
 
 /**
  * @brief Pre-compute and save distances between linked waypoints to optimize A*
@@ -896,7 +1294,7 @@ AStarNew(startWp, goalWp)
     while (pQSize > 0) {
         //pop node n from Open  // n has the lowest f
         n = pQOpen[0];
-        highestPriority = 9999999999;
+        highestPriority = level.maxInt; // 2147483647, 32-bit ints
         bestNode = -1;
         for (i=0; i<pQSize; i++) {
             if (pQOpen[i].f < highestPriority) {
@@ -934,9 +1332,9 @@ AStarNew(startWp, goalWp)
                 return -1;
             }
 
-            // grab up to 5 nodes to return as a stack
+            // grab up to 8 nodes to return as a stack
             pathStack = [];
-            start = pathNodes.size - 5;     // return up to five nodes
+            start = pathNodes.size - 8;     // return up to five nodes
             if (start < 0) {start = 0;}     // don't fall off the front of the array
             index = 0;
             for (i=start; i<pathNodes.size; i++) {
@@ -1126,7 +1524,7 @@ AStarOriginal(startWp, goalWp)
     {
         //pop node n from Open  // n has the lowest f
         n = pQOpen[0];
-        highestPriority = 9999999999;
+        highestPriority = level.maxInt; // 2147483647, 32-bit ints
         bestNode = -1;
         for (i=0; i<pQSize; i++) {
             if (pQOpen[i].f < highestPriority) {

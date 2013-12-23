@@ -1255,6 +1255,7 @@ buildBarricadesByTargetname(targetname, partCount, health, deathFx, buildFx, dro
                 logPrint("j: " + j + " jth part is not defined.\n");
             }
             ent.parts[j].startPosition = ent.parts[j].origin;
+            ent.parts[j].isBarricade = true;
             //             buildBarricade("staticbarricade", 4, 400, level.barricadefx,level.barricadefx);
         }
         ent.hp = int(health);
@@ -1264,6 +1265,7 @@ buildBarricadesByTargetname(targetname, partCount, health, deathFx, buildFx, dro
         ent.buildFx = buildFx;
         ent.occupied = false;
         ent.dropAll = dropAll;
+        ent.isBarricade = true;
         ent thread scripts\players\_barricades::makeBarricade();
     }
 }

@@ -167,6 +167,8 @@ createGrenadeTurret()
     turret.gun.ammo = turret.gun.maxAmmo;               // current ammmo
 
     turret.owner = undefined;
+    turret.isTurret = true;
+    turret.gun.isTurret = true;
 
     // Hide the turret
     turret hide();
@@ -229,6 +231,10 @@ createMinigunTurret()
     turret.gunBarrel hidePart("tag_swivel");
     turret.gunBarrel hidePart("tag_gun");
     turret.gunBarrel LinkTo(turret.gun, "j_barrel_anchor", (0,0,0), (0,0,0));
+
+    turret.isTurret = true;
+    turret.gun.isTurret = true;
+    turret.gunBarrel.isTurret = true;
 
     // makes gun show up with base when you buy it
     turret.gun linkto(turret);

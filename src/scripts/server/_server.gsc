@@ -39,6 +39,7 @@ init()
 
     // should we use the alternate bot AI under devlopment?
     level.zombieAiDevelopment = false;
+    level.maxInt = 2147483647; // 32-bit ints
 
     debugPrint("Running debug version of rotu_svr_scripts.iwd.", "val");
     if (level.printFunctionEntryMessages) {

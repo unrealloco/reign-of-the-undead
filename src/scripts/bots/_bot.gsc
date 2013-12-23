@@ -300,6 +300,48 @@ walk()
     }
 }
 
+/// climbing up a ladder.  bipeds only
+ladder()
+{
+    // Do *not* put a function entrance debugPrint statement here!
+
+    self setAnimation("walk");
+    self.cur_speed = self.walkSpeed;
+    if (self.quake) {
+        Earthquake( 0.17, .3, self.origin, 320);
+    }
+}
+
+/// climbing up a short wall or crate.  bipeds only
+mantle()
+{
+    // Do *not* put a function entrance debugPrint statement here!
+
+    self setAnimation("walk");
+    self.cur_speed = self.walkSpeed;
+    if (self.quake) {
+        Earthquake( 0.17, .3, self.origin, 320);
+    }
+}
+
+pathType(fromWp, toWp)
+{
+    if (level.Wp[fromWp].type == "mantle") {
+        deltaZ = level.Wp[toWp].origin[2] - level.Wp[fromWp].origin[2];
+        distance = distance2D(level.Wp[fromWp].origin, level.Wp[toWp].origin);
+        if ((deltaZ >= 15) && (deltaZ <= 50) && (distance < 25)) {
+            // we only mantle up, never down
+            return "mantle";
+        } else {return "normal";}
+    } else if ((level.Wp[fromWp].type == "ladder") && (level.Wp[toWp].type == "ladder")) {
+        return "ladder";
+    } else if ((level.Wp[fromWp].type == "clamped") && (level.Wp[toWp].type == "clamped")) {
+        return "clamped";
+    }
+
+    return "normal";
+}
+
 /**
  * @brief Stuns a zombie
  *
@@ -534,22 +576,22 @@ sortTargetsByDistance()
 
     players = level.players;
     data = [];
-    temp = spawnStruct();
     for (i=0; i<players.size; i++) {
         player = players[i];
         if (!isDefined(player)) {continue;}
-        if (!player.isTargetable) {continue;}
+        if ((isDefined(player.isTargetable)) && (!player.isTargetable)) {continue;}
         if (player.isAlive) {
+            temp = spawnStruct();
             temp.player = player;
             temp.distance = distanceSquared(self.origin, player.origin);
             // ordered insert by distance
             first = 0;
-            i = data.size;
-            while ((i > first) && (temp.distance < data[i-1].distance)) {
-                data[i] = data[i-1];
-                i--;
+            j = data.size;
+            while ((j > first) && (temp.distance < data[j-1].distance)) {
+                data[j] = data[j-1];
+                j--;
             }
-            data[i] = temp;
+            data[j] = temp;
         }
     }
     return data;
@@ -710,6 +752,9 @@ damage(meleeRange)
 
     // damage player
     targets = self sortTargetsByDistance();
+    if (targets.size == 0) {
+        // all players are down, or not targetable (like in admin menu)
+    }
     for (i=0; i<targets.size; i++) {
         target = targets[i].player;
         distance = targets[i].distance; // a squared distance
@@ -759,7 +804,8 @@ killed(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, psO
 {
     debugPrint("in _bot::killed()", "fn", level.veryHighVerbosity);
 
-    self unlink();
+    //self unlink();
+    self notify("dying");
 
     if(self.sessionteam == "spectator") {return;}
 
@@ -796,8 +842,8 @@ killed(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, psO
                             if ((!players[i].isDown) &&
                                 (distance(self.origin, players[i].origin) < 150)) {
                                 attacker thread scripts\players\_rank::increaseDemerits(level.burningZombieDemeritSize, "burning");
-                            isBadKill = true;
-                                }
+                                isBadKill = true;
+                            }
                         }
                     }
                     break;
@@ -829,13 +875,16 @@ killed(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, psO
         }
 
         body = self clonePlayer(deathAnimDuration);
+        body.isCorpse = true;
 
         if (corpse > 1) {
             thread scripts\include\physics::delayStartRagdoll( body, sHitLoc, vDir, sWeapon, eInflictor, sMeansOfDeath );
         }
     } else {
-        self setOrigin((0,0,-10000));
+//         self setOrigin((0,0,-10000));
     }
+    self setOrigin((0,0,-10000));
+    self unlink();
 
     level.dif_killedLast5Sec++;
 
@@ -844,5 +893,6 @@ killed(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, psO
     level.botsAlive -= 1;
 
     makeBotAvailable(self);
+//     noticePrint("zombie killed, making bot available");
     level notify("bot_killed");
 }
