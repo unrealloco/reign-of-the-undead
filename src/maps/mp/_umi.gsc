@@ -935,6 +935,91 @@ convertToNativeWaypoints()
 }
 
 /**
+ * @brief Validates the waypoints for this map
+ *
+ * This function will find unlinked waypoints, as well as waypoints that are linked,
+ * but are part of a section that isn't linked to another section of linked waypoints.
+ *
+ * If it finds any errors, RotU will ignore all the waypoints in the map.
+ *
+ * @returns nothing
+ * @since RotU 2.2.3
+ */
+validateWaypoints()
+{
+    debugPrint("in _umi::validateWaypoints()", "fn", level.nonVerbose);
+
+    visited = [];
+    unvisited = [];
+    wps = [];
+    invalidWaypoints = [];
+    count = 0;
+    fromWp = undefined;
+
+    for (i=0; i<level.Wp.size; i++) {
+        wps[i] = 0; // boolean
+    }
+
+    for (i=0; i<level.Wp.size; i++) {
+        if (isDefined(level.Wp[i].linked)) {
+            fromWp = i;
+            break;
+        }
+    }
+    if (!isDefined(fromWp)) {
+        level.waypointsInvalid = true;
+        errorPrint("Map " + getdvar("mapname") + " has no valid waypoints!");
+        return;
+    }
+
+    toWp = level.Wp.size - 1;
+    while ((visited.size < wps.size) && (count < 150)) {
+        count++;
+        closed = scripts\include\waypoints::AStarNew(fromWp, toWp, true);
+        if (!isDefined(closed)) {
+            // didn't find a path
+            invalidWaypoints[invalidWaypoints.size] = toWp;
+            wps[toWp] = 1;
+        } else {
+            // update the waypoints we've processed
+            for (i=0; i<closed.size; i++) {
+                wps[closed[i].wpIdx] = 1;
+            }
+            wps[toWp] = 1;
+        }
+
+        // update the visited and unvisited arrays
+        visited = [];
+        unvisited = [];
+        for (i=0; i<wps.size; i++) {
+            if (wps[i] == 1) {visited[visited.size] = i;}
+            else {unvisited[unvisited.size] = i;}
+        }
+
+        if (unvisited.size == 0) {break;}
+        fromWp = visited[randomInt(visited.size)];
+        toWp = unvisited[randomInt(unvisited.size)];
+    }
+
+    if (count == 150) {
+        warnPrint("Waypoint validation was stopped for performace reasons before it finished.");
+        warnPrint("There may be invalid waypoints that aren't noted.");
+    }
+    if (invalidWaypoints.size > 0) {
+        level.waypointsInvalid = true;
+        errorPrint("Map " + getdvar("mapname") + " has invalid waypoints!");
+        for (i=0; i<invalidWaypoints.size; i++) {
+            if (!isDefined(level.Wp[invalidWaypoints[i]].linked)) {
+                errorPrint("Unlinked Waypoint: " + invalidWaypoints[i] + " at: " +  level.Wp[invalidWaypoints[i]].origin);
+            } else {
+                errorPrint("Waypoint: " + invalidWaypoints[i] + " at: " +  level.Wp[invalidWaypoints[i]].origin + " is part of a linked section not linked to the other section.");
+            }
+        }
+        noticePrint("RotU will not be using the waypoints in this map!");
+    }
+}
+
+/**
  * @brief UMI to build zombie spawn points by the entities' classname property
  *
  * @param classname string The value of the entities' classname property

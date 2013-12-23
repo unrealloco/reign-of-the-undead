@@ -62,6 +62,7 @@ loadWaypoints()
         // intialize the k-dimensional waypoint tree
         initKdWaypointTree();
         loadWaypointLinkDistances();
+        maps\mp\_umi::validateWaypoints();
 
 //         kdNearestVisibleWpTest(5000, true);
 
@@ -92,15 +93,16 @@ loadWaypoints()
             waypoint.linked[ii] = level.Wp[atoi(tokens[ii])];
         }
 
-        // Error catching
-        if (!isDefined(waypoint.linked)) {
-            errorPrint("Unlinked Waypoint: " + waypoint.ID + " at: " +  waypoint.origin + " on map " + getdvar("mapname"));
-            level.waypointsInvalid = true;
-        }
+//         // Error catching
+//         if (!isDefined(waypoint.linked)) {
+//             errorPrint("Unlinked Waypoint: " + waypoint.ID + " at: " +  waypoint.origin + " on map " + getdvar("mapname"));
+//             level.waypointsInvalid = true;
+//         }
     }
     // intialize the k-dimensional waypoint tree
     initKdWaypointTree();
     loadWaypointLinkDistances();
+    maps\mp\_umi::validateWaypoints();
 }
 
 /**
@@ -1187,6 +1189,10 @@ loadWaypointLinkDistances()
     if (level.waypointsInvalid) {return;}
 
     for (i=0; i<level.Wp.size; i++) {
+        if (!isDefined(level.Wp[i].linked)) {
+            level.waypointsInvalid = true;
+            continue;
+        }
         for (j=0; j<level.Wp[i].linked.size; j++) {
             level.Wp[i].distance[j] = distance(level.Wp[i].origin, level.Wp[level.Wp[i].linked[j].ID].origin);
         }
@@ -1261,14 +1267,16 @@ randomWaypointPairIndices()
  *
  * @param startWp integer The index of the waypoint to begin the path at
  * @param goalWp integer The index of the waypoint to where the path ends
+ * @param validateWaypoints boolean If true, validate the map's waypoints instead of finding a path
  *
  * @returns An integer stack of up to the first five waypoints in the path
  */
-AStarNew(startWp, goalWp)
+AStarNew(startWp, goalWp, validateWaypoints)
 {
     // 20th most-called function (0.4% of all function calls).
     // Do *not* put a function entrance debugPrint statement here!
     level.astarCalls++;
+    if (!isDefined(validateWaypoints)) {validateWaypoints = false;}
 
     pathNodes = [];
 
@@ -1329,6 +1337,7 @@ AStarNew(startWp, goalWp)
                 // Can't happen, unless perhaps a map-maker screws up the waypoints
                 // and creates unreachable nodes
                 errorPrint("AStarNew(" + startWp + ", " + goalWp + ") on map " + getdvar("mapname") + " failed to find a path.");
+                if (validateWaypoints) {return undefined;}
                 return -1;
             }
 
@@ -1342,6 +1351,7 @@ AStarNew(startWp, goalWp)
                 index++;
             }
 
+            if (validateWaypoints) {return closedList;}
             return pathStack;
         }
 
@@ -1418,6 +1428,8 @@ AStarNew(startWp, goalWp)
             listSize++;
         }
     }
+    // we failed!
+    if (validateWaypoints) {return undefined;}
 }
 
 /**
