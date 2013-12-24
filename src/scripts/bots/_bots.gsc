@@ -383,6 +383,7 @@ spawnZombie(zombieType, spawnpoint, bot)
     wait 0.05;
     bot scripts\bots\_types::onSpawn(bot.type);
     bot linkto(bot.mover);
+    bot thread fixStuck();
     bot idle();
     bot thread zomMain();
 //     bot thread main();
@@ -726,14 +727,45 @@ zomMoveTowards(target_position)
 
     targetWp = nearestWaypoint(target_position, true, self.bestTarget);
 
-    if ((self.myWaypoint == -2) || (targetWp == -2)) {
-        // we hit our own corpse!
-        return;
+    if (self.myWaypoint < 0) {
+        if ((self.myWaypoint == -1) ||  // we never got past this init value
+            (self.myWaypoint == -2) ||  // we hit our own corpse
+            (self.myWaypoint == -4))    // returned waypoint index exceeds array bounds
+        {
+            self.myWaypoint = undefined;
+            errorPrint("self.myWaypoint: " + self.myWaypoint + " targetWp: " + targetWp);
+            return;
+        } else if (self.myWaypoint == -3) { // no visible waypoints from our position
+            // this can happen if we are inside an object we shouldn't be in,
+            // like a shipping container
+            self.myWaypoint = nearestWaypoint(self.origin, false, self);
+            if (self.myWaypoint < 0) {
+                self.myWaypoint = undefined;
+                errorPrint("self.myWaypoint: " + self.myWaypoint + " targetWp: " + targetWp);
+                return;
+            }
+        }
+    } else if (targetWp < 0) {
+        if ((targetWp == -1) ||  // we never got past this init value
+            (targetWp == -2) ||  // we hit our own corpse
+            (targetWp == -4))    // returned waypoint index exceeds array bounds
+        {
+            targetWp = undefined;
+            errorPrint("self.myWaypoint: " + self.myWaypoint + " targetWp: " + targetWp);
+            return;
+        } else if (targetWp == -3) { // no visible waypoints from our position
+            // this can happen if the target is inside an object we shouldn't be in,
+            // like a shipping container, or with insufficient waypoints
+            targetWp = nearestWaypoint(self.origin, false, self);
+            if (targetWp < 0) {
+                targetWp = undefined;
+                errorPrint("self.myWaypoint: " + self.myWaypoint + " targetWp: " + targetWp);
+                return;
+            }
+        }
     }
-    if ((self.myWaypoint < 0) || (targetWp < 0)) {
-        errorPrint("self.myWaypoint: " + self.myWaypoint + " targetWp: " + targetWp);
-        return;
-    }
+
+    /// @todo stop it from repeatedly getting the same invalid waypoint
 
     nextWp = self.nextWp;
     direct = false;

@@ -800,6 +800,60 @@ damage(meleeRange)
     }
 }
 
+fixStuck()
+{
+    debugPrint("in _bot::fixStuck()", "fn", level.highVerbosity);
+
+    self endon("dying");
+    self endon("disconnect");
+    self endon("death");
+
+    lastX = undefined;
+    lastY = undefined;
+    skipCount = 0;
+
+    while ((!isDefined(self.readyToBeKilled)) || (!self.readyToBeKilled)) {
+        wait 0.1;
+    }
+
+    while (1) {
+        wait 10;
+        // stuck bots may be jumping up and down, so ignore z coordinate
+        currentX = self.origin[0];
+        currentY = self.origin[1];
+        if (!isDefined(lastX)) {
+            lastX = currentX;
+            lastY = currentY;
+            continue;
+        } else if ((lastX == currentX) && (lastY == currentY)) {
+            // If our current target isn't visible (i.e. stealth or admin menu),
+            // and is close to us, don't consider ourself to be stuck
+            if ((isDefined(self.currentTarget)) && (!self.currentTarget.visible)) {
+                distance = distanceSquared(self.origin, self.currentTarget.origin);
+                if (distance < 15625) {  // 125 units
+                    skipCount++;
+                    if (skipCount < 3) {continue;}  // consider us stuck if the target is invisible for too long
+                }
+            }
+            skipCount = 0;
+            warnPrint("Fixing potentially stuck bot at " + self.origin + " on map " + getdvar("mapname"));
+            // we are stuck!  Move us to a random spawnpoint
+            spawnpoint = scripts\gamemodes\_survival::randomSpawnpoint();
+            self.mover.origin = spawnpoint.origin;
+            self.mover.angles = spawnpoint.angles;
+            self.myWaypoint = undefined;
+            search();
+            // update last
+            lastX = spawnpoint.origin[0];
+            lastY = spawnpoint.origin[1];
+        } else {
+            // update last
+            lastX = currentX;
+            lastY = currentY;
+        }
+    }
+}
+
 killed(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, psOffsetTime, deathAnimDuration)
 {
     debugPrint("in _bot::killed()", "fn", level.veryHighVerbosity);
