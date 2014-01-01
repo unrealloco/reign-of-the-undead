@@ -113,7 +113,7 @@ Callback_PlayerConnect()
                              "ui_uav_client", 1 ,
                              "ui_hintstring", "",
                              "ui_infostring", "",
-                             "cg_enemynamefadein", level.maxInt,
+                             "cg_enemynamefadein", level.MAX_INT,
                              "cg_enemynamefadeout", 0,
                              "ui_clientcmd", "empty",
                              "r_filmusetweaks", 0,

@@ -69,7 +69,7 @@ getClosestEntity(targetname, type)
 
     ents = getentarray(targetname, type);
     nearestEnt = undefined;
-    nearestDistance = level.maxInt; // 2147483647, 32-bit ints
+    nearestDistance = level.MAX_INT; // 2147483647, 32-bit ints
     for (i=0; i<ents.size; i++) {
         ent = ents[i];
         distance = Distance(self.origin, ent.origin);
@@ -88,7 +88,7 @@ getClosestPlayer()
 
     ents = level.players;
     nearestEnt = undefined;
-    nearestDistance = level.maxInt; // 2147483647, 32-bit ints
+    nearestDistance = level.MAX_INT; // 2147483647, 32-bit ints
     for (i=0; i<ents.size; i++) {
         ent = ents[i];
         distance = Distance(self.origin, ent.origin);
@@ -110,7 +110,7 @@ getClosestPlayerArray()
     nearPlayers = [];
     nearDistance = [];
     for (i=0; i<playerCount; i++) {
-        nearDistance[i] = level.maxInt; // 2147483647, 32-bit ints
+        nearDistance[i] = level.MAX_INT; // 2147483647, 32-bit ints
     }
 
     for (i=0; i<playerCount; i++) {
@@ -143,7 +143,7 @@ getClosestTarget()
 
     ents = level.players;
     nearestEnt = undefined;
-    nearestDistance = level.maxInt; // 2147483647, 32-bit ints
+    nearestDistance = level.MAX_INT; // 2147483647, 32-bit ints
     for (i=0; i<ents.size; i++) {
         ent = ents[i];
         if (!isDefined(ent)) {continue;}

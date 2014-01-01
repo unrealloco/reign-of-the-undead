@@ -322,6 +322,12 @@ spawnZombie(zombieType, spawnpoint, bot)
     bot.currentTarget = undefined;
     bot.targetPosition = undefined;
     bot.type = zombieType;
+    bot.pathNodes = [];
+    bot.myWaypoint = undefined;
+    bot.goalWp = undefined;
+    bot.nextWp = undefined;
+    bot.movement.first = 0;
+    bot.movement.last = 0;
 
     bot.team = bot.pers["team"];
     bot.sessionteam = bot.team;
@@ -385,8 +391,13 @@ spawnZombie(zombieType, spawnpoint, bot)
     bot linkto(bot.mover);
     bot thread fixStuck();
     bot idle();
-    bot thread zomMain();
-//     bot thread main();
+    if (level.zombieAiDevelopment) {
+        bot.runSpeed = bot.runSpeed * 5;    // scale to seconds
+        bot.walkSpeed = bot.walkSpeed * 5;  // scale to seconds
+        bot thread main();
+    } else {
+        bot thread zomMain();
+    }
     bot thread groan();
     bot.readyToBeKilled = true;
 
@@ -521,7 +532,9 @@ zomMain()
     while (1) {
         switch (self.status) {
             case "idle":
-            zomWaitToBeTriggered();
+                // loops through player array once, it calls zomGoTriggered if it
+                // can see the player. If it can't see any players, it does nothing
+                zomWaitToBeTriggered();
 
             switch(level.zomIdleBehavior) {
                 case "magic":
@@ -544,7 +557,7 @@ zomMain()
                         update++;
                     }
                 break;
-            }
+            } // end switch(level.zomIdleBehavior
 
             break;
 

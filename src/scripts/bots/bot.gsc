@@ -83,7 +83,7 @@ instantiate()
         order.angles = (0,0,0);
         bot.movement.orders[i] = order;
     }
-    bot.isFollowingWapypoints = false;
+    bot.isFollowingWaypoints = false;
 
     bot.index = level.bots.size;
 
@@ -357,7 +357,7 @@ findPathToTarget()
 {
     debugPrint("in bot::bestTarget()", "fn", level.highVerbosity);
 
-    if (self.isFollowingWapypoints) {
+    if (self.isFollowingWaypoints) {
     } else {
         speed = self.cur_speed * 5; // assume spec'd speeds are per 0.2s, not per second, so scale them
         maxDistance = speed * 0.2;
@@ -415,7 +415,7 @@ isPathNavigable(origin, destination)
     debugPrint("in bot::isPathNavigable()", "fn", level.highVerbosity);
 
     // assume the mapmaker didn't put a waypoint link through a solid object
-    if (self.isFollowingWapypoints) {return true;}
+    if (self.isFollowingWaypoints) {return true;}
 
     from = (destination[0], destination[1], origin[2]);
     levelVector = vectorNormalize(from - origin);

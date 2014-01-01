@@ -949,15 +949,11 @@ spawnZombie(override, spawntype)
         if (isdefined(override)) {
             type = override;
             spawn = randomSpawnpoint();
-            if (level.zombieAiDevelopment) {
-                return scripts\bots\bots::spawnZombie(type, spawn);
-            } else {return scripts\bots\_bots::spawnZombie(type, spawn);}
+            return scripts\bots\_bots::spawnZombie(type, spawn);
         } else {
             type = scripts\gamemodes\_gamemodes::getRandomType();
             spawn = randomSpawnpoint();
-            if (level.zombieAiDevelopment) {
-                return scripts\bots\bots::spawnZombie(type, spawn);
-            } else {return scripts\bots\_bots::spawnZombie(type, spawn);}
+            return scripts\bots\_bots::spawnZombie(type, spawn);
         }
     }
 }
@@ -978,9 +974,7 @@ groundSpawn(type, spawn, bot)
     playfx(level.goundSpawnFX, PhysicsTrace(spawn.origin, spawn.origin-200));
     wait .2;
 
-    if (level.zombieAiDevelopment) {
-        scripts\bots\bots::spawnZombie(type, spawn, bot);
-    } else {scripts\bots\_bots::spawnZombie(type, spawn, bot);}
+    scripts\bots\_bots::spawnZombie(type, spawn, bot);
 }
 
 /**
@@ -1006,7 +1000,5 @@ soulSpawn(type, spawn, bot)
     playfx(level.soulspawnFX, org.origin);
     org delete();
 
-    if (level.zombieAiDevelopment) {
-        scripts\bots\bots::spawnZombie(type, spawn, bot);
-    } else {scripts\bots\_bots::spawnZombie(type, spawn, bot);}
+    scripts\bots\_bots::spawnZombie(type, spawn, bot);
 }

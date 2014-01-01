@@ -37,9 +37,10 @@ init()
 {
     debugPrint("in _server::init()", "fn", level.nonVerbose);
 
+    scripts\include\constants::init();
+
     // should we use the alternate bot AI under devlopment?
     level.zombieAiDevelopment = false;
-    level.maxInt = 2147483647; // 32-bit ints
 
     debugPrint("Running debug version of rotu_svr_scripts.iwd.", "val");
     if (level.printFunctionEntryMessages) {
@@ -114,13 +115,7 @@ init()
     thread scripts\clients\_clients::init();
     thread scripts\players\_players::init();
     thread scripts\gamemodes\_gamemodes::init();
-
-    if (level.zombieAiDevelopment) {
-        thread scripts\bots\bots::init();
-    } else {
-        thread scripts\bots\_bots::init();
-    }
-
+    thread scripts\bots\_bots::init();
     thread scripts\server\_adminCommands::init();
     thread scripts\server\_rconInterface::init();
     thread scripts\server\_adminInterface::init();

@@ -852,7 +852,7 @@ kdNearestWpTest(n, useMapExtents)
     level.kdTreeDistanceCount = 0;
     treeSize = level.nodes;
     maxDistError = 0;
-    minDistError = level.maxInt; // 2147483647, 32-bit ints
+    minDistError = level.MAX_INT; // 2147483647, 32-bit ints
     meanDistError = 0;
     totalDistError = 0;
 
@@ -861,7 +861,7 @@ kdNearestWpTest(n, useMapExtents)
 
         // iterative method
         nearestWp = -1;
-        nearestDistance = level.maxInt; // 2147483647, 32-bit ints
+        nearestDistance = level.MAX_INT; // 2147483647, 32-bit ints
         for (j=0; j<level.WpCount; j++) {
             distance = distanceSquared(origin, level.Wp[j].origin);
             iterativeDistanceCount++;
@@ -874,7 +874,7 @@ kdNearestWpTest(n, useMapExtents)
         // kd-tree method
         // get an available static member
         index = availableStatic();
-        level.static[index] = level.maxInt; // 2147483647, 32-bit ints
+        level.static[index] = level.MAX_INT; // 2147483647, 32-bit ints
 
         bestNode = kdWaypointNearestNeighbor(level.kdWpTree, origin, index);
 
@@ -938,7 +938,7 @@ kdNearestVisibleWpTest(n, useMapExtents)
     level.kdTreeDistanceCount = 0;
     treeSize = level.nodes;
     maxDistError = 0;
-    minDistError = level.maxInt; // 2147483647, 32-bit ints
+    minDistError = level.MAX_INT; // 2147483647, 32-bit ints
     meanDistError = 0;
     totalDistError = 0;
     skipped = 0;
@@ -949,7 +949,7 @@ kdNearestVisibleWpTest(n, useMapExtents)
 
         // iterative method for nearest waypoint
         nearestWp = -1;
-        nearestDistance = level.maxInt; // 2147483647, 32-bit ints
+        nearestDistance = level.MAX_INT; // 2147483647, 32-bit ints
         for (j=0; j<level.WpCount; j++) {
             distance = distanceSquared(origin, level.Wp[j].origin);
             iterativeDistanceCount++;
@@ -969,7 +969,7 @@ kdNearestVisibleWpTest(n, useMapExtents)
         // kd-tree method
         // get an available static member
         index = availableStatic();
-        level.static[index] = level.maxInt; // 2147483647, 32-bit ints
+        level.static[index] = level.MAX_INT; // 2147483647, 32-bit ints
 
         bestNode = kdWaypointNearestNeighbor(level.kdWpTree, origin, index, true);
 
@@ -1097,14 +1097,14 @@ nearestWaypoint(origin, unobstructedPath, ignoreEntity)
     if (level.useKdWaypointTree) { // be intelligent :-)
         // get an available static member
         index = availableStatic();
-        level.static[index] = level.maxInt; // 2147483647, 32-bit ints
+        level.static[index] = level.MAX_INT; // 2147483647, 32-bit ints
 
         bestNode = kdWaypointNearestNeighbor(level.kdWpTree, origin, index, unobstructedPath, ignoreEntity);
         if (isDefined(bestNode)) {
             nearestWp = bestNode.id;
         } else {
             nearestWp = level.static[index]; // return codes, -2 means we hit our own corpse
-            if (nearestWp == level.maxInt) {nearestWp = -3;}
+            if (nearestWp == level.MAX_INT) {nearestWp = -3;}
             else if (nearestWp >= level.Wp.size) {nearestWp = -4;}
         }
 
@@ -1112,7 +1112,7 @@ nearestWaypoint(origin, unobstructedPath, ignoreEntity)
         level.static[index] = 0;
         level.staticStack[level.staticStack.size] = index;
     } else {    // use brute-force
-        nearestDistance = level.maxInt; // 2147483647, 32-bit ints
+        nearestDistance = level.MAX_INT; // 2147483647, 32-bit ints
         for (i=0; i<level.WpCount; i++) {
             distance = distancesquared(origin, level.Wp[i].origin);
             if (distance < nearestDistance) {
@@ -1159,7 +1159,7 @@ nearestVisibleWaypoint(origin, ignoreEntity)
     nearestWp = -1;
 
     // brute-force method, used for comparison and validation
-    nearestDistance = level.maxInt; // 2147483647, 32-bit ints
+    nearestDistance = level.MAX_INT; // 2147483647, 32-bit ints
     for (i=0; i<level.WpCount; i++) {
         distance = distanceSquared(origin, level.Wp[i].origin);
         if (distance < nearestDistance) {
@@ -1302,7 +1302,7 @@ AStarNew(startWp, goalWp, validateWaypoints)
     while (pQSize > 0) {
         //pop node n from Open  // n has the lowest f
         n = pQOpen[0];
-        highestPriority = level.maxInt; // 2147483647, 32-bit ints
+        highestPriority = level.MAX_INT; // 2147483647, 32-bit ints
         bestNode = -1;
         for (i=0; i<pQSize; i++) {
             if (pQOpen[i].f < highestPriority) {
@@ -1536,7 +1536,7 @@ AStarOriginal(startWp, goalWp)
     {
         //pop node n from Open  // n has the lowest f
         n = pQOpen[0];
-        highestPriority = level.maxInt; // 2147483647, 32-bit ints
+        highestPriority = level.MAX_INT; // 2147483647, 32-bit ints
         bestNode = -1;
         for (i=0; i<pQSize; i++) {
             if (pQOpen[i].f < highestPriority) {

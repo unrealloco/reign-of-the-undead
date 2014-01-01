@@ -275,12 +275,12 @@ devCycleWaypointType()
             newType = "mantle";
             break;
         case "mantle":
-            newType = "climb";
+            newType = "ladder";
             break;
-        case "climb":
-            newType = "clamp";
+        case "ladder":
+            newType = "clamped";
             break;
-        case "clamp":
+        case "clamped":
             newType = "undefined";
             break;
         default:
@@ -1894,12 +1894,12 @@ devEmplaceEquipmentShop()
             phi = scripts\players\_turrets::angleBetweenTwoVectors(k, kPrime*(0,1,1));
             self.carryObj.angles = vectorToAngles(iPrime);
 
-            // now align the crate's y-axis with the computed y-axis
+            // now align the soda machine's y-axis with the computed y-axis
             z = anglesToUp(self.carryObj.angles);
             phi = scripts\players\_turrets::angleBetweenTwoVectors(z, kPrime);
             self.carryObj.angles = self.carryObj.angles + (0,0,phi); // phi rotates about x-axis
 
-            // ensure we rotated the crate properly to align the y-axis
+            // ensure we rotated the soda machine properly to align the y-axis
             y = anglesToRight(self.carryObj.angles);
             beta = scripts\players\_turrets::angleBetweenTwoVectors(y, jPrime);
             if (beta > phi) {
