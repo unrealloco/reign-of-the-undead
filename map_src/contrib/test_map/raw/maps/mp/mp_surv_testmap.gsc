@@ -4,7 +4,7 @@
     Test map for beginning map-makers contributed by Jerkan.  Thanks!
 
     Copyright (c) 2013 Jerkan
-    Copyright (c) 2010-2013 Reign of the Undead Team.
+    Copyright (c) 2010-2014 Reign of the Undead Team.
     See AUTHORS.txt for a listing.
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
