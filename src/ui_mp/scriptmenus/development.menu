@@ -17,7 +17,7 @@
 #define CHOICE_GROUP            "cmds"
 
 #define CHOICE_SEP_1            4       // seperator appears after item 2
-#define CHOICE_SEP_2            11       // seperator appears after item 7
+#define CHOICE_SEP_2            12       // seperator appears after item 7
 
 #include "ui_mp/menustyle.inc"
 #include "ui/choices_setup_common.menu"
@@ -52,11 +52,12 @@
         CHOICE_BUTTON_VIS( 8, "Delete Waypoint", scriptMenuResponse "dev_delete_waypoint"; close self;, 1 )
         CHOICE_BUTTON_VIS( 9, "Delete Link", scriptMenuResponse "dev_delete_link"; close self;, 1 )
         CHOICE_BUTTON_VIS( 10, "Cycle Waypoint Type", scriptMenuResponse "dev_cycle_waypoint_type"; close self;, 1 )
-        CHOICE_BUTTON_VIS( 11, "Save Waypoints", scriptMenuResponse "dev_save_waypoints"; close self;, 1 )
+        CHOICE_BUTTON_VIS( 11, "Set Ladder Angles", scriptMenuResponse "dev_set_ladder_angles"; close self;, 1 )
+        CHOICE_BUTTON_VIS( 12, "Save Waypoints", scriptMenuResponse "dev_save_waypoints"; close self;, 1 )
 
         CHOICE_SEPARATOR_VIS( CHOICE_SEP_2, 1 )
 
-        CHOICE_BUTTON_VIS( 12, "Cancel", scriptMenuResponse "dev_cancel"; close self;, 1 )
+        CHOICE_BUTTON_VIS( 13, "Cancel", scriptMenuResponse "dev_cancel"; close self;, 1 )
 
         /* notify */
         itemDef

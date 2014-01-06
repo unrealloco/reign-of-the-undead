@@ -38,8 +38,17 @@ init()
 {
     level.MAX_INT = 2147483647; // 32-bit ints
 
-    /// bot movement types
+    /// bot movement modes
     level.BOT_WANDERING = 0;
+
+    /// bot motion types
+    level.BOT_WALK = 0;
+    level.BOT_RUN = 1;
+    level.BOT_CLIMB = 2;
+
+    level.BOT_MOVE_DISTANCE = 37; // about 18 inches movement resolution
+    level.MANTLE_MAX_Z = 85;
+    level.MANTLE_MAX_DISTANCE = 50;
 
     /// waypoint path type enums
     level.PATH_NORMAL = 0;
@@ -47,4 +56,5 @@ init()
     level.PATH_LADDER = 2;
     level.PATH_CLAMPED = 3;
     level.PATH_FALL = 4;
+    level.PATH_TELEPORT = 5;
 }

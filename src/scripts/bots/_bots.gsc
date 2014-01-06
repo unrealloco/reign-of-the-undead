@@ -389,7 +389,7 @@ spawnZombie(zombieType, spawnpoint, bot)
     wait 0.05;
     bot scripts\bots\_types::onSpawn(bot.type);
     bot linkto(bot.mover);
-    bot thread fixStuck();
+//     bot thread fixStuck();
     bot idle();
     if (level.zombieAiDevelopment) {
         bot.runSpeed = bot.runSpeed * 5;    // scale to seconds

@@ -316,22 +316,19 @@ wander()
         self.status = level.BOT_WANDERING;
         noticePrint("self.origin: " + self.origin + " self.mover.origin: " + self.mover.origin);
         self.myWaypoint = nearestWaypoint(self.origin, true, self);
-        self.myWaypoint = 101;
+//         self.myWaypoint = 67; /// temp HACK
         /// temp HACK, jump bot to its first waypoint
-        wait 5;
+        wait 3;
         self enqueueMovement(level.Wp[self.myWaypoint].origin, 0.05, self.angles);
-        /// temp HACK
         self setSpeed();
-//         self setAnimation("walk");
         self move();
-//         wait 0.05;
         self.goalWp = self.myWaypoint;
-        self.goalWp = 150;
+//         self.goalWp = 114; /// temp HACK
 
-        while (count < 30) {
+        while (count < 300) {
             count++;
-//             wait 0.5;
             // get a goal waypoint if required
+            if (self.goalWp == self.myWaypoint) {iPrintLnBold("New Goal!");}
             while (self.goalWp == self.myWaypoint) {
                 self.goalWp = randomInt(level.Wp.size);
             }
@@ -348,12 +345,15 @@ wander()
             self.nextWp = self.pathNodes[self.pathNodes.size - 1];
             self.pathNodes[self.pathNodes.size - 1] = undefined;
 
-            iPrintLnBold("my: " + self.myWaypoint + " next: " + self.nextWp + " goal: " + self.goalWp);
+//             iPrintLnBold("my: " + self.myWaypoint + " next: " + self.nextWp + " goal: " + self.goalWp);
             self.pathType = pathType(self.myWaypoint, self.nextWp);
             noticePrint("self.pathType: " + self.pathType);
             if (self.pathType == level.PATH_CLAMPED) {
                 self clamped();
                 self move();
+                self.myWaypoint = self.nextWp;
+            } else if (self.pathType == level.PATH_TELEPORT) {
+                self teleport();
                 self.myWaypoint = self.nextWp;
             } else if (self.pathType == level.PATH_MANTLE) {
                 self mantle();
@@ -366,23 +366,14 @@ wander()
                 self move();
                 self.myWaypoint = self.nextWp;
             } else if (self.pathType == level.PATH_NORMAL) {
-                // for now, just treat all paths as 'clamped' except for mantle and ladder
-                self clamped();
+                self normal();
                 self move();
                 self.myWaypoint = self.nextWp;
-                // do normal movement
-                // else find path
-                // enqueue movements
-                // move
             } else if (self.pathType == level.PATH_FALL) {
-                // for now, just treat all paths as 'clamped' except for mantle and ladder
                 self fall();
-//                 break;
-//                 self clamped();
-//                 self move();
-//                 self.myWaypoint = self.nextWp;
             }
         }
+        iPrintLnBold("Done Wandering!");
     }
 }
 
@@ -401,6 +392,7 @@ run()
 {
     // Do *not* put a function entrance debugPrint statement here!
 
+    self.motionType = level.BOT_RUN;
     self setAnimation("sprint");
     self.cur_speed = self.runSpeed;
     self.speed = self.runSpeed;
@@ -411,10 +403,32 @@ walk()
 {
     // Do *not* put a function entrance debugPrint statement here!
 
+    self.motionType = level.BOT_WALK;
     self setAnimation("walk");
     self.cur_speed = self.walkSpeed;
     self.speed = self.walkSpeed;
     if (self.quake) {Earthquake(0.17, .3, self.origin, 320);}
+}
+
+teleport()
+{
+    // Do *not* put a function entrance debugPrint statement here!
+
+    self endon("dying");
+    self endon("disconnect");
+    self endon("death");
+    level endon("game_ended");
+
+    if (self.isFollowingWaypoints) {
+        // since we are following waypoints, we assume no solid objects or obstructions
+        noticePrint("Teleport!");
+        iPrintLnBold("Teleport!");
+
+        direction = vectorNormalize(level.Wp[self.nextWp].origin - level.Wp[self.myWaypoint].origin);
+        facing = vectorToAngles(direction);
+        self setPlayerAngles(facing);
+        self.mover.origin = level.Wp[self.nextWp].origin;
+    }
 }
 
 /// climbing up a ladder.  bipeds only
@@ -428,79 +442,43 @@ ladder()
     level endon("game_ended");
 
     if (self.isFollowingWaypoints) {
-        noticePrint("Ladder!");
         // since we are following waypoints, we assume no solid objects or obstructions
-        if (self.quake) {Earthquake(0.17, .3, self.origin, 320);}
-        self setAnimation("walk");
-        self.cur_speed = self.walkSpeed;
-        self.speed = self.walkSpeed;
+        noticePrint("Ladder!");
+        iPrintLnBold("Ladder!");
 
-        // determine the position for the end of the vertical-ish movement-- ladders may not be vertical
-        horizontalDirection = vectorNormalize(level.Wp[self.myWaypoint].origin * (1,1,0) - level.Wp[self.nextWp].origin * (1,1,0));
-        topPosition = level.Wp[self.nextWp].origin + (horizontalDirection * 15);
-        verticalDirection = vectorNormalize(level.Wp[self.nextWp].origin - topPosition);
-        facing = vectorToAngles(horizontalDirection * (1,1,0)); // zero out the z-component
+        self.motionType = level.BOT_CLIMB;
+        self.speed = int((self.walkSpeed + self.runSpeed) / 2);
+        self setAnimation("sprint");
 
-        // are we going up or down the ladder?
-        if (level.Wp[self.myWaypoint].origin[2] > level.Wp[self.nextWp].origin[2]) {
-            // going down
-            // queue to the topPosition
-            distance = distance(level.Wp[self.myWaypoint].origin, topPosition);
-            stepDistance = self.speed * 0.05;
-            position = self.origin;
-            while (distance > stepDistance) {
-                distance = distance - stepDistance;
-                position = position + (horizontalDirection * stepDistance);
-                self enqueueMovement(position, 0.05, facing);
-            }
-            position = position + (horizontalDirection * distance);
-            time = distance / self.speed;
-            self enqueueMovement(position, time, facing);
-
-            // now climb down
-            distance = distance(level.Wp[self.nextWp].origin, topPosition);
-            stepDistance = self.speed * 0.05;
-            position = topPosition;
-            while (distance > stepDistance) {
-                distance = distance - stepDistance;
-                position = position + (verticalDirection * stepDistance);
-                self enqueueMovement(position, 0.05, facing);
-            }
-            position = position + (verticalDirection * distance);
-            time = distance / self.speed;
-            self enqueueMovement(level.Wp[self.nextWp].origin, time, facing);
-        } else {
+        facing = undefined;
+        if (level.Wp[self.nextWp].origin[2] > level.Wp[self.myWaypoint].origin[2]) {
             // going up
-            horizontalDirection = horizontalDirection * -1;
-            verticalDirection = verticalDirection * -1;
-            facing = vectorToAngles(horizontalDirection * (1,1,0)); // zero out the z-component
-
-            // first climb up
-            distance = distance(level.Wp[self.myWaypoint].origin, topPosition);
-            stepDistance = self.speed * 0.05;
-            position = level.Wp[self.myWaypoint].origin;
-            while (distance > stepDistance) {
-                distance = distance - stepDistance;
-                position = position + (verticalDirection * stepDistance);
-                self enqueueMovement(position, 0.05, facing);
+            if (isDefined(level.Wp[self.myWaypoint].upAngles)) {
+                facing = level.Wp[self.myWaypoint].upAngles;
+//                 iPrintLnBold("Using .upAngles!");
             }
-            position = position + (verticalDirection * distance);
-            time = distance / self.speed;
-            self enqueueMovement(topPosition, time, facing);
-
-            // now do the horizontal movement
-            distance = distance(level.Wp[self.nextWp].origin, topPosition);
-            stepDistance = self.speed * 0.05;
-            position = topPosition;
-            while (distance > stepDistance) {
-                distance = distance - stepDistance;
-                position = position + (horizontalDirection * stepDistance);
-                self enqueueMovement(position, 0.05, facing);
+        } else {
+            // going down
+            if (isDefined(level.Wp[self.myWaypoint].downAngles)) {
+                facing = level.Wp[self.myWaypoint].downAngles;
+//                 iPrintLnBold("Using .downAngles!");
             }
-            position = position + (horizontalDirection * distance);
-            time = distance / self.speed;
-            self enqueueMovement(level.Wp[self.nextWp].origin, time, facing);
         }
+        if (!isDefined(facing)) {
+            direction = vectorNormalize(level.Wp[self.nextWp].origin - level.Wp[self.myWaypoint].origin);
+            facing = vectorToAngles(direction);
+//             iPrintLnBold("Using computed angles!");
+        }
+
+        distance = distance(level.Wp[self.myWaypoint].origin, level.Wp[self.nextWp].origin);
+        time = distance / self.speed;
+
+        self setPlayerAngles(facing);
+        self.mover moveTo(level.Wp[self.nextWp].origin, time, 0, 0);
+        self.mover waittill("movedone");
+
+        self setSpeed();
+        /// @todo while devPlayer is on ladder, save getPlayerAngles().  Put this in .angles for both "ladder" waypoints
     } else {
         // not following waypoints
     }
@@ -521,43 +499,26 @@ mantle()
         iPrintLnBold("Mantle!");
         // since we are following waypoints, we assume no solid objects or obstructions
 
-//         // make animation frame such that frame distance is about 18 inches.
-//         frameCount = int(18 / self.speed / 0.05);
-//         if (frameCount == 0) {frameCount = 1;}
-//         deltaA = abs(18 - (self.speed * (0.05 * frameCount)));
-//         deltaB = abs(18 - (self.speed * (0.05 * (frameCount + 1))));
-//         if (deltaB < deltaA) {
-//             frameCount++; // this is closer to 18 units than frameCount
-//         }
-//         frameDistance = self.speed * (0.05 * frameCount);
-
         direction = vectorNormalize(level.Wp[self.nextWp].origin - level.Wp[self.myWaypoint].origin);
         facing = vectorToAngles(direction); // see note about direction bug in clamped() function
 
         // enqueue the vertical displacement
         deltaZ = level.Wp[self.nextWp].origin[2] - level.Wp[self.myWaypoint].origin[2];
-//         stepDistance = self.speed * 0.05;
-//         position = self.origin;
-//         while (deltaZ > stepDistance) {
-//             deltaZ = deltaZ - stepDistance;
-//             position = position + (0,0,stepDistance);
-//             self enqueueMovement(position, 0.05, facing);
-//         }
         position = self.origin + (0,0,deltaZ);
         time = deltaZ / self.speed;
+        if (time <= 0) {
+            errorPrint("mantle vertical(time, deltaZ, self.speed): (" + time + ", " + deltaZ + ", " + self.speed + ")");
+            errorPrint(level.Wp[self.nextWp].origin[2] + ", "+ level.Wp[self.myWaypoint].origin[2]);
+        }
         self enqueueMovement(position, time, facing);
 
         // enqueue the horizontal displacement
         distance = distance(position, level.Wp[self.nextWp].origin);
-//         direction = vectorNormalize(level.Wp[self.nextWp].origin - position);
-//         while (distance > stepDistance) {
-//             distance = distance - stepDistance;
-//             position = position + (direction * stepDistance);
-//             self enqueueMovement(position, 0.05, facing);
-//         }
-//         position = position + (direction * distance);
         time = distance / self.speed;
         // put us at the actual waypoint, in case there were any round-off errors
+        if (time <= 0) {
+            errorPrint("mantle horizontal(time, distance, self.speed): (" + time + ", " + distance + ", " + self.speed + ")");
+        }
         self enqueueMovement(level.Wp[self.nextWp].origin, time, facing);
     } else {
         noticePrint("In Mantle(), but .isFollowingWaypoints is false!");
@@ -590,7 +551,6 @@ clamped()
         if (frameCount == 0) {frameCount = 1;}
         deltaA = abs(18 - (self.speed * (0.05 * frameCount)));
         deltaB = abs(18 - (self.speed * (0.05 * (frameCount + 1))));
-//         noticePrint("(frameCount, deltaA, deltaB): (" + frameCount + ", " + deltaA + ", " + deltaB + ")");
         if (deltaB < deltaA) {
             frameCount++; // this is closer to 18 units than frameCount
         }
@@ -631,11 +591,10 @@ clamped()
             time = frameCount * 0.05;
             self enqueueMovement(position, time, facing);
         }
-        position = position + (distance * direction);
         time = distance / self.speed;
         self enqueueMovement(level.Wp[self.nextWp].origin, time, facing);
     } else {
-        noticePrint("In Clamped(), but .isFollowingWaypoints is false!");
+        noticePrint("In clamped(), but .isFollowingWaypoints is false!");
     }
 }
 
@@ -703,6 +662,8 @@ jump()
 
 fall()
 {
+    iPrintLnBold("Fall!");
+
     // compute initial velocity, v_0, for our fall
     lastDirection = vectorNormalize(self.origin - self.lastPosition);
     position = (self.origin[0], self.origin[1], self.lastPosition[2]);
@@ -731,43 +692,14 @@ fall()
     } else {
         position = trace["position"] + (0,0,5);
     }
+
+    self pathPrint("pre-fall path: ");
+
     if (self ballistic(v_0, position) == (0,0,0)) {
         // motion is done and we are on the ground.  get us back on track to our goal
         // we are off waypoints here, so we need to get back on them, preferably
         // without backtracking
-        if (self.nextWp == self.goalWp) {
-            // we need a new goalWp. we either arrived, or we overshot it during our fall.
-            // get us back on the waypoints
-            self.myWaypoint = nearestWaypoint(self.origin, true, self);
-            self.goalWp = self.myWaypoint;
-            /// HACK for now, we just move directly, ignoring anything in our way
-            distance = distance(self.origin, level.Wp[self.myWaypoint].origin);
-            direction = vectorNormalize(level.Wp[self.myWaypoint].origin - self.origin);
-            facing = vectorToAngles(direction);
-            time = distance / self.speed;
-            self setPlayerAngles(facing);
-            self.mover moveTo(level.Wp[self.myWaypoint].origin, time, 0, 0);
-            self.mover waittill("movedone");
-        } else {
-            testWp = self.pathNodes[self.pathNodes.size - 1];
-            distA = distanceSquared(level.Wp[self.nextWp].origin, level.Wp[self.goalWp].origin);
-            distC = distanceSquared(self.origin, level.Wp[self.goalWp].origin);
-            if (distC < distA) {
-                // bot is already closer to goalWp than its nextWp, so make testWp nextWp
-                self.nextWp = testWp;
-                self.pathNodes[self.pathNodes.size - 1] = undefined;
-            }
-            // now go to nextWp
-            /// HACK for now, we just move directly, ignoring anything in our way
-            distance = distance(self.origin, level.Wp[self.nextWp].origin);
-            direction = vectorNormalize(level.Wp[self.nextWp].origin - self.origin);
-            facing = vectorToAngles(direction);
-            time = distance / self.speed;
-            self setPlayerAngles(facing);
-            self.mover moveTo(level.Wp[self.nextWp].origin, time, 0, 0);
-            self.mover waittill("movedone");
-            self.myWaypoint = self.nextWp;
-        }
+        self postFall();
     } else {
         // motion is done but we are not on the ground.  we may have hit a wall or
         // other obstacle and be floating in mid-air right now!
@@ -775,7 +707,169 @@ fall()
     }
 }
 
-/// draws a velocity vector
+postFall()
+{
+    nearestWp = nearestWaypoint(self.origin, true, self);
+    if (nearestWp == self.goalWp) {
+        // just move to goalWp, and invalidate pathNodes
+//         iPrintLnBold("post-fall: moving to goalWp");
+        distance = distance(self.origin, level.Wp[self.goalWp].origin);
+        direction = vectorNormalize(level.Wp[self.goalWp].origin - self.origin);
+        facing = vectorToAngles(direction);
+        time = distance / self.speed;
+        self enqueueMovement(level.Wp[self.goalWp].origin, time, facing);
+        self move();
+        self.myWaypoint = self.goalWp;
+        self.pathNodes = [];
+        return;
+    }
+    // invalidate any pathNodes up to nearestWp
+    for (i=self.pathNodes.size - 1; i>=0; i--) {
+        if (self.pathNodes[i] == nearestWp) {
+//             iPrintLnBold("post-fall: found nearestWp in pathNodes");
+            break;
+        } else {
+            self.pathNodes[i] = undefined;
+        }
+    }
+    if (self.pathNodes.size == 0) {
+        // we need a new path
+//         iPrintLnBold("post-fall: getting a new path");
+        self.pathNodes = AStarNew(nearestWp, self.goalWp);
+    }
+
+    // decide which of the remaining nodes to go to, and how to get there
+    // do we go to nearestWp, or to a point on a waypoint link to one of the pathNodes?
+    testWp = self.pathNodes[self.pathNodes.size - 1];
+    directDistance = distance(self.origin, level.Wp[testWp].origin);
+    linkDistance = distance(level.Wp[nearestWp].origin, level.Wp[testWp].origin);
+    if (directDistance < linkDistance) {
+        // we are already closer to the next pathnode than if we were at nearestWp
+        // if we have a clear path to the next pathnode, go there directly
+        trace = bulletTrace(self.origin + (0,0,20), level.Wp[testWp].origin + (0,0,20), false, self);
+        if (trace["fraction"] == 1) {
+            noticePrint("post-fall: moving directly to testWp");
+            distance = distance(self.origin, level.Wp[testWp].origin);
+            time = distance / self.speed;
+            facing = vectorToAngles(level.Wp[testWp].origin - self.origin);
+            self enqueueMovement(level.Wp[testWp].origin, time, facing);
+            self move();
+            self.pathNodes[self.pathNodes.size - 1] = undefined;
+            self.nextWp = testWp;
+            self.myWaypoint = self.nextWp;
+            return;
+        } else {
+            // else if we have a clear path to the nearest point on the link line, go there
+            // and then to the next pathnode
+            vectorToLine = vectorFromLineToPoint(level.Wp[self.nextWp].origin, level.Wp[testWp].origin, self.origin) * -1;
+            linePosition = self.origin + vectorToLine;
+            trace = bulletTrace(self.origin + (0,0,20), linePosition + (0,0,20), false, self);
+            if (trace["fraction"] == 1) {
+                // we have a clear path
+                // move to line
+                noticePrint("post-fall: moving testWp via nearest point on link line");
+                distance = distance(self.origin, linePosition);
+                time = distance / self.speed;
+                facing = vectorToAngles(vectorToLine);
+                self enqueueMovement(linePosition, time, facing);
+
+                // move to waypoint
+                distance = distance(linePosition, level.Wp[testWp].origin);
+                time = distance / self.speed;
+                facing = vectorToAngles(level.Wp[testWp].origin - level.Wp[self.nextWp].origin);
+                self enqueueMovement(level.Wp[testWp].origin, time, facing);
+                self move();
+                self.pathNodes[self.pathNodes.size - 1] = undefined;
+                self.nextWp = testWp;
+                self.myWaypoint = self.nextWp;
+                return;
+            }
+        }
+    }
+
+    // go to nearestWp
+    noticePrint("post-fall: moving directly to nearestWp: " + nearestWp);
+    distance = distance(self.origin, level.Wp[nearestWp].origin);
+    time = distance / self.speed;
+    facing = vectorToAngles(level.Wp[nearestWp].origin - self.origin);
+    self enqueueMovement(level.Wp[nearestWp].origin, time, facing);
+    self move();
+    self.pathNodes[self.pathNodes.size - 1] = undefined;
+    self.nextWp = nearestWp;
+    self.myWaypoint = self.nextWp;
+    self pathPrint("post-fall path: ");
+    noticePrint("testWp: " + testWp);
+}
+
+pathPrint(message)
+{
+    path = "[";
+    for (i=0; i<self.pathNodes.size; i++) {
+        path = path + " " + self.pathNodes[i];
+    }
+    path = path + " ]";
+    noticePrint(message + path);
+    noticePrint("(myWaypoint, nextWp, goalWp): (" + self.myWaypoint + ", " + self.nextWp + ", " + self.goalWp + ")");
+}
+
+getOnPath()
+{
+    directDistance = distance(self.origin, level.Wp[self.nextWp].origin);
+    testWp = self.pathNodes[self.pathNodes.size - 1];
+    pathDistance = distance(level.Wp[self.nextWp].origin, level.Wp[testWp].origin);
+    pathQueued = false;
+    if (directDistance < pathDistance) {
+        // if we went to nextWp, we would actually be getting farther from the subsequent node
+        vectorToLine = vectorFromLineToPoint(level.Wp[self.nextWp].origin, level.Wp[testWp].origin, self.origin) * -1;
+        linePosition = self.origin + vectorToLine;
+        trace = bulletTrace(self.origin + (0,0,20), linePosition + (0,0,20), false, self);
+        if (trace["fraction"] == 1) {
+            // we have a clear path
+            // move to line
+            distance = distance(self.origin, linePosition);
+            time = distance / self.speed;
+            facing = vectorToAngles(vectorToLine);
+            self enqueueMovement(linePosition, time, facing);
+
+            // move to waypoint
+            distance = distance(linePosition, level.Wp[testWp].origin);
+            time = distance / self.speed;
+            facing = vectorToAngles(level.Wp[testWp].origin - level.Wp[self.nextWp].origin);
+            self enqueueMovement(level.Wp[testWp].origin, time, facing);
+            pathQueued = true;
+        }
+    }
+    if (!pathQueued) {
+        // move directly to first waypoint
+        distance = distance(self.origin, level.Wp[self.myWaypoint].origin);
+        time = distance / self.speed;
+        facing = vectorToAngles(level.Wp[self.myWaypoint].origin - self.origin);
+        enqueueMovement(level.Wp[self.myWaypoint].origin, time, facing);
+    }
+
+//     forward = anglesToForward(self getPlayerAngles);
+//     directVector = vectorNormalize(level.Wp[self.nextWp].origin - self.origin);
+//     testWp = self.pathNodes[self.pathNodes.size - 1];
+//     nextVector = vectorNormalize(level.Wp[testWp].origin - level.Wp[self.nextWp].origin);
+//     dot = vectorDot(directVector, nextVector);
+//
+//     if (dot > 0.5) {
+//         // the first full leg of the path is generally in front of us, so move to
+//         // the first pathNode
+//     } else {
+//         // the first full leg of the path is left/right or behind us, so we need to
+//         // determine if it better to go to another waypoint first
+//     }
+//     cumulativeDistance = distance(self.origin, level.Wp[self.pathNodes[self.pathNodes.size - 1]].origin);
+//     for (i=self.pathNodes.size - 1; i>=0; i--) {
+//         fromWp = self.pathNodes[i];
+//         toWp = self.pathNodes[i - 1];
+//         cumulativeDistance += distance(level.Wp[fromWp].origin, level.Wp[toWp].origin);
+//         directDistance = distance(self.origin, level.Wp[testWp].origin);
+//     }
+}
+
+/// draws a scaled unit vector in the direction of the velocity vector
 drawVelocity(v_0, r_0)
 {
     from = r_0;
@@ -805,7 +899,7 @@ drawVelocity(v_0, r_0)
 ballistic(v_0, r_0)
 {
     noticePrint("Ballistic!");
-    iPrintLnBold("Ballistic!");
+//     iPrintLnBold("Ballistic!");
 
     onGround = false;
 
@@ -861,6 +955,10 @@ ballistic(v_0, r_0)
     t_0 = t - 0.005 + t_epsilon;
     t = int(t_0 / 0.05) * 0.05;
     finalStepTime = t_0 - t;
+    if (finalStepTime <=0) {
+        errorPrint("finalStepTime is <= 0!");
+        errorPrint("finalStepTime: " + finalStepTime + " t_0: " + t_0 + " t: " + t);
+    }
 
     noticePrint("r_0, v_0: " + r_0 + ", " + v_0);
     noticePrint("distance: " + distance + " t_epsilon: " + t_epsilon + " t: " + t);
@@ -887,7 +985,7 @@ ballistic(v_0, r_0)
     }
 
     // move to final position
-    self.mover moveTo(position, finalStepTime, 0, 0);
+    self.mover moveTo(position, finalStepTime, 0, 0);  /// @bug finalStepTime is sometimes not positive
     self.mover waittill("movedone");
     noticePrint("actual final position: " + self.mover.origin);
 
@@ -903,24 +1001,43 @@ ballistic(v_0, r_0)
 
 pathType(fromWp, toWp)
 {
+    if (fromWp == toWp) {
+        errorPrint("fromWp equals toWp (" + fromWp + "), there cannot be a path type!");
+    }
     if (level.Wp[fromWp].type == "mantle") {
-        deltaZ = abs(level.Wp[toWp].origin[2] - level.Wp[fromWp].origin[2]);
+        deltaZ = level.Wp[toWp].origin[2] - level.Wp[fromWp].origin[2];
         distance = distance2D(level.Wp[fromWp].origin, level.Wp[toWp].origin);
-        iPrintLnBold("mantle (deltaZ, distance2D): (" + deltaZ + ", " + distance + ")");
-        if ((deltaZ >= 15) && (deltaZ <= 75) && (distance < 35)) {
+        if ((deltaZ >= 15) && (deltaZ <= level.MANTLE_MAX_Z) && (distance < level.MANTLE_MAX_DISTANCE)) {
             // we only mantle up, never down
             return level.PATH_MANTLE;
-        } else {return level.PATH_NORMAL;}
+        }
     } else if ((level.Wp[fromWp].type == "ladder") && (level.Wp[toWp].type == "ladder")) {
         return level.PATH_LADDER;
     } else if ((level.Wp[fromWp].type == "clamped") && (level.Wp[toWp].type == "clamped")) {
         return level.PATH_CLAMPED;
+    } else if ((level.Wp[fromWp].type == "clamped") && (level.Wp[toWp].type == "ladder")) {
+        return level.PATH_CLAMPED;
     } else if (level.Wp[toWp].type == "mantle") {
         deltaZ = abs(level.Wp[toWp].origin[2] - level.Wp[fromWp].origin[2]);
         distance = distance2D(level.Wp[fromWp].origin, level.Wp[toWp].origin);
-        if ((deltaZ >= 15) && (deltaZ <= 75) && (distance < 35)) {
+        if ((deltaZ >= 15) && (deltaZ <= level.MANTLE_MAX_Z) && (distance < level.MANTLE_MAX_DISTANCE)) {
             // fall off wall/crate towards the mantle waypoint
             return level.PATH_FALL;
+        }
+    } else if ((level.Wp[fromWp].type == "teleport") && (level.Wp[toWp].type == "teleport")) {
+        return level.PATH_TELEPORT;
+    } else if ((level.Wp[fromWp].type == "fall") && (level.Wp[toWp].type == "stand")) {
+        deltaZ = level.Wp[toWp].origin[2] - level.Wp[fromWp].origin[2];
+        if (deltaZ < -50) {
+            return level.PATH_FALL;
+        }
+    } else if ((level.Wp[fromWp].type == "stand") && (level.Wp[toWp].type == "fall")) {
+        deltaZ = level.Wp[toWp].origin[2] - level.Wp[fromWp].origin[2];
+        if (deltaZ > 50) {
+            /// this will be invalid path, as we can't fall up, but I need to fix A*
+            /// first so it won't return a solution that includes these links.
+            /// For now, just treat it as a clamped path.
+            return level.PATH_CLAMPED;
         }
     }
 
@@ -1022,6 +1139,38 @@ canSeeTarget(target)
 /// normal walk/run movement
 normal()
 {
+    if (self.isFollowingWaypoints) {
+        noticePrint("Normal!");
+        // since we are following waypoints, we assume no solid objects or obstructions
+
+        // make animation frame such that frame distance is about 18 inches.
+        frameCount = int(level.BOT_MOVE_DISTANCE / self.speed / 0.05);
+        if (frameCount == 0) {frameCount = 1;}
+        deltaA = abs(level.BOT_MOVE_DISTANCE - (self.speed * (0.05 * frameCount)));
+        deltaB = abs(level.BOT_MOVE_DISTANCE - (self.speed * (0.05 * (frameCount + 1))));
+        if (deltaB < deltaA) {
+            frameCount++; // this is closer to 18 units than frameCount
+        }
+        frameDistance = self.speed * (0.05 * frameCount);
+
+        direction = vectorNormalize(level.Wp[self.nextWp].origin - level.Wp[self.myWaypoint].origin);
+        facing = vectorToAngles(direction);
+
+        position = level.Wp[self.myWaypoint].origin;
+        distance = distance(level.Wp[self.myWaypoint].origin, level.Wp[self.nextWp].origin);
+        while (distance > frameDistance) {
+            distance = distance - frameDistance;
+            position = position + (direction * frameDistance);
+            position = self findGround(position);
+            time = frameCount * 0.05;
+            self enqueueMovement(position, time, facing);
+        }
+        time = distance / self.speed;
+        self enqueueMovement(level.Wp[self.nextWp].origin, time, facing);
+    } else {
+        noticePrint("In normal(), but .isFollowingWaypoints is false!");
+    }
+
 //     if (self.isFollowingWaypoints) {
 //         // since we are following waypoints, we assume no solid objects or obstructions
 //         stepDistance = self.speed * 0.05;
@@ -1341,7 +1490,7 @@ move()
 //     self walk();
     noticePrint("Moving!");
     while (self.movement.first != self.movement.last) {
-        self.lastPosition = self.mover.origin;
+        self.lastPosition = self.mover.origin; // needed to compute initial velocity for ballistic()
         position = self.movement.orders[self.movement.first].origin;
         time = self.movement.orders[self.movement.first].time;
         angles = self.movement.orders[self.movement.first].angles;
@@ -1349,7 +1498,7 @@ move()
         self setPlayerAngles(angles);
         self.mover moveTo(position, time, 0, 0);
         self.mover waittill("movedone");
-        // needed to compute initial velocity for ballistic()
+
 //         wait time;
 //         wait 0.1;
         self.movement.first++;

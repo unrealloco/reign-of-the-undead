@@ -908,6 +908,15 @@ convertToNativeWaypoints()
         if (isDefined(level.waypoints[i].angles)) {
             waypoint.angles = level.waypoints[i].angles;
         }
+
+        // used for ladders
+        if (isDefined(level.waypoints[i].upAngles)) {
+            waypoint.upAngles = level.waypoints[i].upAngles;
+        }
+        if (isDefined(level.waypoints[i].downAngles)) {
+            waypoint.downAngles = level.waypoints[i].downAngles;
+        }
+
         // RotU doesn't use .use, but read it in so we can preserve the info
         // for _umiEditor::devSaveWaypoints
         if (isDefined(level.waypoints[i].use)) {
