@@ -456,6 +456,75 @@ deleteSabotageEntities()
 }
 
 /**
+ * @brief Loads a trap specified in the map
+ *
+ * @param trigger string The targetname of the entity with a classname of 'trigger_multiple'
+ * @param type string The type of the trap
+ * @param price integer The cost to activate the trap
+ *
+ * @returns nothing
+ * @since RotU 2.2.3
+ */
+loadTrap(trigger, type, price)
+{
+    debugPrint("in _umi::loadTrap()", "fn", level.nonVerbose);
+
+    if (!isDefined(level.mapTraps)) {level.mapTraps = [];}
+    if (!isDefined(price)) {price = 5000;} // default if not spec'd and not overriden in game.cfg
+
+    text = "";
+    cost = 0;
+
+    switch (type) {
+        case "central":
+            text = "Central";
+            configCost = getDvarInt("trap_central_costs");
+            if (!isDefined(configCost)) {cost = price;}
+            else {cost = configCost;}
+            if (cost <= 0) {cost = 100;} // hard-coded minimum cost
+            break;
+        case "rotating":
+            text = "Rotating";
+            configCost = getDvarInt("trap_rotating_costs");
+            if (!isDefined(configCost)) {cost = price;}
+            else {cost = configCost;}
+            if (cost <= 0) {cost = 100;} // hard-coded minimum cost
+            break;
+        case "spike":
+            text = "Spike";
+            configCost = getDvarInt("trap_spike_costs");
+            if (!isDefined(configCost)) {cost = price;}
+            else {cost = configCost;}
+            if (cost <= 0) {cost = 100;} // hard-coded minimum cost
+            break;
+        case "fire":
+            text = "Fire";
+            configCost = getDvarInt("trap_fire_costs");
+            if (!isDefined(configCost)) {cost = price;}
+            else {cost = configCost;}
+            if (cost <= 0) {cost = 100;} // hard-coded minimum cost
+            break;
+        case "electric":
+            text = "Electric";
+            configCost = getDvarInt("trap_electric_costs");
+            if (!isDefined(configCost)) {cost = price;}
+            else {cost = configCost;}
+            if (cost <= 0) {cost = 100;} // hard-coded minimum cost
+            break;
+    }
+
+    ents = getEntArray(trigger, "targetname");
+    for (i=0; i<ents.size; i++) {
+        trap = spawnStruct();
+        trap.trigger = ents[i];
+        trap.cost = cost;
+        trap.type = type;
+        trap.text = text;
+        trap.isBeingUsed = false;
+        level.mapTraps[level.mapTraps.size] = trap;
+    }
+}
+/**
  * @brief Loads a glide pad specified in the map
  *
  * A glide pad, when triggered, moves a player from point to point to point, over time

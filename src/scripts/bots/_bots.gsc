@@ -326,8 +326,10 @@ spawnZombie(zombieType, spawnpoint, bot)
     bot.myWaypoint = undefined;
     bot.goalWp = undefined;
     bot.nextWp = undefined;
-    bot.movement.first = 0;
-    bot.movement.last = 0;
+    if (level.zombieAiDevelopment) {
+        bot.movement.first = 0;
+        bot.movement.last = 0;
+    }
 
     bot.team = bot.pers["team"];
     bot.sessionteam = bot.team;
