@@ -104,6 +104,7 @@ watchTrap(activatingPlayer)
 
     // self is the trap
     activatingPlayer endon("disconnect");
+    self endon("stop_trap");
 
     doDamage = false;
 
@@ -126,15 +127,26 @@ watchTrap(activatingPlayer)
             doDamage = true;
         }
 
+        // ensure our trigger is bounceless, only kill a zombie if it has been at least
+        // 1000 ms since they were last killed
+        now = getTime();
+        if (!isDefined(triggeringEntity.lastTrapKilledTime)) {triggeringEntity.lastTrapKilledTime = now - 1250;}
+        if (now - triggeringEntity.lastTrapKilledTime < 1000) {
+            doDamage = false;
+            continue;
+        }
+
         if (doDamage) {
+            triggeringEntity.lastTrapKilledTime = now;
             if (triggeringEntity.isBot) {
                 // suicide() sets the parameters to _bot::killed() wrong, so we just
                 // ensure we do enough damage to kill the bot
-                iDamage = triggeringEntity.maxHealth + 200;
-                triggeringEntity thread scripts\bots\_bots::Callback_BotDamage(self.trigger, activatingPlayer, iDamage, 0, "MOD_MELEE", self.type, (0,0,0), (0,0,0), "head", 0);
+                iDamage = triggeringEntity.maxHealth + 300;
+                //if (isDefined(triggeringEntity.name)) {noticePrint(self.type + " trap attempting to damage " + triggeringEntity.name + " at " + now);}
+                triggeringEntity scripts\bots\_bots::Callback_BotDamage(self.trigger, activatingPlayer, iDamage, 0, "MOD_MELEE", self.type, (0,0,0), (0,0,0), "head", 0);
             } else {
-                iDamage = triggeringEntity.maxHealth + 200;
-                triggeringEntity thread scripts\players\_players::onPlayerDamage(self.trigger, activatingPlayer, iDamage, 0, "MOD_MELEE", self.type, (0,0,0), (0,0,0), "head", 0);
+                iDamage = triggeringEntity.maxHealth + 300;
+                triggeringEntity scripts\players\_players::onPlayerDamage(self.trigger, activatingPlayer, iDamage, 0, "MOD_MELEE", self.type, (0,0,0), (0,0,0), "head", 0);
             }
             doDamage = false;
         }
@@ -180,9 +192,13 @@ centralTrap(trap)
     trap thread watchTrap(self);
     wait 25;
     trap.base StopLoopSound();
-    wait 10;
-
+    wait 5;
+    // stop watching trap trigger when it stops rotating
     trap.killTrigger = undefined;
+    trap notify("stop_trap");
+    wait 5;
+
+    // reset trap
     trap.activator moveZ(10, 1);
     trap.bat moveZ(-72, 1);
     trap.activator PlaySound("shield_off");
@@ -216,6 +232,7 @@ rotatingTrap(trap)
     trap.death StopLoopSound();
     wait 0.1;
     trap.killTrigger = undefined;
+    trap notify("stop_trap");
     trap.activator PlaySound("shield_off");
     trap.activator moveZ(12, 1);
     wait 1;
@@ -246,6 +263,7 @@ spikeTrap(trap)
         wait 2;
         trap.death moveZ(-32, 1);
         trap.killTrigger = undefined;
+        trap notify("stop_trap");
         wait 2;
     }
 
@@ -284,6 +302,7 @@ fireTrap(trap)
 
     wait 15;
     trap.killTrigger = undefined;
+    trap notify("stop_trap");
     trap.death moveZ(-48, 1);
     trap.activator rotateYaw(-360, 1);
 
@@ -338,6 +357,7 @@ electricTrap(trap)
     }
 
     trap.killTrigger = undefined;
+    trap notify("stop_trap");
     trap.activator moveZ(2.5, 1);
     trap.death moveZ(-64, 1);
     trap.activator PlaySound("shield_off");
