@@ -747,16 +747,18 @@ zomMoveTowards(target_position)
             (self.myWaypoint == -2) ||  // we hit our own corpse
             (self.myWaypoint == -4))    // returned waypoint index exceeds array bounds
         {
+            value = self.myWaypoint;
             self.myWaypoint = undefined;
-            errorPrint("self.myWaypoint: " + self.myWaypoint + " targetWp: " + targetWp);
+            errorPrint("self.myWaypoint: " + value + " targetWp: " + targetWp);
             return;
         } else if (self.myWaypoint == -3) { // no visible waypoints from our position
             // this can happen if we are inside an object we shouldn't be in,
             // like a shipping container
             self.myWaypoint = nearestWaypoint(self.origin, false, self);
             if (self.myWaypoint < 0) {
+                value = self.myWaypoint;
                 self.myWaypoint = undefined;
-                errorPrint("self.myWaypoint: " + self.myWaypoint + " targetWp: " + targetWp);
+                errorPrint("self.myWaypoint: " + value + " targetWp: " + targetWp);
                 return;
             }
         }
@@ -765,16 +767,18 @@ zomMoveTowards(target_position)
             (targetWp == -2) ||  // we hit our own corpse
             (targetWp == -4))    // returned waypoint index exceeds array bounds
         {
+            value = targetWp;
             targetWp = undefined;
-            errorPrint("self.myWaypoint: " + self.myWaypoint + " targetWp: " + targetWp);
+            errorPrint("self.myWaypoint: " + self.myWaypoint + " targetWp: " + value);
             return;
         } else if (targetWp == -3) { // no visible waypoints from our position
             // this can happen if the target is inside an object we shouldn't be in,
             // like a shipping container, or with insufficient waypoints
             targetWp = nearestWaypoint(self.origin, false, self);
             if (targetWp < 0) {
+                value = targetWp;
                 targetWp = undefined;
-                errorPrint("self.myWaypoint: " + self.myWaypoint + " targetWp: " + targetWp);
+                errorPrint("self.myWaypoint: " + self.myWaypoint + " targetWp: " + value);
                 return;
             }
         }
