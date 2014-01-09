@@ -311,6 +311,9 @@ fx,misc/laser_sight_red
 fx,misc/laser_sight_green
 fx,misc/laser_sight_blue
 
+fx,fire/firelp_med_pm_nodistort
+fx,explosions/sparks_d
+
 xmodel,body_complete_sp_zakhaevs_son
 xmodel,izmb_zombie1_body
 xmodel,izmb_zombie2_body

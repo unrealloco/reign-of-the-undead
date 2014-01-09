@@ -135,6 +135,7 @@ init()
     thread scripts\players\_players::onWaveIntermissionEnds();
     thread verifyRconPassword();
 
+    wait 0.5;
     noticePrint("Server is running and waiting for players to connect.");
     runTestCode();
 }
