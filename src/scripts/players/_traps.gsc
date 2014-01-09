@@ -44,7 +44,7 @@ init()
             trap = level.mapTraps[i];
             hintString = "Press [USE] to activate the " + trap.text + " trap! (^1" + trap.cost + "^7)";
             level scripts\players\_usables::addUsable(trap.trigger, "trap", hintString, 96);
-            if (trap.type == "central") {scripts\players\_traps::centralTrapBat();}
+            if (trap.type == "central") {centralTrapBat(trap);}
         }
     }
 }
@@ -144,15 +144,16 @@ watchTrap(activatingPlayer)
 /**
  * @brief Better compile reflections for central type trap
  *
+ * @param trap struct The central trap to run
+ *
  * @returns nothing
  * @since RotU 2.2.3
  */
-centralTrapBat()
+centralTrapBat(trap)
 {
     debugPrint("in _traps::centralTrapBat()", "fn", level.nonVerbose);
 
-    brush1 = getEnt("bat", "targetname");
-    brush1 moveZ(-80, 1);
+    trap.bat moveZ(-80, 1);
 }
 
 /**
@@ -168,27 +169,23 @@ centralTrap(trap)
     debugPrint("in _traps::centralTrap()", "fn", level.nonVerbose);
 
     // self is activating player
-    brush1 = getEnt("bat", "targetname");
-    brush2 = getEnt("prsten", "targetname");
-    brush3 = getEnt("aktiv", "targetname");
-
-    brush3 PlaySound("shield_on");
-    brush3 moveZ(-10, 1);
-    brush1 moveZ(72, 1);
+    trap.activator PlaySound("shield_on");
+    trap.activator moveZ(-10, 1);
+    trap.bat moveZ(72, 1);
     wait 5;
-    brush1 rotateYaw(10800, 30);
-    brush2 rotateYaw(10800, 30);
-    brush2 playLoopSound("rotating");
-    trap.killTrigger = spawn("trigger_radius", brush1.origin, 0, 172, 172);
+    trap.bat rotateYaw(10800, 30);
+    trap.base rotateYaw(10800, 30);
+    trap.base playLoopSound("rotating");
+    trap.killTrigger = spawn("trigger_radius", trap.bat.origin, 0, 172, 172);
     trap thread watchTrap(self);
     wait 25;
-    brush2 StopLoopSound();
+    trap.base StopLoopSound();
     wait 10;
 
     trap.killTrigger = undefined;
-    brush3 moveZ(10, 1);
-    brush1 moveZ(-72, 1);
-    brush3 PlaySound("shield_off");
+    trap.activator moveZ(10, 1);
+    trap.bat moveZ(-72, 1);
+    trap.activator PlaySound("shield_off");
     wait 2;
 }
 
@@ -204,26 +201,23 @@ rotatingTrap(trap)
 {
     debugPrint("in _traps::rotatingTrap()", "fn", level.nonVerbose);
 
-    brush1 = getEnt("rot_dio", "targetname");
-    brush2 = getEnt("aktiv2", "targetname");
+    trap.activator PlaySound("shield_on");
 
-    brush2 PlaySound("shield_on");
-
-    brush2 moveZ(-12, 1);
+    trap.activator moveZ(-12, 1);
     wait 1;
-    brush1 playLoopSound("rattle");
+    trap.death playLoopSound("rattle");
     wait 0.1;
-    trap.killTrigger = spawn("trigger_radius", brush1.origin, 0, 250, 128);
+    trap.killTrigger = spawn("trigger_radius", trap.death.origin, 0, 250, 128);
     trap thread watchTrap(self);
-    brush1 rotatePitch(7200, 20);
+    trap.death rotatePitch(7200, 20);
 
     wait 20;
 
-    brush1 StopLoopSound();
+    trap.death StopLoopSound();
     wait 0.1;
     trap.killTrigger = undefined;
-    brush2 PlaySound("shield_off");
-    brush2 moveZ(12, 1);
+    trap.activator PlaySound("shield_off");
+    trap.activator moveZ(12, 1);
     wait 1;
 }
 
@@ -239,27 +233,24 @@ spikeTrap(trap)
 {
     debugPrint("in _traps::spikeTrap()", "fn", level.nonVerbose);
 
-    brush1 = getEnt("trap3", "targetname");
-    brush2 = getEnt("aktiv3", "targetname");
+    trap.activator PlaySound("shield_on");
 
-    brush2 PlaySound("shield_on");
-
-    brush2 moveZ(-12, 1);
+    trap.activator moveZ(-12, 1);
     wait 1;
 
     for (i=0; i<10; i++) {
-        brush1 PlaySound("pneumatic");
-        brush1 moveZ(32, 1);
-        trap.killTrigger = spawn("trigger_radius", brush1.origin, 0, 70, 70);
+        trap.death PlaySound("pneumatic");
+        trap.death moveZ(32, 1);
+        trap.killTrigger = spawn("trigger_radius", trap.death.origin, 0, 70, 70);
         trap thread watchTrap(self);
         wait 2;
-        brush1 moveZ(-32, 1);
+        trap.death moveZ(-32, 1);
         trap.killTrigger = undefined;
         wait 2;
     }
 
-    brush2 PlaySound("shield_off");
-    brush2 moveZ(12, 1);
+    trap.activator PlaySound("shield_off");
+    trap.activator moveZ(12, 1);
     wait 1;
 }
 
@@ -275,40 +266,33 @@ fireTrap(trap)
 {
     debugPrint("in _traps::fireTrap()", "fn", level.nonVerbose);
 
-    fire1 = getent ("vatra1" ,"targetname"); //origin1
-    fire2 = getent ("vatra2" ,"targetname"); //origin2
-    fire3 = getent ("vatra3" ,"targetname"); //origin3
-    fire4 = getent ("vatra4" ,"targetname"); //origin4
-    brush1 = getEnt( "brush_death", "targetname" );
-    brush2 = getEnt( "aktiv_trap4", "targetname" );
+    trap.activator PlaySound("shield_on");
 
-    brush2 PlaySound("shield_on");
-
-    brush2 rotateYaw(360, 1);
+    trap.activator rotateYaw(360, 1);
     wait 1;
 
-    trap.killTrigger = spawn("trigger_radius", brush1.origin, 0, 32, 32);
+    trap.killTrigger = spawn("trigger_radius", trap.death.origin, 0, 32, 32);
     trap thread watchTrap(self);
 
-    fx1 = PlayLoopedFX(level.fireTrapFx, 1, fire1.origin);
-    fx2 = PlayLoopedFX(level.fireTrapFx, 1, fire2.origin);
-    fx3 = PlayLoopedFX(level.fireTrapFx, 1, fire3.origin);
-    fx4 = PlayLoopedFX(level.fireTrapFx, 1, fire4.origin);
-    fire1 PlayLoopSound("fire_metal_large");
-    brush1 moveZ(48, 1);
-    brush2 rotateYaw(360, 1);
+    fx1 = PlayLoopedFX(level.fireTrapFx, 1, trap.fire1.origin);
+    fx2 = PlayLoopedFX(level.fireTrapFx, 1, trap.fire2.origin);
+    fx3 = PlayLoopedFX(level.fireTrapFx, 1, trap.fire3.origin);
+    fx4 = PlayLoopedFX(level.fireTrapFx, 1, trap.fire4.origin);
+    trap.fire1 PlayLoopSound("fire_metal_large");
+    trap.death moveZ(48, 1);
+    trap.activator rotateYaw(360, 1);
 
     wait 15;
     trap.killTrigger = undefined;
-    brush1 moveZ(-48, 1);
-    brush2 rotateYaw(-360, 1);
+    trap.death moveZ(-48, 1);
+    trap.activator rotateYaw(-360, 1);
 
     fx1 delete();
     fx2 delete();
     fx3 delete();
     fx4 delete();
-    fire1 StopLoopSound();
-    brush2 PlaySound("shield_off");
+    trap.fire1 StopLoopSound();
+    trap.activator PlaySound("shield_off");
     wait 1;
 }
 
@@ -324,47 +308,38 @@ electricTrap(trap)
 {
     debugPrint("in _traps::electricTrap()", "fn", level.nonVerbose);
 
-    elec1 = getent("electric1" ,"targetname"); //origin
-    elec2 = getent("electric2" ,"targetname"); //origin
-    elec3 = getent("electric3" ,"targetname"); //origin
-    elec4 = getent("electric4" ,"targetname"); //origin
-    elec5 = getent("electric5" ,"targetname"); //origin
-    elec6 = getent("electric6" ,"targetname"); //origin
-    brush1 = getEnt( "brush_death5", "targetname" );
-    brush2 = getEnt( "aktiv_trap5", "targetname" );
-
-    brush2 PlaySound("shield_on");
-    brush2 moveZ(-2.5, 1);
-    brush1 movez(64, 1);
-    trap.killTrigger = spawn("trigger_radius", brush1.origin, 0, 16, 16);
+    trap.activator PlaySound("shield_on");
+    trap.activator moveZ(-2.5, 1);
+    trap.death moveZ(64, 1);
+    trap.killTrigger = spawn("trigger_radius", trap.death.origin, 0, 16, 16);
     trap thread watchTrap(self);
 
     for (i=0; i<10; i++) {
-        fx1 = PlayLoopedFX(level.electricTrapFx, 1, elec1.origin);
-        fx2 = PlayLoopedFX(level.electricTrapFx, 1, elec2.origin);
-        elec1 PlaySound("electric");
+        fx1 = PlayLoopedFX(level.electricTrapFx, 1, trap.elec1.origin);
+        fx2 = PlayLoopedFX(level.electricTrapFx, 1, trap.elec2.origin);
+        trap.elec1 PlaySound("electric");
         wait 1;
         fx1 delete();
         fx2 delete();
 
-        fx3 = PlayLoopedFX(level.electricTrapFx, 1, elec3.origin);
-        fx4 = PlayLoopedFX(level.electricTrapFx, 1, elec4.origin);
-        elec3 PlaySound("electric");
+        fx3 = PlayLoopedFX(level.electricTrapFx, 1, trap.elec3.origin);
+        fx4 = PlayLoopedFX(level.electricTrapFx, 1, trap.elec4.origin);
+        trap.elec3 PlaySound("electric");
         wait 1;
         fx3 delete();
         fx4 delete();
 
-        fx5 = PlayLoopedFX(level.electricTrapFx, 1, elec5.origin);
-        fx6 = PlayLoopedFX(level.electricTrapFx, 1, elec6.origin);
-        elec5 PlaySound("electric");
+        fx5 = PlayLoopedFX(level.electricTrapFx, 1, trap.elec5.origin);
+        fx6 = PlayLoopedFX(level.electricTrapFx, 1, trap.elec6.origin);
+        trap.elec5 PlaySound("electric");
         wait 1;
         fx5 delete();
         fx6 delete();
     }
 
     trap.killTrigger = undefined;
-    brush2 movez(2.5, 1);
-    brush1 movez(-64, 1);
-    brush2 PlaySound("shield_off");
+    trap.activator moveZ(2.5, 1);
+    trap.death moveZ(-64, 1);
+    trap.activator PlaySound("shield_off");
     wait 1;
 }

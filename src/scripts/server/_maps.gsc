@@ -67,7 +67,6 @@ init()
         for (i=0; i<level.mapTeleporters.size; i++) {
             level.mapTeleporters[i].trigger thread watchMapTeleporters(level.mapTeleporters[i]);
         }
-        noticePrint("level.mapTeleporters.size: " + level.mapTeleporters.size);
     }
 
     if (isDefined(level.mapHurtTriggers)) {

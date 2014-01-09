@@ -456,18 +456,20 @@ deleteSabotageEntities()
 }
 
 /**
- * @brief Loads a trap specified in the map
+ * @brief Loads a central trap specified in the map
  *
- * @param trigger string The targetname of the entity with a classname of 'trigger_multiple'
- * @param type string The type of the trap
+ * @param trigger string The targetname of the entity with a classname of 'trigger_use_touch' used by player to activate the trap
+ * @param bat string The targetname of a 'script_brushmodel' for the spinning battering rams
+ * @param base string The targetname of a 'script_brushmodel' for the spinning base
+ * @param activator string The targetname of a 'script_brushmodel' used by player to activate the trap
  * @param price integer The cost to activate the trap
  *
  * @returns nothing
  * @since RotU 2.2.3
  */
-loadTrap(trigger, type, price)
+loadCentralTrap(trigger, bat, base, activator, price)
 {
-    debugPrint("in _umi::loadTrap()", "fn", level.nonVerbose);
+    debugPrint("in _umi::loadCentralTrap()", "fn", level.nonVerbose);
 
     if (!isDefined(level.mapTraps)) {level.mapTraps = [];}
     if (!isDefined(price)) {price = 5000;} // default if not spec'd and not overriden in game.cfg
@@ -475,55 +477,211 @@ loadTrap(trigger, type, price)
     text = "";
     cost = 0;
 
-    switch (type) {
-        case "central":
-            text = "Central";
-            configCost = getDvarInt("trap_central_costs");
-            if (!isDefined(configCost)) {cost = price;}
-            else {cost = configCost;}
-            if (cost <= 0) {cost = 100;} // hard-coded minimum cost
-            break;
-        case "rotating":
-            text = "Rotating";
-            configCost = getDvarInt("trap_rotating_costs");
-            if (!isDefined(configCost)) {cost = price;}
-            else {cost = configCost;}
-            if (cost <= 0) {cost = 100;} // hard-coded minimum cost
-            break;
-        case "spike":
-            text = "Spike";
-            configCost = getDvarInt("trap_spike_costs");
-            if (!isDefined(configCost)) {cost = price;}
-            else {cost = configCost;}
-            if (cost <= 0) {cost = 100;} // hard-coded minimum cost
-            break;
-        case "fire":
-            text = "Fire";
-            configCost = getDvarInt("trap_fire_costs");
-            if (!isDefined(configCost)) {cost = price;}
-            else {cost = configCost;}
-            if (cost <= 0) {cost = 100;} // hard-coded minimum cost
-            break;
-        case "electric":
-            text = "Electric";
-            configCost = getDvarInt("trap_electric_costs");
-            if (!isDefined(configCost)) {cost = price;}
-            else {cost = configCost;}
-            if (cost <= 0) {cost = 100;} // hard-coded minimum cost
-            break;
-    }
+    text = "Central";
+    configCost = getDvarInt("trap_central_costs");
+    if (!isDefined(configCost)) {cost = price;}
+    else {cost = configCost;}
+    if (cost <= 0) {cost = 100;} // hard-coded minimum cost
 
     ents = getEntArray(trigger, "targetname");
     for (i=0; i<ents.size; i++) {
         trap = spawnStruct();
         trap.trigger = ents[i];
         trap.cost = cost;
-        trap.type = type;
+        trap.type = "central";
         trap.text = text;
         trap.isBeingUsed = false;
+        trap.activator = getEnt(activator, "targetname");
+        trap.bat = getEnt(bat, "targetname");
+        trap.base = getEnt(base, "targetname");
         level.mapTraps[level.mapTraps.size] = trap;
     }
 }
+
+/**
+ * @brief Loads a rotating trap specified in the map
+ *
+ * @param trigger string The targetname of the entity with a classname of 'trigger_use_touch' used by player to activate the trap
+ * @param death string The targetname of a 'script_brushmodel' used to locate the kill trigger
+ * @param activator string The targetname of a 'script_brushmodel' used by player to activate the trap
+ * @param price integer The cost to activate the trap
+ *
+ * @returns nothing
+ * @since RotU 2.2.3
+ */
+loadRotatingTrap(trigger, death, activator, price)
+{
+    debugPrint("in _umi::loadRotatingTrap()", "fn", level.nonVerbose);
+
+    if (!isDefined(level.mapTraps)) {level.mapTraps = [];}
+    if (!isDefined(price)) {price = 5000;} // default if not spec'd and not overriden in game.cfg
+
+    text = "";
+    cost = 0;
+
+    text = "Rotating";
+    configCost = getDvarInt("trap_rotating_costs");
+    if (!isDefined(configCost)) {cost = price;}
+    else {cost = configCost;}
+    if (cost <= 0) {cost = 100;} // hard-coded minimum cost
+
+    ents = getEntArray(trigger, "targetname");
+    for (i=0; i<ents.size; i++) {
+        trap = spawnStruct();
+        trap.trigger = ents[i];
+        trap.cost = cost;
+        trap.type = "rotating";
+        trap.text = text;
+        trap.isBeingUsed = false;
+        trap.activator = getEnt(activator, "targetname");
+        trap.death = getEnt(death, "targetname");
+        level.mapTraps[level.mapTraps.size] = trap;
+    }
+}
+
+/**
+ * @brief Loads a spike trap specified in the map
+ *
+ * @param trigger string The targetname of the entity with a classname of 'trigger_use_touch' used by player to activate the trap
+ * @param death string The targetname of a 'script_brushmodel' used to locate the kill trigger
+ * @param activator string The targetname of a 'script_brushmodel' used by player to activate the trap
+ * @param price integer The cost to activate the trap
+ *
+ * @returns nothing
+ * @since RotU 2.2.3
+ */
+loadSpikeTrap(trigger, death, activator, price)
+{
+    debugPrint("in _umi::loadSpikeTrap()", "fn", level.nonVerbose);
+
+    if (!isDefined(level.mapTraps)) {level.mapTraps = [];}
+    if (!isDefined(price)) {price = 5000;} // default if not spec'd and not overriden in game.cfg
+
+    text = "";
+    cost = 0;
+
+    text = "Spike";
+    configCost = getDvarInt("trap_spike_costs");
+    if (!isDefined(configCost)) {cost = price;}
+    else {cost = configCost;}
+    if (cost <= 0) {cost = 100;} // hard-coded minimum cost
+
+    ents = getEntArray(trigger, "targetname");
+    for (i=0; i<ents.size; i++) {
+        trap = spawnStruct();
+        trap.trigger = ents[i];
+        trap.cost = cost;
+        trap.type = "spike";
+        trap.text = text;
+        trap.isBeingUsed = false;
+        trap.activator = getEnt(activator, "targetname");
+        trap.death = getEnt(death, "targetname");
+        level.mapTraps[level.mapTraps.size] = trap;
+    }
+}
+
+/**
+ * @brief Loads a fire trap specified in the map
+ *
+ * @param trigger string The targetname of the entity with a classname of 'trigger_use_touch' used by player to activate the trap
+ * @param fire1 string The targetname of a 'script_brushmodel' for a fire location
+ * @param fire2 string The targetname of a 'script_brushmodel' for a fire location
+ * @param fire3 string The targetname of a 'script_brushmodel' for a fire location
+ * @param fire4 string The targetname of a 'script_brushmodel' for a fire location
+ * @param death string The targetname of a 'script_brushmodel' used to locate the kill trigger
+ * @param activator string The targetname of a 'script_brushmodel' used by player to activate the trap
+ * @param price integer The cost to activate the trap
+ *
+ * @returns nothing
+ * @since RotU 2.2.3
+ */
+loadFireTrap(trigger, fire1, fire2, fire3, fire4, death, activator, price)
+{
+    debugPrint("in _umi::loadFireTrap()", "fn", level.nonVerbose);
+
+    if (!isDefined(level.mapTraps)) {level.mapTraps = [];}
+    if (!isDefined(price)) {price = 5000;} // default if not spec'd and not overriden in game.cfg
+
+    text = "";
+    cost = 0;
+
+    text = "Fire";
+    configCost = getDvarInt("trap_fire_costs");
+    if (!isDefined(configCost)) {cost = price;}
+    else {cost = configCost;}
+    if (cost <= 0) {cost = 100;} // hard-coded minimum cost
+
+    ents = getEntArray(trigger, "targetname");
+    for (i=0; i<ents.size; i++) {
+        trap = spawnStruct();
+        trap.trigger = ents[i];
+        trap.cost = cost;
+        trap.type = "fire";
+        trap.text = text;
+        trap.isBeingUsed = false;
+        trap.activator = getEnt(activator, "targetname");
+        trap.death = getEnt(death, "targetname");
+        trap.fire1 = getEnt(fire1, "targetname");
+        trap.fire2 = getEnt(fire2, "targetname");
+        trap.fire3 = getEnt(fire3, "targetname");
+        trap.fire4 = getEnt(fire4, "targetname");
+        level.mapTraps[level.mapTraps.size] = trap;
+    }
+}
+
+/**
+ * @brief Loads an electric trap specified in the map
+ *
+ * @param trigger string The targetname of the entity with a classname of 'trigger_use_touch' used by player to activate the trap
+ * @param elec1 string The targetname of a 'script_brushmodel' for an arcing point
+ * @param elec2 string The targetname of a 'script_brushmodel' for an arcing point
+ * @param elec3 string The targetname of a 'script_brushmodel' for an arcing point
+ * @param elec4 string The targetname of a 'script_brushmodel' for an arcing point
+ * @param elec5 string The targetname of a 'script_brushmodel' for an arcing point
+ * @param elec6 string The targetname of a 'script_brushmodel' for an arcing point
+ * @param death string The targetname of a 'script_brushmodel' used to locate the kill trigger
+ * @param activator string The targetname of a 'script_brushmodel' used by player to activate the trap
+ * @param price integer The cost to activate the trap
+ *
+ * @returns nothing
+ * @since RotU 2.2.3
+ */
+loadElectricTrap(trigger, elec1, elec2, elec3, elec4, elec5, elec6, death, activator, price)
+{
+    debugPrint("in _umi::loadElectricTrap()", "fn", level.nonVerbose);
+
+    if (!isDefined(level.mapTraps)) {level.mapTraps = [];}
+    if (!isDefined(price)) {price = 5000;} // default if not spec'd and not overriden in game.cfg
+
+    text = "";
+    cost = 0;
+
+    text = "Electric";
+    configCost = getDvarInt("trap_electric_costs");
+    if (!isDefined(configCost)) {cost = price;}
+    else {cost = configCost;}
+    if (cost <= 0) {cost = 100;} // hard-coded minimum cost
+
+    ents = getEntArray(trigger, "targetname");
+    for (i=0; i<ents.size; i++) {
+        trap = spawnStruct();
+        trap.trigger = ents[i];
+        trap.cost = cost;
+        trap.type = "electric";
+        trap.text = text;
+        trap.isBeingUsed = false;
+        trap.activator = getEnt(activator, "targetname");
+        trap.death = getEnt(death, "targetname");
+        trap.elec1 = getEnt(elec1, "targetname");
+        trap.elec2 = getEnt(elec2, "targetname");
+        trap.elec3 = getEnt(elec3, "targetname");
+        trap.elec4 = getEnt(elec4, "targetname");
+        trap.elec5 = getEnt(elec5, "targetname");
+        trap.elec6 = getEnt(elec6, "targetname");
+        level.mapTraps[level.mapTraps.size] = trap;
+    }
+}
+
 /**
  * @brief Loads a glide pad specified in the map
  *

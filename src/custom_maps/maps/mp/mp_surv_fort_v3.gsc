@@ -64,11 +64,12 @@ main()
 //     convertToNativeWaypoints();
 
     precache();
-    loadTrap("trig_aktiv", "central", 1000);     // 10000
-    loadTrap("trig2_aktiv", "rotating", 1000);   // 5000
-    loadTrap("trig3_aktiv", "spike", 1000);      // 5000
-    loadTrap("trig_aktiv4", "fire", 1000);       // 5000
-    loadTrap("trig_elec", "electric", 1000);     // 5000
+    loadCentralTrap("trig_aktiv", "bat", "prsten", "aktiv", 1000);      // 5000
+    loadRotatingTrap("trig2_aktiv", "rot_dio", "aktiv2", 1000);         // 5000
+    loadSpikeTrap("trig3_aktiv", "trap3", "aktiv3", 1000);              // 5000
+    loadFireTrap("trig_aktiv4", "vatra1", "vatra2", "vatra3", "vatra4", "brush_death", "aktiv_trap4", 1000);     // 5000
+    loadElectricTrap("trig_elec", "electric1", "electric2", "electric3", "electric4",
+                     "electric5", "electric6", "brush_death5", "aktiv_trap5", 1000);     // 5000
 
     waitUntilFirstPlayerSpawns();
 
