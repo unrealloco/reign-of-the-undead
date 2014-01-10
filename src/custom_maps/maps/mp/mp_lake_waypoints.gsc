@@ -924,9 +924,11 @@ load_waypoints()
     level.waypoints[117].children[1] = 217;
     level.waypoints[117].children[2] = 218;
     level.waypoints[118] = spawnstruct();
-    level.waypoints[118].origin = (0,0,0);
+    level.waypoints[118].origin = (553.872,3004.17,301.254);
     level.waypoints[118].type = "stand";
-    level.waypoints[118].childCount = 0;                /// @bug This waypoint is unlinked!
+    level.waypoints[118].childCount = 2;
+    level.waypoints[118].children[0] = 435;
+    level.waypoints[118].children[1] = 436;
     level.waypoints[119] = spawnstruct();
     level.waypoints[119].origin = (903.179,2234.51,306.24);
     level.waypoints[119].type = "stand";
@@ -3390,7 +3392,7 @@ load_waypoints()
     level.waypoints[428].children[1] = 427;
     level.waypoints[428].children[2] = 429;
     level.waypoints[429] = spawnstruct();
-    level.waypoints[429].origin = (-775,1577.45,105.645);
+    level.waypoints[429].origin = (-775.001,1577.45,105.645);
     level.waypoints[429].type = "stand";
     level.waypoints[429].childCount = 4;
     level.waypoints[429].children[0] = 71;
@@ -3437,19 +3439,13 @@ load_waypoints()
     level.waypoints[435].childCount = 3;
     level.waypoints[435].children[0] = 27;
     level.waypoints[435].children[1] = 436;
-    level.waypoints[435].children[2] = 437;
+    level.waypoints[435].children[2] = 118;
     level.waypoints[436] = spawnstruct();
     level.waypoints[436].origin = (625.086,3049.32,334.262);
     level.waypoints[436].type = "stand";
     level.waypoints[436].childCount = 2;
     level.waypoints[436].children[0] = 435;
-    level.waypoints[436].children[1] = 437;
-    level.waypoints[437] = spawnstruct();
-    level.waypoints[437].origin = (553.872,3004.17,301.254);
-    level.waypoints[437].type = "stand";
-    level.waypoints[437].childCount = 2;
-    level.waypoints[437].children[0] = 435;
-    level.waypoints[437].children[1] = 436;
+    level.waypoints[436].children[1] = 118;
 
     level.waypointCount = level.waypoints.size;
 }

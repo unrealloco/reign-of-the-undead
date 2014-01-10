@@ -1358,8 +1358,12 @@ AStarNew(startWp, goalWp, validateWaypoints)
         //for each successor nc of n
         for (i=0; i<level.Wp[n.wpIdx].linkedCount; i++) {
             //newg = n.g + cost(n,nc)
-            newg = n.g + level.Wp[n.wpIdx].distance[i];
-
+            if (!isDefined(level.Wp[n.wpIdx].distance)) {
+                // don't crash if the waypoints are bad so we didn't pre-compute distances
+                newg = n.g + distance(level.Wp[n.wpIdx].origin, level.Wp[n.wpIdx].linked[i].origin);
+            } else {
+                newg = n.g + level.Wp[n.wpIdx].distance[i];
+            }
             // if nc is in Open or Closed, and nc.g <= newg then skip this iteration
             ncFound = false;
             // if nc is in open list, grab a copy of it
