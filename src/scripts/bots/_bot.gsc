@@ -1700,7 +1700,7 @@ fixStuck()
                 distance = distanceSquared(self.origin, self.currentTarget.origin);
                 if (distance < 15625) {  // 125 units
                     skipCount++;
-                    if (skipCount < 3) {continue;}  // consider us stuck if the target is invisible for too long
+                    if (skipCount < 6) {continue;}  // consider us stuck if the target is invisible for too long
                 }
             }
             skipCount = 0;
