@@ -1253,6 +1253,8 @@ validateWaypoints()
             }
         }
         noticePrint("RotU will not be using the waypoints in this map!");
+    } else {
+        noticePrint("Waypoints PASSED validation!");
     }
 }
 

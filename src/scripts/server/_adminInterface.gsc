@@ -1486,19 +1486,23 @@ buildFilteredMapsString(maps)
 
     results = [];
     resultsIndex = 0;
+    lines = 0;
     results[resultsIndex] = tokens[0];
+    lines++;
     if (tokens.size > 1) {
         for (i=1; i<tokens.size; i++) {
             if ((resultsIndex == 2) && (results[resultsIndex].size + 2 + tokens[i].size > 160)) {
                 // truncate results, since we can't display them all
                 results[resultsIndex] += "\n^1--RESULTS TRUNCATED--";
                 break;
-            } else if(results[resultsIndex].size + 2 + tokens[i].size > 260) {
+            } else if ((results[resultsIndex].size + 2 + tokens[i].size > 260) || (lines == 9)){
                 // adding this token will overflow the string for the current dvar
                 resultsIndex++;
                 results[resultsIndex] = tokens[i];
+                lines = 1;
             } else {
                 results[resultsIndex] += "\n" + tokens[i];
+                lines++;
             }
         }
     }
