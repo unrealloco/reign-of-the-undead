@@ -92,12 +92,6 @@ loadWaypoints()
         for (ii=0; ii<tokens.size; ii++) {
             waypoint.linked[ii] = level.Wp[atoi(tokens[ii])];
         }
-
-//         // Error catching
-//         if (!isDefined(waypoint.linked)) {
-//             errorPrint("Unlinked Waypoint: " + waypoint.ID + " at: " +  waypoint.origin + " on map " + getdvar("mapname"));
-//             level.waypointsInvalid = true;
-//         }
     }
     // intialize the k-dimensional waypoint tree
     initKdWaypointTree();
@@ -1190,7 +1184,6 @@ loadWaypointLinkDistances()
 
     for (i=0; i<level.Wp.size; i++) {
         if (!isDefined(level.Wp[i].linked)) {
-            level.waypointsInvalid = true;
             continue;
         }
         for (j=0; j<level.Wp[i].linked.size; j++) {

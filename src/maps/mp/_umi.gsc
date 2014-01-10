@@ -1159,11 +1159,6 @@ convertToNativeWaypoints()
             waypoint.linked[j] = level.Wp[level.waypoints[i].children[j]];
             //             noticePrint("waypoint: " + i + " is linked to waypoint " + level.waypoints[i].children[j]);
         }
-        // Error catching
-        if (!isDefined(waypoint.linked)) {
-            errorPrint("Unlinked Waypoint: " + waypoint.ID + " at: " +  waypoint.origin + " on map " + getdvar("mapname"));
-            level.waypointsInvalid = true;
-        }
     }
 
     // Now that the ROZO waypoints are in memory in RotU format, we can free the
@@ -1242,20 +1237,47 @@ validateWaypoints()
         warnPrint("Waypoint validation was stopped for performace reasons before it finished.");
         warnPrint("There may be invalid waypoints that aren't noted.");
     }
+    fixedWaypoints = false;
     if (invalidWaypoints.size > 0) {
-        level.waypointsInvalid = true;
         errorPrint("Map " + getdvar("mapname") + " has invalid waypoints!");
         for (i=0; i<invalidWaypoints.size; i++) {
             if (!isDefined(level.Wp[invalidWaypoints[i]].linked)) {
                 errorPrint("Unlinked Waypoint: " + invalidWaypoints[i] + " at: " +  level.Wp[invalidWaypoints[i]].origin);
+                deleteUnlinkedWaypoint(invalidWaypoints[i]);
+                fixedWaypoints = true;
             } else {
                 errorPrint("Waypoint: " + invalidWaypoints[i] + " at: " +  level.Wp[invalidWaypoints[i]].origin + " is part of a linked section not linked to the other section.");
+                level.waypointsInvalid = true;
             }
         }
-        noticePrint("RotU will not be using the waypoints in this map!");
+
+        if (level.waypointsInvalid) {
+            noticePrint("RotU will not be using the waypoints in this map!");
+        } else if (fixedWaypoints) {
+            noticePrint("RotU sucessfully deleted unlinked waypoints from memory, but the waypoints should still be fixed!");
+        }
     } else {
         noticePrint("Waypoints PASSED validation!");
     }
+}
+
+deleteUnlinkedWaypoint(waypointId)
+{
+    debugPrint("in _umi::deleteUnlinkedWaypoint()", "fn", level.nonVerbose);
+
+    // Deleting a waypoint from the middle of the array is very expensive, while
+    // deleting it from the end of the array is O(1), so first we ensure the waypoint
+    // to be deleted is the last waypoint in the array.
+    if (waypointId != level.Wp.size - 1) {
+        maps\mp\_umiEditor::devSwapWaypoints(waypointId, level.Wp.size - 1, false);
+    }
+
+    // unlink and delete the last waypoint
+//     maps\mp\_umiEditor::devUnlinkWaypoint(level.Wp.size - 1);
+    level.Wp[level.Wp.size - 1] = undefined;
+
+    // update waypoint count
+    level.WpCount = level.Wp.size;
 }
 
 /**
