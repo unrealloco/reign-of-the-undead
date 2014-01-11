@@ -730,134 +730,98 @@ zomMoveTowards(target_position)
     self endon("death");
     self endon("dying");
 
-    if (!isDefined(self.lastAStarTargetWp)) {self.lastAStarTargetWp = -1;}
-    if (!isDefined(self.lastAStarWp)) {self.lastAStarWp = -1;}
+    if (level.waypointsInvalid) {
+        // this map either has no waypoints, or they are bad so we aren't using them
+        moveToPoint(target_position, self.cur_speed);
+    } else {
+        if (!isDefined(self.lastAStarTargetWp)) {self.lastAStarTargetWp = -1;}
+        if (!isDefined(self.lastAStarWp)) {self.lastAStarWp = -1;}
 
-    /**
-     * @todo we only need unobstructed paths if we were off-waypoint.
-     */
-    if (!isdefined(self.myWaypoint)) {
-        self.myWaypoint = nearestWaypoint(self.origin, true, self);
-    }
+        if (!isDefined(self.myWaypoint)) {
+            self.myWaypoint = nearestWaypoint(self.origin, true, self);
+        }
 
-    targetWp = nearestWaypoint(target_position, true, self.bestTarget);
+        targetWp = nearestWaypoint(target_position, true, self.bestTarget);
 
-    if (self.myWaypoint < 0) {
-        if ((self.myWaypoint == -1) ||  // we never got past this init value
-            (self.myWaypoint == -2) ||  // we hit our own corpse
-            (self.myWaypoint == -4))    // returned waypoint index exceeds array bounds
-        {
-            value = self.myWaypoint;
-            self.myWaypoint = undefined;
-            errorPrint("self.myWaypoint: " + value + " targetWp: " + targetWp);
-            return;
-        } else if (self.myWaypoint == -3) { // no visible waypoints from our position
-            // this can happen if we are inside an object we shouldn't be in,
-            // like a shipping container
-            self.myWaypoint = nearestWaypoint(self.origin, false, self);
-            if (self.myWaypoint < 0) {
+        if (self.myWaypoint < 0) {
+            if ((self.myWaypoint == -1) ||  // we never got past this init value
+                (self.myWaypoint == -2) ||  // we hit our own corpse
+                (self.myWaypoint == -4))    // returned waypoint index exceeds array bounds
+            {
                 value = self.myWaypoint;
                 self.myWaypoint = undefined;
                 errorPrint("self.myWaypoint: " + value + " targetWp: " + targetWp);
                 return;
+            } else if (self.myWaypoint == -3) { // no visible waypoints from our position
+                // this can happen if we are inside an object we shouldn't be in,
+                // like a shipping container
+                self.myWaypoint = nearestWaypoint(self.origin, false, self);
+                if (self.myWaypoint < 0) {
+                    value = self.myWaypoint;
+                    self.myWaypoint = undefined;
+                    errorPrint("self.myWaypoint: " + value + " targetWp: " + targetWp);
+                    return;
+                }
             }
-        }
-    } else if (targetWp < 0) {
-        if ((targetWp == -1) ||  // we never got past this init value
-            (targetWp == -2) ||  // we hit our own corpse
-            (targetWp == -4))    // returned waypoint index exceeds array bounds
-        {
-            value = targetWp;
-            targetWp = undefined;
-            errorPrint("self.myWaypoint: " + self.myWaypoint + " targetWp: " + value);
-            return;
-        } else if (targetWp == -3) { // no visible waypoints from our position
-            // this can happen if the target is inside an object we shouldn't be in,
-            // like a shipping container, or with insufficient waypoints
-            targetWp = nearestWaypoint(self.origin, false, self);
-            if (targetWp < 0) {
+        } else if (targetWp < 0) {
+            if ((targetWp == -1) ||  // we never got past this init value
+                (targetWp == -2) ||  // we hit our own corpse
+                (targetWp == -4))    // returned waypoint index exceeds array bounds
+            {
                 value = targetWp;
                 targetWp = undefined;
                 errorPrint("self.myWaypoint: " + self.myWaypoint + " targetWp: " + value);
                 return;
-            }
-        }
-    }
-
-    /// @todo stop it from repeatedly getting the same invalid waypoint
-
-    nextWp = self.nextWp;
-    direct = false;
-
-    if (self.underway) {
-        if (targetWp == self.myWaypoint) {
-            direct = true;
-            self.underway = false;
-            self.myWaypoint = undefined;
-        } else {
-            if (!isdefined(nextWp)) {return;}
-            if (targetWp == nextWp) {
-                if (distancesquared(target_position, self.origin) <= distancesquared(level.Wp[nextWp].origin, self.origin)) {
-                    direct = true;
-                    self.underway = false;
-                    self.myWaypoint = undefined;
+            } else if (targetWp == -3) { // no visible waypoints from our position
+                // this can happen if the target is inside an object we shouldn't be in,
+                // like a shipping container, or with insufficient waypoints
+                targetWp = nearestWaypoint(self.origin, false, self);
+                if (targetWp < 0) {
+                    value = targetWp;
+                    targetWp = undefined;
+                    errorPrint("self.myWaypoint: " + self.myWaypoint + " targetWp: " + value);
+                    return;
                 }
             }
         }
-    } else {
+
         if (targetWp == self.myWaypoint) {
-            direct = true;
+            // we are already at the closest waypoint, just move to target
+            moveToPoint(target_position, self.cur_speed);
             self.underway = false;
             self.myWaypoint = undefined;
         } else {
-            if (level.waypointsInvalid) {
-                // HACK: Make maps with invalid waypoints work, at least somewhat
-                direct = true;
+            if ((self.lastAStarTargetWp != targetWp) ||     // our target wp has changed since our last A* call
+                (self.myWaypoint != self.lastAStarWp) ||    // our current wp is not the waypoint we were supposed to go to
+                (self.pathNodes.size == 0))                 // we are out of path nodes
+            {
+                // invalidate the pathNodes stack and get a fresh stack from A*
+                self.pathNodes = AStarNew(self.myWaypoint, targetWp);
+                self.lastAStarTargetWp = targetWp;
+            } else {
+                level.savedAStarCalls++;
+            }
+            // pop the next wp to head towards off the stack
+            nextWp = self.pathNodes[self.pathNodes.size - 1];
+            self.pathNodes[self.pathNodes.size - 1] = undefined;
+            self.lastAStarWp = nextWp;
+
+            self.nextWp = nextWp;
+            self.underway = true;
+
+            if ((targetWp == nextWp) &&
+                (distanceSquared(target_position, self.origin) <= distanceSquared(level.Wp[nextWp].origin, self.origin)))
+            {
+                // we are close enough to target_position to go directly there, ignoring waypoints
+                moveToPoint(target_position, self.cur_speed);
                 self.underway = false;
                 self.myWaypoint = undefined;
             } else {
-                if ((self.lastAStarTargetWp != targetWp) ||     // our target wp has changed since our last A* call
-                    (self.myWaypoint != self.lastAStarWp) ||    // our current wp is not the waypoint we were supposed to go to
-                    (self.pathNodes.size == 0))                 // we are out of path nodes
-                {
-                    // invalidate the pathNodes stack and get a fresh stack from A*
-                    self.pathNodes = AStarNew(self.myWaypoint, targetWp);
-                    self.lastAStarTargetWp = targetWp;
-                } else {
-                    level.savedAStarCalls++;
+                moveToPoint(level.Wp[nextWp].origin, self.cur_speed);
+                if (distance(level.Wp[nextWp].origin, self.origin) <  64) {
+                    self.underway = false;
+                    self.myWaypoint = nextWp;
                 }
-                // pop the next wp to head towards off the stack
-                nextWp = self.pathNodes[self.pathNodes.size - 1];
-                self.pathNodes[self.pathNodes.size - 1] = undefined;
-                self.lastAStarWp = nextWp;
-
-                self.nextWp = nextWp;
-                self.underway = true;
-            }
-        }
-    }
-
-    //TARGET SET! MOVING!
-    //line(self.origin, target_position, (0,0,1));
-    if (direct) {
-        moveToPoint(target_position, self.cur_speed);
-        /*lineCol = (1,0,0);
-        line(level.Wp[self.myWaypoint].origin, target_position, lineCol);*/
-    } else {
-        /*lineCol = (1,0,0);
-        line(level.Wp[self.myWaypoint].origin, level.Wp[nextWp].origin, lineCol);*/
-        if (isdefined(nextWp)) {
-            /// @todo BUG: massive runtime errors if not defined, try this hack as a temp fix. map specific?
-            /// for some maps, level.wp.size == 0.  Legacy maps do not use the waypoints system
-            if (!isDefined(level.Wp[nextWp])) {
-                errorPrint("level.Wp[nextWp] is undefined on map: " + getdvar("mapname"));
-                //self idle();
-                //return;
-            }
-            moveToPoint(level.Wp[nextWp].origin, self.cur_speed);
-            if (distance(level.Wp[nextWp].origin, self.origin) <  64) {
-                self.underway = false;
-                self.myWaypoint = nextWp;
             }
         }
     }
