@@ -202,6 +202,7 @@ initMapEditor()
     level.devPlayer scripts\players\_players::execClientCommand( "exec maps/mp/_umi_shortcuts.cfg" );
 
     level.giveWaypointMode = false;
+    level.linkingInProgress = false;
     level.waypointModeTurnedOff = false;
     // holds 2 levels of linked waypoints, plus 20 closest unlinked waypoints
     level.localWaypoints = [];
@@ -226,6 +227,9 @@ initMapEditor()
 devToggleGiveWaypointsMode()
 {
     debugPrint("in _umiEditor::devToggleGiveWaypointsMode()", "fn", level.nonVerbose);
+
+    // don't start or stop waypoint mode while in the process of linking a waypoint
+    if (level.linkingInProgress) {return;}
 
     // intialize
     if (!isDefined(level.giveWaypointMode)) {
@@ -297,6 +301,7 @@ devLinkWaypoint()
     debugPrint("in _umiEditor::devLinkWaypoint()", "fn", level.nonVerbose);
 
     level.linkingFlag.waypointId = level.currentWaypoint;
+    level.linkingInProgress = true;
 
     level.linkingFlag show();
     self.carryObj = level.linkingFlag;
@@ -348,6 +353,7 @@ devFinishLink()
 
             self.canUse = true;
             self enableweapons();
+            level.linkingInProgress = false;
 
             return;
         }
