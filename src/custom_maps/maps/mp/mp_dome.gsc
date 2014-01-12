@@ -1,7 +1,7 @@
 /******************************************************************************
  *    Reign of the Undead, v2.x
  *
- *    Copyright (c) 2010-2014 Reign of the Undead Team.
+ *    Copyright (c) 2010-2013 Reign of the Undead Team.
  *    See AUTHORS.txt for a listing.
  *
  *    Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -42,13 +42,12 @@ main()
     deleteHqEntities();
     deleteCtfEntities();
     deleteUnusedSpawnpoints(true, true, true, true);
-    disambiguateBarrelsByTargetname("explodable_barrel");
 
     maps\createart\mp_dome_art::main();
-    maps\mp\_ac_fan_script::main();
-    maps\mp\_rotatemebitch::main();
-    maps\mp\mp_dome_fx::main();
-    maps\mp\mp_dome_sound_fx::main();
+    //maps\mp\_ac_fan_script::main();
+    //maps\mp\_rotatemebitch::main();
+    //maps\mp\mp_dome_fx::main();
+    //maps\mp\mp_dome_sound_fx::main();
 
     ambientPlay("ambient_middleeast_ext");
     maps\mp\_compass::setupMiniMap("compass_map_mp_dome");
@@ -61,10 +60,10 @@ main()
     game["axis_soldiertype"] = "desert";
 
     setdvar("r_specularcolorscale", "1");
-    setdvar("r_glowbloomintensity0",".25");
-    setdvar("r_glowbloomintensity1",".25");
-    setdvar("r_glowskybleedintensity0",".3");
-    setdvar("compassmaxrange","1700");
+    setdvar("r_glowbloomintensity0", ".25");
+    setdvar("r_glowbloomintensity1", ".25");
+    setdvar("r_glowskybleedintensity0", ".3");
+    setdvar("compassmaxrange", "1700");
 
     thread maps\mp\mp_dome_waypoints::load_waypoints();
     thread maps\mp\mp_dome_tradespawns::load_tradespawns();
@@ -79,7 +78,8 @@ main()
         maps\mp\_umiEditor::initMapEditor();
         maps\mp\_umiEditor::initWeaponShopEditor("0 2 4 6");
         maps\mp\_umiEditor::initEquipmentShopEditor("1 3 5 7");
-        maps\mp\_umiEditor::devDumpEntities();
+//      maps\mp\_umiEditor::devDumpEntities();
+
     } else {
         buildWeaponShopsByTradespawns("0 2 4 6");
         buildShopsByTradespawns("1 3 5 7");
