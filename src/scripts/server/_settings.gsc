@@ -1,7 +1,7 @@
 /******************************************************************************
     Reign of the Undead, v2.x
 
-    Copyright (c) 2010-2014 Reign of the Undead Team.
+    Copyright (c) 2010-2013 Reign of the Undead Team.
     See AUTHORS.txt for a listing.
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -96,7 +96,6 @@ loadSettings()
     dvarFloat(  "game",     "turret_time",          120,    10,     99999); // [s]
     dvarFloat(  "game",     "spawn_requirement",    0.5,    0,      1);
     dvarString( "game",     "mapvote_style",        "2.2");
-    dvarInt(    "game",     "assistance_max_rank",  30,     15,      30);
 
     dvarBool(   "hud",      "survivors_left",       1);
     dvarBool(   "hud",      "survivors_down",       1);

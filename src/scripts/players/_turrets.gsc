@@ -1,7 +1,7 @@
 /******************************************************************************
     Reign of the Undead, v2.x
 
-    Copyright (c) 2010-2014 Reign of the Undead Team.
+    Copyright (c) 2010-2013 Reign of the Undead Team.
     See AUTHORS.txt for a listing.
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -167,8 +167,6 @@ createGrenadeTurret()
     turret.gun.ammo = turret.gun.maxAmmo;               // current ammmo
 
     turret.owner = undefined;
-    turret.isTurret = true;
-    turret.gun.isTurret = true;
 
     // Hide the turret
     turret hide();
@@ -231,10 +229,6 @@ createMinigunTurret()
     turret.gunBarrel hidePart("tag_swivel");
     turret.gunBarrel hidePart("tag_gun");
     turret.gunBarrel LinkTo(turret.gun, "j_barrel_anchor", (0,0,0), (0,0,0));
-
-    turret.isTurret = true;
-    turret.gun.isTurret = true;
-    turret.gunBarrel.isTurret = true;
 
     // makes gun show up with base when you buy it
     turret.gun linkto(turret);

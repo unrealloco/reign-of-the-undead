@@ -1,7 +1,7 @@
 /******************************************************************************
     Reign of the Undead, v2.x
 
-    Copyright (c) 2010-2014 Reign of the Undead Team.
+    Copyright (c) 2010-2013 Reign of the Undead Team.
     See AUTHORS.txt for a listing.
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -67,7 +67,6 @@ init()
     thread scripts\players\_barricades::init();
     thread scripts\players\_turrets::init();
     thread scripts\players\_teleporter::init();
-    thread scripts\players\_traps::init();
     thread scripts\players\_rank::init();
     //thread scripts\players\_challenges::buildChallegeInfo();
     thread uav();
@@ -288,7 +287,7 @@ isNewPlayer()
     prestige = self scripts\players\_persistence::statGet("plevel");
     rank = self.pers["rank"];
     if ((prestige < 1) &&
-        (rank < level.dvar["game_assistance_max_rank"]) &&
+        (rank < 30) &&
         (self.newPlayerAssistCount < 3))
     {
         return true;
@@ -323,10 +322,9 @@ assistNewPlayers()
     }
 
     rank = self.pers["rank"];
-    max = level.dvar["game_assistance_max_rank"];
-    if (rank < int(0.33 * max)) {self scripts\players\_players::incUpgradePoints(1000);}
-    else if (rank < int(0.66 * max)) {self scripts\players\_players::incUpgradePoints(500);}
-    else if (rank < max) {self scripts\players\_players::incUpgradePoints(250);}
+    if (rank < 10) {self scripts\players\_players::incUpgradePoints(1000);}
+    else if (rank < 20) {self scripts\players\_players::incUpgradePoints(500);}
+    else if (rank < 30) {self scripts\players\_players::incUpgradePoints(250);}
     self iprintlnbold("^1You must keep running to survive!");
 }
 
@@ -925,7 +923,7 @@ correctPlayerCounts()
     self endon("game_ended");
 
     while(1) {
-        wait 3;
+        wait 15;
         alivePlayers = 0;
         downPlayers = 0;
         activePlayers = 0;
@@ -939,12 +937,12 @@ correctPlayerCounts()
         if (level.activePlayers != activePlayers) {
             level.activePlayers = activePlayers;
             level.downPlayers = downPlayers;
-            debugPrint("level.activePlayers was incorrect; correcting.");
+            noticePrint("level.activePlayers was incorrect; correcting.");
         }
         if (level.alivePlayers != alivePlayers) {
             level.alivePlayers = alivePlayers;
             level.downPlayers = downPlayers;
-            debugPrint("level.alivePlayers was incorrect; correcting.");
+            noticePrint("level.alivePlayers was incorrect; correcting.");
         }
     }
 }

@@ -1,7 +1,7 @@
 /******************************************************************************
     Reign of the Undead, v2.x
 
-    Copyright (c) 2010-2014 Reign of the Undead Team.
+    Copyright (c) 2010-2013 Reign of the Undead Team.
     See AUTHORS.txt for a listing.
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -69,7 +69,7 @@ getClosestEntity(targetname, type)
 
     ents = getentarray(targetname, type);
     nearestEnt = undefined;
-    nearestDistance = level.MAX_INT; // 2147483647, 32-bit ints
+    nearestDistance = 9999999999;
     for (i=0; i<ents.size; i++) {
         ent = ents[i];
         distance = Distance(self.origin, ent.origin);
@@ -88,7 +88,7 @@ getClosestPlayer()
 
     ents = level.players;
     nearestEnt = undefined;
-    nearestDistance = level.MAX_INT; // 2147483647, 32-bit ints
+    nearestDistance = 9999999999;
     for (i=0; i<ents.size; i++) {
         ent = ents[i];
         distance = Distance(self.origin, ent.origin);
@@ -110,7 +110,7 @@ getClosestPlayerArray()
     nearPlayers = [];
     nearDistance = [];
     for (i=0; i<playerCount; i++) {
-        nearDistance[i] = level.MAX_INT; // 2147483647, 32-bit ints
+        nearDistance[i] = 999999999;
     }
 
     for (i=0; i<playerCount; i++) {
@@ -134,16 +134,13 @@ getClosestPlayerArray()
     return nearPlayers;
 }
 
-/**
- * @deprecated
- */
 getClosestTarget()
 {
     debugPrint("in entities::getClosestTarget()", "fn", level.highVerbosity);
 
     ents = level.players;
     nearestEnt = undefined;
-    nearestDistance = level.MAX_INT; // 2147483647, 32-bit ints
+    nearestDistance = 9999999999;
     for (i=0; i<ents.size; i++) {
         ent = ents[i];
         if (!isDefined(ent)) {continue;}

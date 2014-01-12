@@ -12,6 +12,3 @@ Original Developer
 Scripters
     BraX <paulina1295@o2.pl> www.brax-site.pl
     Etheross (xfire: etheross)
-
-Map Porting
-    UnionJack (skype: andrewmorrow)

@@ -1,7 +1,7 @@
 /******************************************************************************
     Reign of the Undead, v2.x
 
-    Copyright (c) 2010-2014 Reign of the Undead Team.
+    Copyright (c) 2010-2013 Reign of the Undead Team.
     See AUTHORS.txt for a listing.
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -77,7 +77,6 @@ giveBarrel(type)
 
     self.carryObj linkto(self);
     self.carryObj.type = type;
-    self.carryObj.isBarrel = true;
 
     // track whether the barrel is currently being killed
     self.carryObj.isBeingKilled = false;

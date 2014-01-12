@@ -1,7 +1,7 @@
 /******************************************************************************
     Reign of the Undead, v2.x
 
-    Copyright (c) 2010-2014 Reign of the Undead Team.
+    Copyright (c) 2010-2013 Reign of the Undead Team.
     See AUTHORS.txt for a listing.
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -185,7 +185,6 @@ spawnTeleporter(origin, angles, spawnDelay)
     teleporter.angles = angles;
     teleporter.trigger = spawn("trigger_radius", teleporter.origin, 0, 40, 128);
     teleporter setcontents(2);
-    teleporter.isTeleporter = true;
 
     // Loop sound
     // Don't play.  Sound file is missing, besides, it was *really* irritating.
@@ -208,13 +207,13 @@ spawnTeleporter(origin, angles, spawnDelay)
 
         // Teleport user to destination
         if (user.isBot) {
-            if ((isDefined(level.wp.size)) && (level.wp.size > 9)) {
+            if ((isDefined(level.wp.size)) && (level.wp.size > 0)) {
                 // This map uses waypoints
                 wp = level.wp[randomint(level.wp.size)];
                 user thread teleOut(self, wp.origin, user.angles);
             } else {
                 // This is a legacy map that doesn't use waypoints
-                spawn = scripts\gamemodes\_survival::randomSpawnpoint();
+                spawn = scripts\gamemodes\_survival::getRandomSpawn();
                 user thread teleOut(self, spawn.origin, user.angles);
             }
         }
@@ -260,7 +259,7 @@ teleOut( teleporter, origin, angles )
     {
         self.myWaypoint = undefined;
         self.underway = false;
-        self.mover.origin = origin;
+        self.linkObj.origin = origin;
     }
     else
     {

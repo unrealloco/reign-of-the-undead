@@ -1,7 +1,7 @@
 /******************************************************************************
     Reign of the Undead, v2.x
 
-    Copyright (c) 2010-2014 Reign of the Undead Team.
+    Copyright (c) 2010-2013 Reign of the Undead Team.
     See AUTHORS.txt for a listing.
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -157,9 +157,6 @@ watchDevelopmentMenuResponses()
         case "dev_cycle_waypoint_type":
             devCycleWaypointType();
             break;
-        case "dev_set_ladder_angles":
-            devSetLadderAngles();
-            break;
         case "dev_save_waypoints":
             devSaveWaypoints();
             break;
@@ -205,7 +202,6 @@ initMapEditor()
     level.devPlayer scripts\players\_players::execClientCommand( "exec maps/mp/_umi_shortcuts.cfg" );
 
     level.giveWaypointMode = false;
-    level.linkingInProgress = false;
     level.waypointModeTurnedOff = false;
     // holds 2 levels of linked waypoints, plus 20 closest unlinked waypoints
     level.localWaypoints = [];
@@ -230,9 +226,6 @@ initMapEditor()
 devToggleGiveWaypointsMode()
 {
     debugPrint("in _umiEditor::devToggleGiveWaypointsMode()", "fn", level.nonVerbose);
-
-    // don't start or stop waypoint mode while in the process of linking a waypoint
-    if (level.linkingInProgress) {return;}
 
     // intialize
     if (!isDefined(level.giveWaypointMode)) {
@@ -278,18 +271,9 @@ devCycleWaypointType()
             newType = "mantle";
             break;
         case "mantle":
-            newType = "ladder";
+            newType = "climb";
             break;
-        case "ladder":
-            newType = "fall";
-            break;
-        case "fall":
-            newType = "clamped";
-            break;
-        case "clamped":
-            newType = "teleport";
-            break;
-        case "teleport":
+        case "climb":
             newType = "undefined";
             break;
         default:
@@ -303,71 +287,6 @@ devCycleWaypointType()
 }
 
 /**
- * @brief Sets the angle for bots on ladders
- *
- * @returns nothing
- * @since RotU 2.2.3
- */
-devSetLadderAngles()
-{
-    debugPrint("in _umiEditor::devSetLadderAngles()", "fn", level.nonVerbose);
-
-    // bail if we are in waypoint mode
-    if (level.giveWaypointMode) {return;}
-
-    if (!(level.devPlayer isOnLadder())) {
-        iPrintLnBold("You must be on the ladder!");
-        return;
-    }
-
-    angles = level.devPlayer getPlayerAngles();
-    wp = level.currentWaypoint;
-    ladderBottom = -1;
-    ladderTop = -1;
-    // find all of the ladder type waypoints wp is linked to
-    wps = [];
-    for (i=0; i<level.Wp[wp].linkedCount; i++) {
-        id = level.Wp[wp].linked[i].ID;
-        if (level.Wp[id].type == "ladder") {
-            wps[wps.size] = id;
-        }
-    }
-    if (level.Wp[wp].origin[2] < level.devPlayer.origin[2]) {
-        ladderBottom = wp;
-        // find ladder top
-        for (i=0; i<wps.size; i++) {
-            if (level.Wp[wps[i]].origin[2] > level.Wp[wp].origin[2]) {
-                ladderTop = wps[i];
-                break;
-            }
-        }
-    } else {
-        ladderTop = wp;
-        // find ladder bottom
-        for (i=0; i<wps.size; i++) {
-            if (level.Wp[wps[i]].origin[2] < level.Wp[wp].origin[2]) {
-                ladderBottom = wps[i];
-                break;
-            }
-        }
-    }
-    if (ladderBottom == -1) {
-        iPrintLnBold("Failed to find ladderBottom!");
-    }
-    if (ladderTop == -1) {
-        iPrintLnBold("Failed to find ladderTop!");
-    }
-
-    if ((ladderBottom == -1) || (ladderTop == -1)) {
-        return;
-    } else {
-        level.Wp[ladderBottom].upAngles = angles;
-        level.Wp[ladderTop].downAngles = angles;
-        iPrintLnBold("Ladder angles set!");
-    }
-}
-
-/**
  * @brief Begins to link the current waypoint to another waypoint
  *
  * @returns nothing
@@ -377,11 +296,7 @@ devLinkWaypoint()
 {
     debugPrint("in _umiEditor::devLinkWaypoint()", "fn", level.nonVerbose);
 
-    // don't start a waypoint link while in waypoint mode
-    if (level.giveWaypointMode) {return;}
-
     level.linkingFlag.waypointId = level.currentWaypoint;
-    level.linkingInProgress = true;
 
     level.linkingFlag show();
     self.carryObj = level.linkingFlag;
@@ -433,7 +348,6 @@ devFinishLink()
 
             self.canUse = true;
             self enableweapons();
-            level.linkingInProgress = false;
 
             return;
         }
@@ -689,11 +603,6 @@ devGetAvailableUnlinkedWaypointFlag()
 devUiDeleteWaypoint()
 {
     debugPrint("in _umiEditor::devUiDeleteWaypoint()", "fn", level.nonVerbose);
-
-    // don't delete a waypoint while in waypoint mode
-    if (level.giveWaypointMode) {return;}
-    // don't delete a waypoint while in the process of linking a waypoint
-    if (level.linkingInProgress) {return;}
 
     waypointId = level.currentWaypoint;
     devUnflagWaypoint(waypointId);
@@ -1968,12 +1877,12 @@ devEmplaceEquipmentShop()
             phi = scripts\players\_turrets::angleBetweenTwoVectors(k, kPrime*(0,1,1));
             self.carryObj.angles = vectorToAngles(iPrime);
 
-            // now align the soda machine's y-axis with the computed y-axis
+            // now align the crate's y-axis with the computed y-axis
             z = anglesToUp(self.carryObj.angles);
             phi = scripts\players\_turrets::angleBetweenTwoVectors(z, kPrime);
             self.carryObj.angles = self.carryObj.angles + (0,0,phi); // phi rotates about x-axis
 
-            // ensure we rotated the soda machine properly to align the y-axis
+            // ensure we rotated the crate properly to align the y-axis
             y = anglesToRight(self.carryObj.angles);
             beta = scripts\players\_turrets::angleBetweenTwoVectors(y, jPrime);
             if (beta > phi) {
@@ -2402,8 +2311,8 @@ devSaveTradespawns()
         x = devExponentialGuard(shop.origin[0]);
         y = devExponentialGuard(shop.origin[1]);
         z = devExponentialGuard(shop.origin[2]);
-        rho = devExponentialGuard(shop.angles[0]);
-        phi = devExponentialGuard(shop.angles[1]);
+        rho = shop.angles[0];
+        phi = shop.angles[1];
 
         logPrint("    level.tradespawns["+i+"] = spawnstruct();  // spec'd for "+type+" shop\n");
         logPrint("    level.tradespawns["+i+"].origin = ("+x+","+y+","+z+");\n");
@@ -2486,23 +2395,6 @@ devSaveWaypoints()
             logPrint("    level.waypoints["+i+"].type = \""+level.Wp[i].type+"\";\n");
         }
 
-        // .upAngles and .downAngles are used for ladders in new AI
-        if (isDefined(level.Wp[i].upAngles)) {
-            rho = devExponentialGuard(level.Wp[i].upAngles[0]);
-            theta = devExponentialGuard(level.Wp[i].upAngles[1]);
-            phi = devExponentialGuard(level.Wp[i].upAngles[2]);
-
-            logPrint("    level.waypoints["+i+"].upAngles = ("+rho+","+theta+","+phi+");\n");
-        }
-
-        if (isDefined(level.Wp[i].downAngles)) {
-            rho = devExponentialGuard(level.Wp[i].downAngles[0]);
-            theta = devExponentialGuard(level.Wp[i].downAngles[1]);
-            phi = devExponentialGuard(level.Wp[i].downAngles[2]);
-
-            logPrint("    level.waypoints["+i+"].downAngles = ("+rho+","+theta+","+phi+");\n");
-        }
-
         if (level.Wp[i].linkedCount == 0) {
             comment = "                /// @bug This waypoint is unlinked!";
         } else {comment = "";}
@@ -2514,8 +2406,8 @@ devSaveWaypoints()
 
         // .angles isn't used by RotU, but we will endeavor to preserve that info
         if (isDefined(level.Wp[i].angles)) {
-            rho = devExponentialGuard(level.Wp[i].angles[0]);
-            phi = devExponentialGuard(level.Wp[i].angles[1]);
+            rho = level.Wp[i].angles[0];
+            phi = level.Wp[i].angles[1];
 
             logPrint("    level.waypoints["+i+"].angles = ("+rho+","+phi+",0);\n");
         }
@@ -2551,11 +2443,9 @@ devDumpEntities()
         classname = "";
         targetname = "";
         origin = "";
-        script_noteworthy = "";
         if (isDefined(ents[i].classname)) {classname = ents[i].classname;}
         if (isDefined(ents[i].targetname)) {targetname = ents[i].targetname;}
         if (isDefined(ents[i].origin)) {origin = ents[i].origin;}
-        if (isDefined(ents[i].script_noteworthy)) {script_noteworthy = ents[i].script_noteworthy;}
-        noticePrint("Entity: "+i+" classname: "+classname+" targetname: "+targetname+" origin: "+origin+" script_noteworthy: "+script_noteworthy);
+        noticePrint("Entity: "+i+" classname: "+classname+" targetname: "+targetname+" origin: "+origin);
     }
 }

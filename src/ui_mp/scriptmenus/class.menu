@@ -168,10 +168,8 @@
 
         CHOICE_BUTTON_BG( 7, 1 )
         CHOICE_HIGHLIGHT( 7, 1 )
-        CHOICE_BUTTON_VIS_NOHI( 7, "@MENU_LEAVE_GAME", open popup_endgame, when( dvarbool(sv_running) && dvarbool(canleavegame) ) )
-        CHOICE_BUTTON_VIS_NOHI( 7, "@MENU_LEAVE_GAME", open popup_leavegame, when( !dvarbool(sv_running) && dvarbool(canleavegame) ) )
-        CHOICE_DBUTTON_VIS_NOHI( 7, "@MENU_LEAVE_GAME", when( !dvarbool(canleavegame) ) )
-        CHOICE_NEWICON_VIS( 7, "specialty_locked", when( !dvarbool(canleavegame) ) )
+        CHOICE_BUTTON_VIS_NOHI( 7, "@MENU_LEAVE_GAME", open popup_endgame, when( dvarbool( sv_running ) ) )
+        CHOICE_BUTTON_VIS_NOHI( 7, "@MENU_LEAVE_GAME", open popup_leavegame, when( !dvarbool( sv_running ) ) )
 
         #include "ui/safearea.menu"
     }

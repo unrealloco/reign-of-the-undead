@@ -1,7 +1,7 @@
 /******************************************************************************
     Reign of the Undead, v2.x
 
-    Copyright (c) 2010-2014 Reign of the Undead Team.
+    Copyright (c) 2010-2013 Reign of the Undead Team.
     See AUTHORS.txt for a listing.
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -47,40 +47,6 @@ init()
 
     thread logPlayersAtGameEnd();
     applyMapFixes();
-
-    // enable some features found on non-rotu maps
-    if (isDefined(level.glidePads)) {
-        for (i=0; i<level.glidePads.size; i++) {
-            level.glidePads[i].trigger thread watchGlidePad(level.glidePads[i]);
-        }
-    }
-
-    if (isDefined(level.elevators)) {
-        for (i=0; i<level.elevators.size; i++) {
-            for (j=0; j<level.elevators[i].triggers.size; j++) {
-                level.elevators[i].triggers[j] thread watchElevatorTrigger(level.elevators[i]);
-            }
-        }
-    }
-
-    if (isDefined(level.mapTeleporters)) {
-        for (i=0; i<level.mapTeleporters.size; i++) {
-            level.mapTeleporters[i].trigger thread watchMapTeleporters(level.mapTeleporters[i]);
-        }
-    }
-
-    if (isDefined(level.mapHurtTriggers)) {
-        for (i=0; i<level.mapHurtTriggers.size; i++) {
-            level.mapHurtTriggers[i].trigger thread watchHurtTriggers(level.mapHurtTriggers[i]);
-        }
-    }
-
-    // cyclical animations
-    if (isDefined(level.mapAnimations)) {
-        for (i=0; i<level.mapAnimations.size; i++) {
-            thread mapAnimation(level.mapAnimations[i]);
-        }
-    }
 }
 
 blank(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10)
@@ -199,7 +165,7 @@ logPlayersAtGameEnd()
     level endon("starting_map_change");
 
     flag = true;
-    while (flag) {
+    while(flag) {
         level waittill("game_ended");
         noticePrint("Players in the game when the game ended:");
         for (i=0; i<level.players.size; i++) {
@@ -309,209 +275,3 @@ changeMap(mapname)
         }
     }
 } // End function changeMap()
-
-
-/**
- * @brief Continuouly animates a script_brushmodel animation spec'd in a map
- *
- * @param animation struct The animation to perform
- *
- * @returns nothing
- * @since RotU 2.2.3
- */
-mapAnimation(animation)
-{
-    debugPrint("in _maps::mapAnimation()", "fn", level.nonVerbose);
-
-    level endon("game_ended");
-
-    if (animation.type == "linear") {
-        while (1) {
-            for (i=0; i<animation.steps.size; i++) {
-                animation.model moveTo(animation.steps[i].destination, animation.steps[i].time);
-                wait animation.steps[i].time;
-                wait animation.steps[i].delay;
-            }
-            wait animation.delay;
-            if (animation.reversible) {
-                for (i=animation.steps.size - 1; i>=0; i--) {
-                    animation.model moveTo(animation.steps[i].origin, animation.steps[i].time);
-                    wait animation.steps[i].time;
-                    wait animation.steps[i].delay;
-                }
-                wait animation.delay;
-            }
-        }
-    } else if (animation.type == "rotate") {
-        while (1) {
-            /// @todo implement rotating cyclical animations
-        }
-    }
-}
-
-/**
- * @brief Initiates a glide when a player trips the trigger
- *
- * @param pad struct The pad to watch for trigger events
- *
- * @returns nothing
- * @since RotU 2.2.3
- */
-watchGlidePad(pad)
-{
-    debugPrint("in _maps::watchGlidePad()", "fn", level.nonVerbose);
-
-    while (1) {
-        self waittill("trigger", player);
-
-        pad thread glidePlayer(player);
-        wait 0.05;
-    }
-}
-
-/**
- * @brief Moves a player along a glide path
- *
- * @param player entity The player to move
- *
- * @returns nothing
- * @since RotU 2.2.3
- */
-glidePlayer(player)
-{
-    debugPrint("in _maps::glidePlayer()", "fn", level.nonVerbose);
-
-    // self is the pad
-    player setOrigin(self.origin1);
-    mover = spawn("script_origin", player.origin);
-    player linkTo(mover);
-
-    if (isDefined(self.time12)) {
-        mover moveTo(self.origin2, self.time12);
-        wait self.time12;
-    }
-    if (isDefined(self.time23)) {
-        mover moveTo(self.origin3, self.time23);
-        wait self.time23;
-    }
-    if (isDefined(self.time34)) {
-        mover moveTo(self.origin4, self.time34);
-        wait self.time34;
-    }
-    if (isDefined(self.time45)) {
-        mover moveTo(self.origin5, self.time45);
-        wait self.time45;
-    }
-    if (isDefined(self.time56)) {
-        mover moveTo(self.origin6, self.time56);
-        wait self.time56;
-    }
-    player unlink();
-    mover delete();
-}
-
-/**
- * @brief Operates elevators
- *
- * @param elevator struct The elevator to operate
- *
- * @returns nothing
- * @since RotU 2.2.3
- */
-watchElevatorTrigger(elevator)
-{
-    debugPrint("in _maps::watchElevatorTrigger()", "fn", level.nonVerbose);
-
-    while (1) {
-        self waittill("trigger", player);
-
-        if (self.targetname == elevator.triggers[0].targetname) {
-            // call for elevator at trigger
-            if (elevator.model.origin == elevator.positionA) {
-                // elevator is already there, so user wants to go to positionB
-                elevator.model moveTo(elevator.positionB, elevator.time);
-                wait elevator.time;
-            } else {
-                // elevator first needs to come to positionA
-                elevator.model moveTo(elevator.positionA, elevator.time);
-                wait elevator.time;
-                continue; // wait for next trigger event
-            }
-        }
-        wait 0.05;
-    }
-}
-
-/**
- * @brief Operates a built-in teleporter
- *
- * @param mapTeleporter struct The teleporter to operate
- *
- * @returns nothing
- * @since RotU 2.2.3
- */
-watchMapTeleporters(mapTeleporter)
-{
-    debugPrint("in _maps::watchMapTeleporters()", "fn", level.nonVerbose);
-
-    while (1) {
-        self waittill("trigger", player);
-
-        player setOrigin(mapTeleporter.destination);
-        wait 0.05;
-    }
-}
-
-/**
- * @brief Watches hurt triggers and teleports player to spawnpoint when triggered
- *
- * @param trigger struct The hurt trigger to watch
- *
- * @returns nothing
- * @since RotU 2.2.3
- */
-watchHurtTriggers(trigger)
-{
-    debugPrint("in _maps::watchHurtTriggers()", "fn", level.nonVerbose);
-
-    while (1) {
-        self waittill("trigger", player);
-
-        if (self.origin != trigger.origin) {
-            // not the trigger we are waiting for
-            wait 0.05;
-            continue;
-        }
-
-        if ((isDefined(player.isActive)) && (isDefined(player.isAlive)) &&
-            (player.isActive) && (player.isAlive))
-        {
-            player setOrigin(player.originalSpawnLocation);
-            player thread hurtPlayer();
-            wait 0.05;
-        } else {
-            // not actually a human player
-            wait 0.05;
-        }
-    }
-}
-
-/**
- * @brief Downs a player after they have triggered a hurt trigger and been teleported
- *
- * @returns nothing
- * @since RotU 2.2.3
- */
-hurtPlayer()
-{
-    debugPrint("in _maps::hurtPlayer()", "fn", level.nonVerbose);
-
-    interval = 1;
-    damage = 65;
-    self.isPlayer = true;
-    while ((!self.isDown)) {
-        self [[level.callbackPlayerDamage]] (self, self, damage, 0, "MOD_EXPLOSIVE", "none", self.origin, (0,0,0), "none", 0);
-        wait interval;
-    }
-}
-

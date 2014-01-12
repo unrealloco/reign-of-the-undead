@@ -94,10 +94,3 @@ megakill,,ut/megakill.wav,1,1,,,,1000000,,announcer,streamed,,,master
 ludicrouskill,,ut/ludicrouskill.wav,1,1,,,,1000000,,announcer,streamed,,,master
 holyshit,,ut/holyshit.wav,1,1,,,,1000000,,announcer,streamed,,,master
 wickedsick,,ut/WhickedSick.wav,1,1,,,,1000000,announcer,,streamed,,,master
-
-rotating,,traps/rotating.wav,0.99,1,element,0.8,1.1,300,,element,,,,0.5,all_mp,,,,,250,,,0.4,,,,,
-shield_on,,traps/shield_on.wav,0.99,1,element,0.95,1.1,100,,element,,,,0.5,all_mp,,,,,250,,,0.4,,,,,
-shield_off,,traps/shield_off.wav,0.99,1,element,0.95,1.1,100,,element,,,,0.5,all_mp,,,,,250,,,0.4,,,,,
-electric,,traps/electric.wav,0.99,1,element,0.95,1.1,300,,element,,,,0.5,all_mp,,,,,250,,,0.4,,,,,
-pneumatic,,traps/pneumatic.wav,0.99,1,element,0.95,1.1,100,,element,,,,0.5,all_mp,,,,,250,,,0.4,,,,,
-rattle,,traps/rattle.wav,0.99,1,element,0.95,1.1,300,,element,,,,0.5,all_mp,,,,,250,,,0.4,,,,,

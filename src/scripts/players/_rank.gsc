@@ -1,7 +1,7 @@
 /******************************************************************************
     Reign of the Undead, v2.x
 
-    Copyright (c) 2010-2014 Reign of the Undead Team.
+    Copyright (c) 2010-2013 Reign of the Undead Team.
     See AUTHORS.txt for a listing.
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -752,16 +752,13 @@ increaseDemerits(amount, reason)
 
     switch(reason) {
         case "burning":
-            if (amount == 0) {message = "Check Your Fire!";}
-            else {message += "Injuring Players by Killing a Burning Zombie";}
+            message += "Injuring Players by Killing a Burning Zombie";
             break;
         case "wave_intermission_revive":
-            if (amount == 0) {message = "Please revive other players!";}
-            else {message += "Not Reviving Enough Players Between Waves";}
+            message += "Not Reviving Enough Players Between Waves";
             break;
         case "gone_zombie":
-            if (amount == 0) {message = "Cure your infection before becoming a zombie!";}
-            else {message += "Becoming a Zombie When You Could Have Bought a Cure";}
+            message += "Becoming a Zombie When You Could Have Bought a Cure";
             break;
     }
     self iPrintLnBold(message);

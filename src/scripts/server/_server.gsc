@@ -1,7 +1,7 @@
 /******************************************************************************
     Reign of the Undead, v2.x
 
-    Copyright (c) 2010-2014 Reign of the Undead Team.
+    Copyright (c) 2010-2013 Reign of the Undead Team.
     See AUTHORS.txt for a listing.
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -36,11 +36,6 @@
 init()
 {
     debugPrint("in _server::init()", "fn", level.nonVerbose);
-
-    scripts\include\constants::init();
-
-    // should we use the alternate bot AI under devlopment?
-    level.zombieAiDevelopment = false;
 
     debugPrint("Running debug version of rotu_svr_scripts.iwd.", "val");
     if (level.printFunctionEntryMessages) {
@@ -135,7 +130,6 @@ init()
     thread scripts\players\_players::onWaveIntermissionEnds();
     thread verifyRconPassword();
 
-    wait 0.5;
     noticePrint("Server is running and waiting for players to connect.");
     runTestCode();
 }

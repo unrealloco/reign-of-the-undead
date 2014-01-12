@@ -1,7 +1,7 @@
 /******************************************************************************
     Reign of the Undead, v2.x
 
-    Copyright (c) 2010-2014 Reign of the Undead Team.
+    Copyright (c) 2010-2013 Reign of the Undead Team.
     See AUTHORS.txt for a listing.
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -121,14 +121,14 @@ emberFX()
     while(1) {
         // Some legacy maps (e.g. mp_surv_overrun) seem to not use waypoints, so level.wp.size is zero.
         // In these cases, we just get a random spawn point and use that for the origin
-        if (level.wp.size < 9) {
-            index = randomInt(level.botSpawnpoints.size);
-            origin = level.botSpawnpoints[index].origin;
+        if (level.wp.size == 0) {
+            spawn = scripts\gamemodes\_survival::getRandomSpawn();
+            org = spawn.origin;
         } else {
-            origin = level.wp[randomint(level.wp.size)].origin;
+            org = level.wp[randomint(level.wp.size)].origin;
         }
-        playfx(level.ember_fx, origin);
-        Earthquake( 0.25, 2, origin, 512);
+        playfx(level.ember_fx, org);
+        Earthquake( 0.25, 2, org, 512);
         wait .2 + randomfloat(.2);
     }
 }
