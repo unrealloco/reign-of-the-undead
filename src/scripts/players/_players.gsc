@@ -287,7 +287,7 @@ isNewPlayer()
     prestige = self scripts\players\_persistence::statGet("plevel");
     rank = self.pers["rank"];
     if ((prestige < 1) &&
-        (rank < 30) &&
+        (rank < level.dvar["game_assistance_max_rank"]) &&
         (self.newPlayerAssistCount < 3))
     {
         return true;
@@ -322,9 +322,10 @@ assistNewPlayers()
     }
 
     rank = self.pers["rank"];
-    if (rank < 10) {self scripts\players\_players::incUpgradePoints(1000);}
-    else if (rank < 20) {self scripts\players\_players::incUpgradePoints(500);}
-    else if (rank < 30) {self scripts\players\_players::incUpgradePoints(250);}
+    max = level.dvar["game_assistance_max_rank"];
+    if (rank < int(0.33 * max)) {self scripts\players\_players::incUpgradePoints(1000);}
+    else if (rank < int(0.66 * max)) {self scripts\players\_players::incUpgradePoints(500);}
+    else if (rank < max) {self scripts\players\_players::incUpgradePoints(250);}
     self iprintlnbold("^1You must keep running to survive!");
 }
 
