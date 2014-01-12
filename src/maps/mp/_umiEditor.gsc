@@ -2443,9 +2443,11 @@ devDumpEntities()
         classname = "";
         targetname = "";
         origin = "";
+        script_noteworthy = "";
         if (isDefined(ents[i].classname)) {classname = ents[i].classname;}
         if (isDefined(ents[i].targetname)) {targetname = ents[i].targetname;}
         if (isDefined(ents[i].origin)) {origin = ents[i].origin;}
-        noticePrint("Entity: "+i+" classname: "+classname+" targetname: "+targetname+" origin: "+origin);
+        if (isDefined(ents[i].script_noteworthy)) {script_noteworthy = ents[i].script_noteworthy;}
+        noticePrint("Entity: "+i+" classname: "+classname+" targetname: "+targetname+" origin: "+origin+" script_noteworthy: "+script_noteworthy);
     }
 }
