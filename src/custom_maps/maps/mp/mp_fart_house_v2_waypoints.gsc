@@ -8,13 +8,10 @@
 // =============================================================================
 //
 // This file contains the waypoints for the map 'mp_fart_house_v2'
-//
-// N.B. You will need to delete the timecodes at the beginning of these lines!
-//
 load_waypoints()
 {
     level.waypoints = [];
-    
+
     level.waypoints[0] = spawnstruct();
     level.waypoints[0].origin = (-4425.04,1496.18,520.125);
     level.waypoints[0].type = "stand";
@@ -8883,6 +8880,6 @@ load_waypoints()
     level.waypoints[1066].type = "stand";
     level.waypoints[1066].childCount = 1;
     level.waypoints[1066].children[0] = 543;
-    
+
     level.waypointCount = level.waypoints.size;
 }

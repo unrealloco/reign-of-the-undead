@@ -50,14 +50,6 @@ main()
     deleteEntitiesByTargetname("pf443_auto1");
     deleteEntitiesByTargetname("heal");
 
-//     ents = getentarray("elevator1", "targetname");
-//     logPrint("data: " + ents[0].script_noteworthy);
-//     ents[0].origin = (-1936,2045,-467);
-
-//     deleteEntitiesByTargetname("elevator2");
-//     deleteEntitiesByTargetname("switch1"); // useable
-//     deleteEntitiesByTargetname("switch2"); // useable
-
     maps\mp\_compass::setupMiniMap("compass_map_mp_fart_house_v2");
 
     ambientPlay("ambient_overgrown_day");
@@ -110,10 +102,7 @@ main()
 
     waitUntilFirstPlayerSpawns();
 
-    maps\mp\_umiEditor::devDumpEntities();
-
     umiEditorMode = false;  // toggle true/false to switch between editor and game mode
-
 
     if (umiEditorMode) {
         devDrawAllPossibleSpawnpoints();
