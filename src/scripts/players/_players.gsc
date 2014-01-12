@@ -923,7 +923,7 @@ correctPlayerCounts()
     self endon("game_ended");
 
     while(1) {
-        wait 15;
+        wait 3;
         alivePlayers = 0;
         downPlayers = 0;
         activePlayers = 0;
@@ -937,12 +937,12 @@ correctPlayerCounts()
         if (level.activePlayers != activePlayers) {
             level.activePlayers = activePlayers;
             level.downPlayers = downPlayers;
-            noticePrint("level.activePlayers was incorrect; correcting.");
+            debugPrint("level.activePlayers was incorrect; correcting.");
         }
         if (level.alivePlayers != alivePlayers) {
             level.alivePlayers = alivePlayers;
             level.downPlayers = downPlayers;
-            noticePrint("level.alivePlayers was incorrect; correcting.");
+            debugPrint("level.alivePlayers was incorrect; correcting.");
         }
     }
 }
