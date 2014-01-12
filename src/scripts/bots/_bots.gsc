@@ -537,79 +537,70 @@ zomMain()
                 // loops through player array once, it calls zomGoTriggered if it
                 // can see the player. If it can't see any players, it does nothing
                 zomWaitToBeTriggered();
-
-            switch(level.zomIdleBehavior) {
-                case "magic":
-                    if (update==5) {
-                        if (level.zomTarget != "") {
-                            if (level.zomTarget == "player_closest") {
-                                ent = self closestTarget();
-                                if (isDefined(ent)) {
-                                    self zomSetTarget(ent.origin);
+                switch(level.zomIdleBehavior) {
+                    case "magic":
+                        if (update==5) {
+                            if (level.zomTarget != "") {
+                                if (level.zomTarget == "player_closest") {
+                                    ent = self closestTarget();
+                                    if (isDefined(ent)) {
+                                        self zomSetTarget(ent.origin);
+                                    }
+                                } else {
+                                    self zomSetTarget(getRandomEntity(level.zomTarget).origin);
                                 }
                             } else {
-                                self zomSetTarget(getRandomEntity(level.zomTarget).origin);
+                                ent = self closestTarget();
+                                if (isdefined(ent)) {self zomSetTarget(ent.origin);}
                             }
+                            update = 0;
                         } else {
-                            ent = self closestTarget();
-                            if (isdefined(ent)) {self zomSetTarget(ent.origin);}
+                            update++;
                         }
-                        update = 0;
-                    } else {
-                        update++;
-                    }
+                        break;
+                } // end switch(level.zomIdleBehavior)
                 break;
-            } // end switch(level.zomIdleBehavior
-
-            break;
-
             case "triggered":
-
                 if ((isDefined(self.bestTarget)) && ((update==10) || (self.bestTarget.isDown))) {  // find new target when current target goes down
-                self.bestTarget = zomGetBestTarget();
-                update = 0;
-            } else {update++;}
-            if (isdefined(self.bestTarget)) {
-                self.lastMemorizedPos = self.bestTarget.origin;
-                if (!checkForBarricade(self.bestTarget.origin)) {
-                    if (distance(self.bestTarget.origin, self.origin) < self.meleeRange) {
-                        self thread zomMoveLockon(self.bestTarget, self.meleeTime, self.meleeSpeed);
+                    self.bestTarget = zomGetBestTarget();
+                    update = 0;
+                } else {update++;}
+                if (isdefined(self.bestTarget)) {
+                    self.lastMemorizedPos = self.bestTarget.origin;
+                    if (!checkForBarricade(self.bestTarget.origin)) {
+                        if (distance(self.bestTarget.origin, self.origin) < self.meleeRange) {
+                            self thread zomMoveLockon(self.bestTarget, self.meleeTime, self.meleeSpeed);
+                            self melee();
+                            //doWait = false;
+                        } else {
+                            zomMovement();
+                            self zomMoveTowards(self.bestTarget.origin);
+                            //doWait = false;
+                        }
+                    } else {
                         self melee();
-                        //doWait = false;
-                    } else {
-                        zomMovement();
-                        self zomMoveTowards(self.bestTarget.origin);
-                        //doWait = false;
                     }
                 } else {
-                    self melee();
+                    self search();
                 }
-            } else {
-                self search();
-            }
-
-            break;
-
+                break;
             case "searching":
-
-            zomWaitToBeTriggered();
-            if (isdefined(self.lastMemorizedPos)) {
-                if (!checkForBarricade(self.lastMemorizedPos)) {
-                    if (distance(self.lastMemorizedPos, self.origin) > 48) {
-                        zomMovement();
-                        self zomMoveTowards(self.lastMemorizedPos);
-                        //doWait = false;
+                zomWaitToBeTriggered();
+                if (isdefined(self.lastMemorizedPos)) {
+                    if (!checkForBarricade(self.lastMemorizedPos)) {
+                        if (distance(self.lastMemorizedPos, self.origin) > 48) {
+                            zomMovement();
+                            self zomMoveTowards(self.lastMemorizedPos);
+                            //doWait = false;
+                        } else {
+                            self.lastMemorizedPos = undefined;
+                        }
                     } else {
-                        self.lastMemorizedPos = undefined;
+                        self melee();
                     }
-                } else {
-                    self melee();
                 }
-            }
-            else {idle();}
-
-            break;
-
+                else {idle();}
+                break;
             case "stunned":
                 wait 1.25;
                 idle();
@@ -738,10 +729,12 @@ zomMoveTowards(target_position)
         if (!isDefined(self.lastAStarWp)) {self.lastAStarWp = -1;}
 
         if (!isDefined(self.myWaypoint)) {
-            self.myWaypoint = nearestWaypoint(self.origin, true, self);
+//             self.myWaypoint = nearestWaypoint(self.origin, true, self);
+            self.myWaypoint = nearestWaypoint(self.origin, false, self);
         }
 
-        targetWp = nearestWaypoint(target_position, true, self.bestTarget);
+//         targetWp = nearestWaypoint(target_position, true, self.bestTarget);
+        targetWp = nearestWaypoint(target_position, false, self.bestTarget);
 
         if (self.myWaypoint < 0) {
             if ((self.myWaypoint == -1) ||  // we never got past this init value
@@ -792,10 +785,14 @@ zomMoveTowards(target_position)
             self.myWaypoint = undefined;
         } else {
             if ((self.lastAStarTargetWp != targetWp) ||     // our target wp has changed since our last A* call
-                (self.myWaypoint != self.lastAStarWp) ||    // our current wp is not the waypoint we were supposed to go to
+//                 (self.myWaypoint != self.lastAStarWp) ||    // our current wp is not the waypoint we were supposed to go to
                 (self.pathNodes.size == 0))                 // we are out of path nodes
             {
                 // invalidate the pathNodes stack and get a fresh stack from A*
+                if (self.lastAStarTargetWp != targetWp) {noticePrint(self.name + ": self.lastAStarTargetWp != targetWp");}
+                if (self.myWaypoint != self.lastAStarWp) {noticePrint(self.name + ": self.myWaypoint != self.lastAStarWp");}
+                if (self.pathNodes.size == 0) {noticePrint(self.name + ": self.pathNodes.size == 0");}
+                noticePrint("A* call (bot, myWaypoint, targetWp): (" + self.name + ", " + self.myWaypoint + ", " + targetWp + ")");
                 self.pathNodes = AStarNew(self.myWaypoint, targetWp);
                 self.lastAStarTargetWp = targetWp;
             } else {
@@ -814,10 +811,12 @@ zomMoveTowards(target_position)
             {
                 // we are close enough to target_position to go directly there, ignoring waypoints
                 moveToPoint(target_position, self.cur_speed);
+                self.isFollowingWaypoints = false;
                 self.underway = false;
                 self.myWaypoint = undefined;
             } else {
                 moveToPoint(level.Wp[nextWp].origin, self.cur_speed);
+                self.isFollowingWaypoints = true;
                 if (distance(level.Wp[nextWp].origin, self.origin) <  64) {
                     self.underway = false;
                     self.myWaypoint = nextWp;
