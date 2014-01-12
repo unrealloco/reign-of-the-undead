@@ -2325,8 +2325,8 @@ devSaveTradespawns()
         x = devExponentialGuard(shop.origin[0]);
         y = devExponentialGuard(shop.origin[1]);
         z = devExponentialGuard(shop.origin[2]);
-        rho = shop.angles[0];
-        phi = shop.angles[1];
+        rho = devExponentialGuard(shop.angles[0]);
+        phi = devExponentialGuard(shop.angles[1]);
 
         logPrint("    level.tradespawns["+i+"] = spawnstruct();  // spec'd for "+type+" shop\n");
         logPrint("    level.tradespawns["+i+"].origin = ("+x+","+y+","+z+");\n");
@@ -2420,8 +2420,8 @@ devSaveWaypoints()
 
         // .angles isn't used by RotU, but we will endeavor to preserve that info
         if (isDefined(level.Wp[i].angles)) {
-            rho = level.Wp[i].angles[0];
-            phi = level.Wp[i].angles[1];
+            rho = devExponentialGuard(level.Wp[i].angles[0]);
+            phi = devExponentialGuard(level.Wp[i].angles[1]);
 
             logPrint("    level.waypoints["+i+"].angles = ("+rho+","+phi+",0);\n");
         }
