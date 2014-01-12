@@ -75,6 +75,12 @@ init()
         }
     }
 
+    // cyclical animations
+    if (isDefined(level.mapAnimations)) {
+        for (i=0; i<level.mapAnimations.size; i++) {
+            thread mapAnimation(level.mapAnimations[i]);
+        }
+    }
 }
 
 blank(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10)
@@ -303,6 +309,44 @@ changeMap(mapname)
         }
     }
 } // End function changeMap()
+
+/**
+ * @brief Continuouly animates a script_brushmodel animation spec'd in a map
+ *
+ * @param animation struct The animation to perform
+ *
+ * @returns nothing
+ * @since RotU 2.2.3
+ */
+mapAnimation(animation)
+{
+    debugPrint("in _maps::mapAnimation()", "fn", level.nonVerbose);
+
+    level endon("game_ended");
+
+    if (animation.type == "linear") {
+        while (1) {
+            for (i=0; i<animation.steps.size; i++) {
+                animation.model moveTo(animation.steps[i].destination, animation.steps[i].time);
+                wait animation.steps[i].time;
+                wait animation.steps[i].delay;
+            }
+            wait animation.delay;
+            if (animation.reversible) {
+                for (i=animation.steps.size - 1; i>=0; i--) {
+                    animation.model moveTo(animation.steps[i].origin, animation.steps[i].time);
+                    wait animation.steps[i].time;
+                    wait animation.steps[i].delay;
+                }
+                wait animation.delay;
+            }
+        }
+    } else if (animation.type == "rotate") {
+        while (1) {
+            /// @todo implement rotating cyclical animations
+        }
+    }
+}
 
 /**
  * @brief Initiates a glide when a player trips the trigger
