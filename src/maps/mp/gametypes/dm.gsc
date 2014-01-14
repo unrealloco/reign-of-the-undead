@@ -38,6 +38,7 @@ main()
 {
     // source the settings the debug system depends on
     initializeDebugSystem();
+    scripts\include\constants::init();
     debugPrint("in dm::main()", "fn", level.lowVerbosity);
 
     if (getDvar("mapname") == "mp_background") {return;} // this isn't required...

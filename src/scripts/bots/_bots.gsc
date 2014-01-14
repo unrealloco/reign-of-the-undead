@@ -45,7 +45,7 @@ init()
 
     precache();
 
-    scripts\include\waypoints::loadWaypoints();
+    scripts\include\waypoints::initializeWaypoints();
 
     if (getDvarInt("use_flexible_slots") != 1) {level.useFlexibleSlots = false;}
     else {level.useFlexibleSlots = true;}

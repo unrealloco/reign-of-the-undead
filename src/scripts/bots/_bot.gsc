@@ -1007,7 +1007,7 @@ pathType(fromWp, toWp)
     if (level.Wp[fromWp].type == "mantle") {
         deltaZ = level.Wp[toWp].origin[2] - level.Wp[fromWp].origin[2];
         distance = distance2D(level.Wp[fromWp].origin, level.Wp[toWp].origin);
-        if ((deltaZ >= 15) && (deltaZ <= level.MANTLE_MAX_Z) && (distance < level.MANTLE_MAX_DISTANCE)) {
+        if ((deltaZ >= level.MANTLE_MIN_Z) && (deltaZ <= level.MANTLE_MAX_Z) && (distance < level.MANTLE_MAX_DISTANCE)) {
             // we only mantle up, never down
             return level.PATH_MANTLE;
         }
@@ -1020,7 +1020,7 @@ pathType(fromWp, toWp)
     } else if (level.Wp[toWp].type == "mantle") {
         deltaZ = abs(level.Wp[toWp].origin[2] - level.Wp[fromWp].origin[2]);
         distance = distance2D(level.Wp[fromWp].origin, level.Wp[toWp].origin);
-        if ((deltaZ >= 15) && (deltaZ <= level.MANTLE_MAX_Z) && (distance < level.MANTLE_MAX_DISTANCE)) {
+        if ((deltaZ >= level.MANTLE_MIN_Z) && (deltaZ <= level.MANTLE_MAX_Z) && (distance < level.MANTLE_MAX_DISTANCE)) {
             // fall off wall/crate towards the mantle waypoint
             return level.PATH_FALL;
         }

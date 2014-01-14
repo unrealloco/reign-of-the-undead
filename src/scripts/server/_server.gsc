@@ -37,10 +37,8 @@ init()
 {
     debugPrint("in _server::init()", "fn", level.nonVerbose);
 
-    scripts\include\constants::init();
-
     // should we use the alternate bot AI under devlopment?
-    level.zombieAiDevelopment = false;
+    level.zombieAiDevelopment = true;
 
     debugPrint("Running debug version of rotu_svr_scripts.iwd.", "val");
     if (level.printFunctionEntryMessages) {

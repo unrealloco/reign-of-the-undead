@@ -36,67 +36,33 @@
 #include scripts\include\utility;
 
 /**
- * @brief Loads internal or external waypoints
+ * @brief Initializes waypoints
  *
  * @returns nothing
  */
-loadWaypoints()
+initializeWaypoints()
 {
-    debugPrint("in waypoints::loadWaypoints()", "fn", level.nonVerbose);
-
-    level.useKdWaypointTree = false;
-
-    if (!isDefined(level.waypointsInvalid)) {level.waypointsInvalid = false;}
+    debugPrint("in waypoints::initializeWaypoints()", "fn", level.nonVerbose);
 
     initStatic(); // initialize my hack to enable static member variables
 
-    level.astarCalls = 0;
-    level.astarDistanceCalls = 0;
-    level.savedAStarCalls = 0;
+    level.useKdWaypointTree = false;
+
+    if (!isDefined(level.Wp)) {
+        // load internal waypoints
+        maps\mp\_umi::loadWaypoints();
+    }
+
+    if (!level.waypointsInvalid) {
+        initKdWaypointTree();
+    }
+
+    if (!isDefined(level.astarCalls)) {level.astarCalls = 0;}
+    if (!isDefined(level.astarDistanceCalls)) {level.astarDistanceCalls = 0;}
+    if (!isDefined(level.savedAStarCalls)) {level.savedAStarCalls = 0;}
 
     // level thread printAStarData();
-
-    if ((isDefined(level.Wp)) && (level.Wp.size > 0)) {
-        // waypoints were already loaded externally, so don't look for internal ones
-
-        // intialize the k-dimensional waypoint tree
-        initKdWaypointTree();
-        loadWaypointLinkDistances();
-        maps\mp\_umi::validateWaypoints();
-
-//         kdNearestVisibleWpTest(5000, true);
-
-        return;
-    }
-
-    level.Wp = [];
-    level.WpCount = 0;
-
-    fileName =  "waypoints/"+ tolower(getdvar("mapname")) + "_wp.csv";
-    level.WpCount = int(TableLookup(fileName, 0, 0, 1));
-    for (i=0; i<level.WpCount; i++) {
-        waypoint = spawnstruct();
-        level.Wp[i] = waypoint;
-        strOrg = TableLookup(fileName, 0, i+1, 1);
-        tokens = strtok(strOrg, " ");
-
-        waypoint.origin = (atof(tokens[0]), atof(tokens[1]), atof(tokens[2]));
-        waypoint.isLinking = false;
-        waypoint.ID = i;
-    }
-    for (iii=0; iii<level.WpCount; iii++) {
-        waypoint = level.Wp[iii];
-        strLnk = TableLookup(fileName, 0, iii+1, 2);
-        tokens = strtok(strLnk, " ");
-        waypoint.linkedCount = tokens.size;
-        for (ii=0; ii<tokens.size; ii++) {
-            waypoint.linked[ii] = level.Wp[atoi(tokens[ii])];
-        }
-    }
-    // intialize the k-dimensional waypoint tree
-    initKdWaypointTree();
-    loadWaypointLinkDistances();
-    maps\mp\_umi::validateWaypoints();
+    // kdNearestVisibleWpTest(5000, true);
 }
 
 /**
@@ -1169,27 +1135,6 @@ nearestVisibleWaypoint(origin, ignoreEntity)
     }
 
     return nearestWp;
-}
-
-/**
- * @brief Pre-compute and save distances between linked waypoints to optimize A*
- * We compute and store each distance twice to minimize the work A* has to do to
- * find the distance
- *
- * @returns nothing
- */
-loadWaypointLinkDistances()
-{
-    if (level.waypointsInvalid) {return;}
-
-    for (i=0; i<level.Wp.size; i++) {
-        if (!isDefined(level.Wp[i].linked)) {
-            continue;
-        }
-        for (j=0; j<level.Wp[i].linked.size; j++) {
-            level.Wp[i].distance[j] = distance(level.Wp[i].origin, level.Wp[level.Wp[i].linked[j].ID].origin);
-        }
-    }
 }
 
 /**

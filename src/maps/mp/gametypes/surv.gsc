@@ -44,6 +44,7 @@ main()
 {
     // source the settings the debug system depends on
     initializeDebugSystem();
+    scripts\include\constants::init();
     debugPrint("in surv::main()", "fn", level.nonVerbose);
 
     // Used to let maps know what mod is trying to load them

@@ -47,6 +47,7 @@ init()
     level.BOT_CLIMB = 2;
 
     level.BOT_MOVE_DISTANCE = 37; // about 18 inches movement resolution
+    level.MANTLE_MIN_Z = 15;
     level.MANTLE_MAX_Z = 85;
     level.MANTLE_MAX_DISTANCE = 50;
 

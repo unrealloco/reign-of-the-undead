@@ -1091,21 +1091,79 @@ convertToNativeWaypoints()
 {
     debugPrint("in _umi::convertToNativeWaypoints()", "fn", level.lowVerbosity);
 
-    if ((isDefined(level.WpCount)) && (level.WpCount > 0)) {
-        noticePrint("Map: Native waypoints are already loaded, nothing to convert.");
-        return;
+    loadWaypoints();
+}
+
+loadWaypoints()
+{
+    debugPrint("in _umi::loadWaypoints()", "fn", level.lowVerbosity);
+
+    waypointsLoaded = false;
+
+    if (isDefined(level.waypoints)) {
+        // load external waypoints
+        waypointsLoaded = loadExternalWaypoints();
     }
+    if (!waypointsLoaded) {
+        // load internal waypoints
+        waypointsLoaded = loadInternalWaypoints();
+    }
+
+    if (waypointsLoaded) {
+        // load distances, validate, kd-tree
+        loadWaypointLinkDistances();
+        level.waypointsInvalid = false;
+        validateWaypoints();
+    } else {
+        level.waypointsInvalid = true;
+    }
+}
+
+loadInternalWaypoints()
+{
+    debugPrint("in _umi::loadInternalWaypoints()", "fn", level.lowVerbosity);
+
+    level.Wp = [];
+    level.WpCount = 0;
+
     fileName =  "waypoints/"+ tolower(getdvar("mapname")) + "_wp.csv";
     testCount = int(TableLookup(fileName, 0, 0, 1));
     if ((isDefined(testCount)) && (testCount > 0)) {
-        if ((isDefined(level.preferBtdWaypoints)) && (!level.preferBtdWaypoints)) {
-            noticePrint("Map: Native waypoints will be loaded from the fast file, nothing to convert.");
-            return;
+        level.WpCount = testCount;
+        for (i=0; i<level.WpCount; i++) {
+            waypoint = spawnstruct();
+            level.Wp[i] = waypoint;
+            strOrigin = TableLookup(fileName, 0, i+1, 1);
+            tokens = strtok(strOrigin, " ");
+
+            waypoint.origin = (atof(tokens[0]), atof(tokens[1]), atof(tokens[2]));
+            waypoint.isLinking = false;
+            waypoint.ID = i;
+            waypoint.type = "stand";
         }
+        for (i=0; i<level.WpCount; i++) {
+            waypoint = level.Wp[i];
+            strLnk = TableLookup(fileName, 0, i+1, 2);
+            tokens = strtok(strLnk, " ");
+            waypoint.linkedCount = tokens.size;
+            for (j=0; j<tokens.size; j++) {
+                waypoint.linked[j] = level.Wp[atoi(tokens[j])];
+            }
+        }
+        return true;
+    } else {
+        errorPrint("Map: No internal waypoints found!");
+        return false;
     }
+}
+
+loadExternalWaypoints()
+{
+    debugPrint("in _umi::loadExternalWaypoints()", "fn", level.lowVerbosity);
+
     if (level.waypoints.size == 0) {
-        errorPrint("Map: No waypoints loaded in level.waypoints to convert.");
-        return;
+        errorPrint("Map: No external waypoints found!");
+        return false;
     }
 
     level.Wp = [];
@@ -1121,12 +1179,10 @@ convertToNativeWaypoints()
         waypoint.isLinking = false;
         waypoint.ID = i;
 
-        // RotU doesn't use .type, but read it in so we can preserve the info
-        // for _umiEditor::devSaveWaypoints
         if (isDefined(level.waypoints[i].type)) { // stand, jump, mantle, climb/clamp
             waypoint.type = level.waypoints[i].type;
         } else if (isDefined(level.waypoints[i].clamp) && (level.waypoints[i].clamp)) {
-            waypoint.type = "clamp";
+            waypoint.type = "clamped";
         } else {
             waypoint.type = "stand";
         }
@@ -1136,7 +1192,7 @@ convertToNativeWaypoints()
             waypoint.angles = level.waypoints[i].angles;
         }
 
-        // used for ladders
+        // used for bot angles while climbing up/down ladders
         if (isDefined(level.waypoints[i].upAngles)) {
             waypoint.upAngles = level.waypoints[i].upAngles;
         }
@@ -1154,16 +1210,36 @@ convertToNativeWaypoints()
     for (i=0; i<level.WpCount; i++) {
         waypoint = level.Wp[i];
         waypoint.linkedCount = level.waypoints[i].childCount;
-        //         noticePrint("waypoint: " + i + " origin: " + waypoint.origin);
         for (j=0; j<waypoint.linkedCount; j++) {
             waypoint.linked[j] = level.Wp[level.waypoints[i].children[j]];
-            //             noticePrint("waypoint: " + i + " is linked to waypoint " + level.waypoints[i].children[j]);
         }
     }
 
-    // Now that the ROZO waypoints are in memory in RotU format, we can free the
-    // memory used by the ROZO waypoints
+    // Now that the external waypoints are in memory in RotU format, we can free the
+    // memory used by the intial loading of the waypoints
     level.waypoints = [];
+    return true;
+}
+
+/**
+ * @brief Pre-compute and save distances between linked waypoints to optimize A*
+ * We compute and store each distance twice to minimize the work A* has to do to
+ * find the distance
+ *
+ * @returns nothing
+ */
+loadWaypointLinkDistances()
+{
+    debugPrint("in _umi::loadWaypointLinkDistances()", "fn", level.nonVerbose);
+
+    for (i=0; i<level.Wp.size; i++) {
+        if (!isDefined(level.Wp[i].linked)) {
+            continue;
+        }
+        for (j=0; j<level.Wp[i].linked.size; j++) {
+            level.Wp[i].distance[j] = distance(level.Wp[i].origin, level.Wp[level.Wp[i].linked[j].ID].origin);
+        }
+    }
 }
 
 /**
@@ -1180,6 +1256,10 @@ convertToNativeWaypoints()
 validateWaypoints()
 {
     debugPrint("in _umi::validateWaypoints()", "fn", level.nonVerbose);
+
+    if (!isDefined(level.astarCalls)) {level.astarCalls = 0;}
+    if (!isDefined(level.astarDistanceCalls)) {level.astarDistanceCalls = 0;}
+    if (!isDefined(level.savedAStarCalls)) {level.savedAStarCalls = 0;}
 
     visited = [];
     unvisited = [];
@@ -1234,7 +1314,7 @@ validateWaypoints()
     }
 
     if (count == 150) {
-        warnPrint("Waypoint validation was stopped for performace reasons before it finished.");
+        warnPrint("Waypoint validation was stopped for performance reasons before it finished.");
         warnPrint("There may be invalid waypoints that aren't noted.");
     }
     fixedWaypoints = false;
@@ -1257,8 +1337,69 @@ validateWaypoints()
             noticePrint("RotU sucessfully deleted unlinked waypoints from memory, but the waypoints should still be fixed!");
         }
     } else {
-        noticePrint("Waypoints PASSED validation!");
+        noticePrint("Waypoints PASSED critical validation tests!");
     }
+    waypointQuality();
+}
+
+waypointQuality()
+{
+    debugPrint("in _umi::waypointQuality()", "fn", level.nonVerbose);
+
+    for (i=0; i<level.Wp.size; i++) {
+        // check waypoint types
+        if (!isWaypointTypeValid(level.Wp[i].type)) {
+            type = level.Wp[i].type;
+            level.Wp[i].type = "stand";
+            warnPrint("Waypoint " + i + " had unrecognized type: " + type + ". RotU set type to 'stand'.");
+        }
+        // check path types
+        if (level.Wp[i].type == "mantle") {
+            foundPath = false;
+            for (j=0; j<level.Wp[i].linked.size; j++) {
+                pathType = scripts\bots\_bot::pathType(i, level.Wp[i].linked[j].ID);
+                if (pathType == level.PATH_MANTLE) {
+                    foundPath = true;
+                    break;
+                }
+            }
+            if (!foundPath) {
+                warnPrint("Waypoint " + i + " has type 'mantle', but RotU did not find a valid mantle path.");
+                noticePrint("The mantle waypoint must be linked to the higher destination waypoint.");
+                noticePrint("The destination waypoint must be between " + level.MANTLE_MIN_Z + " and " + level.MANTLE_MAX_Z + " units above the mantle waypoint.");
+                noticePrint("The 2-D distance between the mantle waypoint and the destination waypoint must be less than " + level.MANTLE_MAX_DISTANCE + " units.");
+            }
+        } else if (level.Wp[i].type == "teleport") {
+            foundPath = false;
+            for (j=0; j<level.Wp[i].linked.size; j++) {
+                pathType = scripts\bots\_bot::pathType(i, level.Wp[i].linked[j].ID);
+                if (pathType == level.PATH_TELEPORT) {
+                    foundPath = true;
+                    break;
+                }
+            }
+            if (!foundPath) {
+                warnPrint("Waypoint " + i + " has type 'teleport', but RotU did not find a valid teleport path.");
+            }
+        }
+    }
+}
+
+isWaypointTypeValid(type)
+{
+    debugPrint("in _umi::isWaypointTypeValid()", "fn", level.nonVerbose);
+
+    switch(type) {
+        case "stand":       // fall through
+        case "jump":        // fall through
+        case "mantle":      // fall through
+        case "ladder":      // fall through
+        case "fall":        // fall through
+        case "clamped":     // fall through
+        case "teleport":
+            return true;
+    }
+    return false;
 }
 
 deleteUnlinkedWaypoint(waypointId)
@@ -1895,15 +2036,6 @@ initSetup()
  * @returns nothing
  */
 initBarricades()
-{}
-
-/**
- * @brief A hook for a function to load waypoints
- * @reserved
- *
- * @returns nothing
- */
-loadWaypoints()
 {}
 
 /**
