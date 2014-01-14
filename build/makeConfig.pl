@@ -13,7 +13,7 @@ uploadPath  => 'C:\Users\Mark\Desktop\rotudevUpload',
 releasePath  => 'C:\Users\Mark\Desktop',
 
 # The full path to a your subversion working copy src folder. Only needed to package releases
-workPath  => 'E:\work\rotu\trunk\src',
+workPath  => 'E:\work\rotu\branches\rotu-2.2.2\src',
 
 # If you add/remove config files, update this array so makeMod.pl works properly!
 configFiles => ['admin.cfg', 'damage.cfg', 'didyouknow.cfg', 'easy.cfg',
