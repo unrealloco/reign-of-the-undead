@@ -1,7 +1,7 @@
 /******************************************************************************
     Reign of the Undead, v2.x
 
-    Copyright (c) 2010-2014 Reign of the Undead Team.
+    Copyright (c) 2010-2013 Reign of the Undead Team.
     See AUTHORS.txt for a listing.
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -134,46 +134,43 @@ dvarDefault(dvar, def)
     if (getdvar(dvar) == "") {setdvar(dvar,def);}
 }
 
-/**
- * @brief Gets a random zombie spawnpoint
- *
- * @returns struct containing the spawnpoint .origin and .angles
- */
-randomSpawnpoint()
+addSpawn(targetname, priority)
 {
-    debugPrint("in _survival::randomSpawnpoint()", "fn", level.absurdVerbosity);
+    debugPrint("in _survival::addSpawn()", "fn", level.nonVerbose);
 
-    // force using a single spawnpoint for AI development
-    // id = level.botSpawnpointsQueue[level.nextBotSpawnpointPointer];
-    // iPrintLnBold("using spawnpoint ID: " + id);
-    // spawnpoint = level.botSpawnpoints[51];
-    // return spawnpoint;
-    spawnpoint = level.botSpawnpoints[level.botSpawnpointsQueue[level.nextBotSpawnpointPointer]];
-    level.nextBotSpawnpointPointer++;
-    if (level.nextBotSpawnpointPointer == level.botSpawnpointsQueue.size) {
-        level.nextBotSpawnpointPointer = 0;
-    }
-    return spawnpoint;
-}
+    if (!isdefined(level.survSpawns)) {return -1;}
 
-/**
- * @brief Chooses a spawnpoint for soul and ground spawned zombies
- *
- * @returns struct The spawnpoint to use
- */
-specialSpawn()
-{
-    debugPrint("in _survival::specialSpawn()", "fn", level.nonVerbose);
+    if (!isdefined(priority)) {priority = 1;}
 
-    // do soul and ground spawns at random waypoints if the map has enough waypoints,
-    // otherwise just use a random spawnpoint
-    if (level.wp.size > 9) {
-        // actually returns a wp struct, not a spawnpoint
-        return level.wp[randomint(level.wp.size)]; /// @todo use a filled random queue here?
-    } else {
-        return randomSpawnpoint();
+    spawns = getentarray(targetname, "targetname");
+
+    if (spawns.size > 0) {
+        index = level.survSpawns.size;
+        level.survSpawnsPriority[index] = priority;
+        level.survSpawnsTotalPriority = level.survSpawnsTotalPriority + priority;
+        level.survSpawns[index] = targetname;
     }
 }
+
+getRandomSpawn()
+{
+    debugPrint("in _survival::getRandomSpawn()", "fn", level.absurdVerbosity);
+
+    spawn = undefined;
+    random = randomint(level.survSpawnsTotalPriority);
+    for (i=0; i<level.survSpawns.size; i++) {
+        random = random - level.survSpawnsPriority[i];
+        if (random < 0) {
+            spawn = level.survSpawns[i];
+            break;
+        }
+    }
+    if (isDefined(spawn)) {
+        array = getentarray(spawn, "targetname");
+        return array[randomint(array.size)];
+    }
+}
+
 
 /**
  * @brief Calculates the number of zombies in a wave based on the wave system
@@ -512,9 +509,6 @@ startRegularWave()
             // we want to stop playing this wave, so don't create any more zombies
             break;
         }
-        if (level.zombieAiDevelopment) {
-            while (level.botsAlive > 0) {wait 2;} // only one bot at a time for dev purposes
-        }
         if (level.botsAlive<level.dif_zomMax) {
             // Make every nth zombie a special zombie
             modulo = i % level.nthZombieIsSpecial;
@@ -680,9 +674,6 @@ startSpecialWave(type)
             if ((level.waveType == "boss") || (level.waveType == "many_bosses")) {level.bossOverlay fadeout(1);}
             break;
         }
-        if (level.zombieAiDevelopment) {
-            while (level.botsAlive > 0) {wait 2;} // only one bot at a time for dev purposes
-        }
         if (level.botsAlive<level.dif_zomMax) {
             if (level.waveType == "inferno") {
                 // type is a random burning, burning_dog, or burning_tank
@@ -833,7 +824,6 @@ killBuggedZombies()
     level endon("wave_finished");
 
     if (!level.dvar["surv_find_stuck"]) {return;}
-    if (level.zombieAiDevelopment) {return;}
 
     tolerance = 0;
     while(1) {
@@ -861,7 +851,6 @@ killBuggedZombies()
                 level.bots[i] suicide();
                 wait 0.05;
             }
-            wait .1;
         }
     }
 }
@@ -925,34 +914,46 @@ spawnZombie(override, spawntype)
 
     if (!isdefined(spawntype)) {spawntype = 0;}
 
-    if (spawntype==1) { // soul spawn
-        bot = scripts\bots\_bots::availableBot();
-        if (!isDefined(bot)) {return undefined;}
+    if (spawntype==1) {
+        bot = scripts\bots\_bots::getAvailableBot();
+        if (!isdefined(bot)) {return undefined;}
 
         bot.hasSpawned = true;
 
         type = override;
-        spawn = specialSpawn();
+        // Some legacy maps (e.g. mp_surv_overrun) seem to not use waypoints, so level.wp.size is zero.
+        // In these cases, we just get a random spawn point
+        if (level.wp.size == 0) {
+            spawn = getRandomSpawn();
+        } else {
+            spawn = level.wp[randomint(level.wp.size)];
+        }
         thread soulSpawn(type, spawn, bot);
         return bot;
-    } else if (spawntype==2) { // ground spawn
-        bot = scripts\bots\_bots::availableBot();
-        if (!isDefined(bot)) {return undefined;}
+    } else if (spawntype==2) {
+        bot = scripts\bots\_bots::getAvailableBot();
+        if (!isdefined(bot)) {return undefined;}
 
         bot.hasSpawned = true;
 
         type = override;
-        spawn = specialSpawn();
+        // Some legacy maps (e.g. mp_surv_overrun) seem to not use waypoints, so level.wp.size is zero.
+        // In these cases, we just get a random spawn point
+        if (level.wp.size == 0) {
+            spawn = getRandomSpawn();
+        } else {
+            spawn = level.wp[randomint(level.wp.size)];
+        }
         thread groundSpawn(type, spawn, bot);
         return bot;
     } else {
         if (isdefined(override)) {
             type = override;
-            spawn = randomSpawnpoint();
+            spawn = getRandomSpawn();
             return scripts\bots\_bots::spawnZombie(type, spawn);
         } else {
             type = scripts\gamemodes\_gamemodes::getRandomType();
-            spawn = randomSpawnpoint();
+            spawn = getRandomSpawn();
             return scripts\bots\_bots::spawnZombie(type, spawn);
         }
     }

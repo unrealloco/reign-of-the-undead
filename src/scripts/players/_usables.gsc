@@ -1,7 +1,7 @@
 /******************************************************************************
     Reign of the Undead, v2.x
 
-    Copyright (c) 2010-2014 Reign of the Undead Team.
+    Copyright (c) 2010-2013 Reign of the Undead Team.
     See AUTHORS.txt for a listing.
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -66,7 +66,7 @@ addUsable(ent, type, hintstring, distance)
     ent.occupied = false;
     ent.type = type;
     ent.hintstring = hintstring;
-    if (isDefined(distance)) {ent.distance = distance;}
+    if (isdefined(distance)) {ent.distance = distance;}
     else {ent.distance = 96;}
 
     if (ent.type == "revive") {
@@ -368,13 +368,16 @@ usableUse()
     debugPrint("in _usables::usableUse()", "fn", level.lowVerbosity);
 
     self setclientdvar("ui_hintstring", "");
-    if (isDefined(self.curEnt)) {
-        if (!canUseObj(self.curEnt)) {
+    if (isdefined(self.curEnt))
+    {
+        if (!canUseObj(self.curEnt))
+        {
             self usableAbort();
             return;
         }
         self notify("used_usable");
-        switch (self.curEnt.type) {
+        switch (self.curEnt.type)
+        {
             case "revive":
                 self.curEnt.occupied = true;
                 self.isBusy = true;
@@ -383,7 +386,7 @@ usableUse()
                 self disableWeapons();
                 self progressBar(self.revivetime);
                 self thread reviveInTime(self.revivetime, self.curEnt);
-                break;
+            break;
             case "infected":
                 if (!self.curEnt.isDown) {
                     iprintln("^2"+self.curEnt.name+"^2's infection has been cured by " + self.name);
@@ -391,73 +394,87 @@ usableUse()
                     self scripts\players\_players::incUpgradePoints(20*level.dvar["game_rewardscale"]);
                     self thread scripts\players\_rank::giveRankXP("revive");
                 }
-                break;
+
+            break;
             case "weaponpickup":
                 self scripts\players\_weapons::swapWeapons(self.curEnt.wep_type, self.curEnt.myWeapon);
-                break;
+            break;
             case "objective":
                 level notify("obj_used"+self.curEnt.usable_obj_id);
-                break;
+            break;
             case "extras": // shop
                 self setclientdvar("ui_points", self.points);
                 self closeMenu();
                 self closeInGameMenu();
                 self openMenu(game["menu_extras"]);
-                break;
+            break;
             case "teleporter":
                 if (level.teleporter.size > 1) {
                     index = randomint(level.teleporter.size-1);
                     ent = level.teleporter[index];
-                    if (ent == self.curEnt) {ent = level.teleporter[index+1];}
+                    if (ent == self.curEnt)
+                    ent = level.teleporter[index+1];
                     self thread scripts\players\_teleporter::teleOut(self.curEnt, ent.origin, ent.angles);
                 } else {
                     ent = getRandomTdmSpawn();
                     self thread scripts\players\_teleporter::teleOut(self.curEnt, ent.origin, ent.angles);
                 }
-                break;
+
+            break;
             case "ammobox": // weapons crate
-                if (level.ammoStockType == "ammo") {
+                if (level.ammoStockType == "ammo")
+                {
                     self.isBusy = true;
                     self freezecontrols(1);
                     self disableWeapons();
                     self progressBar(self.curEnt.loadtime);
                     self thread ammoInTime(self.curEnt.loadtime);
                 }
-                if (level.ammoStockType == "upgrade") {
+                if (level.ammoStockType == "upgrade")
+                {
                     wep = self getcurrentWeapon();
-                    if (wep == self.primary) {scripts\gamemodes\_upgradables::doUpgrade("primary");}
-                    if (wep == self.secondary) {scripts\gamemodes\_upgradables::doUpgrade("secondary");}
-                    if (wep == self.extra) {scripts\gamemodes\_upgradables::doUpgrade("extra");}
+                    if (wep == self.primary)
+                    scripts\gamemodes\_upgradables::doUpgrade("primary");
+                    if (wep == self.secondary)
+                    scripts\gamemodes\_upgradables::doUpgrade("secondary");
+                    if (wep == self.extra)
+                    scripts\gamemodes\_upgradables::doUpgrade("extra");
                 }
-                if (level.ammoStockType == "weapon") {
-                    if (!isDefined(self.box_weapon)) {
-                        if (self.points >= level.dvar["surv_waw_costs"]) {
-                            if (level.dvar["surv_waw_alwayspay"]) {
-                                self scripts\players\_players::incUpgradePoints(-1*level.dvar["surv_waw_costs"]);
-                            }
+                if (level.ammoStockType == "weapon")
+                {
+                    if (!isdefined( self.box_weapon))
+                    {
+                        if (self.points >= level.dvar["surv_waw_costs"])
+                        {
+                            if (level.dvar["surv_waw_alwayspay"])
+                            self scripts\players\_players::incUpgradePoints(-1*level.dvar["surv_waw_costs"]);
                             scripts\gamemodes\_mysterybox::mystery_box(self.curEnt);
                         }
-                    } else {
-                        if (self.box_weapon.done) {
+                    }
+                    else
+                    {
+                        if (self.box_weapon.done)
+                        {
                             self scripts\players\_weapons::swapWeapons(self.box_weapon.slot, self.box_weapon.weaponName);
                             self.box_weapon delete();
-                            if (!level.dvar["surv_waw_alwayspay"]) {
-                                self scripts\players\_players::incUpgradePoints(-1*level.dvar["surv_waw_costs"]);
-                            }
+                            if (!level.dvar["surv_waw_alwayspay"])
+                            self scripts\players\_players::incUpgradePoints(-1*level.dvar["surv_waw_costs"]);
+
                         }
                     }
+
                 }
-                break;
+            break;
             case "barricade":
                 self.isBusy = true;
                 self freezecontrols(1);
                 self disableWeapons();
                 self progressBar(1);
                 self thread restoreBarricadeInTime(1);
-                break;
+            break;
             case "turret":
                 self scripts\players\_turrets::moveDefenseTurret(self.curEnt);
-                break;
+            break;
             case "equipmentShop":
                 self maps\mp\_umiEditor::devMoveEquipmentShop(self.curEnt);
                 break;
@@ -466,25 +483,6 @@ usableUse()
                 break;
             case "waypoint":
                 self maps\mp\_umiEditor::devMoveWaypoint(self.curEnt);
-                break;
-            case "trap":
-                trap = undefined;
-                for (i=0; i<level.mapTraps.size; i++) {
-                    if (level.mapTraps[i].trigger == self.curEnt) {
-                        trap = level.mapTraps[i];
-                        break;
-                    }
-                }
-                if (self.points >= trap.cost + 1500) { // 1500 holdback for Heal and Cure
-                    if (!trap.isBeingUsed) {
-                        self scripts\players\_players::incUpgradePoints(-1 * trap.cost);
-                        self thread scripts\players\_traps::startTrap(trap);
-                    } else {
-                        self iPrintLnBold("This trap is already in use!");
-                    }
-                } else {
-                    self iPrintLnBold("You can not afford it! Cost = ^1" + trap.cost + " + 1500^7");
-                }
                 break;
         }
     }

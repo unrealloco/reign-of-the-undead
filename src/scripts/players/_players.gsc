@@ -1,7 +1,7 @@
 /******************************************************************************
     Reign of the Undead, v2.x
 
-    Copyright (c) 2010-2014 Reign of the Undead Team.
+    Copyright (c) 2010-2013 Reign of the Undead Team.
     See AUTHORS.txt for a listing.
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -67,7 +67,6 @@ init()
     thread scripts\players\_barricades::init();
     thread scripts\players\_turrets::init();
     thread scripts\players\_teleporter::init();
-    thread scripts\players\_traps::init();
     thread scripts\players\_rank::init();
     //thread scripts\players\_challenges::buildChallegeInfo();
     thread uav();

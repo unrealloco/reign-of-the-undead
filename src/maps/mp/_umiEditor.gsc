@@ -1,7 +1,7 @@
 /******************************************************************************
     Reign of the Undead, v2.x
 
-    Copyright (c) 2010-2014 Reign of the Undead Team.
+    Copyright (c) 2010-2013 Reign of the Undead Team.
     See AUTHORS.txt for a listing.
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -157,9 +157,6 @@ watchDevelopmentMenuResponses()
         case "dev_cycle_waypoint_type":
             devCycleWaypointType();
             break;
-        case "dev_set_ladder_angles":
-            devSetLadderAngles();
-            break;
         case "dev_save_waypoints":
             devSaveWaypoints();
             break;
@@ -278,18 +275,9 @@ devCycleWaypointType()
             newType = "mantle";
             break;
         case "mantle":
-            newType = "ladder";
+            newType = "climb";
             break;
-        case "ladder":
-            newType = "fall";
-            break;
-        case "fall":
-            newType = "clamped";
-            break;
-        case "clamped":
-            newType = "teleport";
-            break;
-        case "teleport":
+        case "climb":
             newType = "undefined";
             break;
         default:
@@ -300,71 +288,6 @@ devCycleWaypointType()
     level.Wp[level.currentWaypoint].type = newType;
     level.waypointTypeHud setText(newType);
     level.devPlayer setClientDvar("dev_waypoint_type", newType);
-}
-
-/**
- * @brief Sets the angle for bots on ladders
- *
- * @returns nothing
- * @since RotU 2.2.3
- */
-devSetLadderAngles()
-{
-    debugPrint("in _umiEditor::devSetLadderAngles()", "fn", level.nonVerbose);
-
-    // bail if we are in waypoint mode
-    if (level.giveWaypointMode) {return;}
-
-    if (!(level.devPlayer isOnLadder())) {
-        iPrintLnBold("You must be on the ladder!");
-        return;
-    }
-
-    angles = level.devPlayer getPlayerAngles();
-    wp = level.currentWaypoint;
-    ladderBottom = -1;
-    ladderTop = -1;
-    // find all of the ladder type waypoints wp is linked to
-    wps = [];
-    for (i=0; i<level.Wp[wp].linkedCount; i++) {
-        id = level.Wp[wp].linked[i].ID;
-        if (level.Wp[id].type == "ladder") {
-            wps[wps.size] = id;
-        }
-    }
-    if (level.Wp[wp].origin[2] < level.devPlayer.origin[2]) {
-        ladderBottom = wp;
-        // find ladder top
-        for (i=0; i<wps.size; i++) {
-            if (level.Wp[wps[i]].origin[2] > level.Wp[wp].origin[2]) {
-                ladderTop = wps[i];
-                break;
-            }
-        }
-    } else {
-        ladderTop = wp;
-        // find ladder bottom
-        for (i=0; i<wps.size; i++) {
-            if (level.Wp[wps[i]].origin[2] < level.Wp[wp].origin[2]) {
-                ladderBottom = wps[i];
-                break;
-            }
-        }
-    }
-    if (ladderBottom == -1) {
-        iPrintLnBold("Failed to find ladderBottom!");
-    }
-    if (ladderTop == -1) {
-        iPrintLnBold("Failed to find ladderTop!");
-    }
-
-    if ((ladderBottom == -1) || (ladderTop == -1)) {
-        return;
-    } else {
-        level.Wp[ladderBottom].upAngles = angles;
-        level.Wp[ladderTop].downAngles = angles;
-        iPrintLnBold("Ladder angles set!");
-    }
 }
 
 /**
@@ -1968,12 +1891,12 @@ devEmplaceEquipmentShop()
             phi = scripts\players\_turrets::angleBetweenTwoVectors(k, kPrime*(0,1,1));
             self.carryObj.angles = vectorToAngles(iPrime);
 
-            // now align the soda machine's y-axis with the computed y-axis
+            // now align the crate's y-axis with the computed y-axis
             z = anglesToUp(self.carryObj.angles);
             phi = scripts\players\_turrets::angleBetweenTwoVectors(z, kPrime);
             self.carryObj.angles = self.carryObj.angles + (0,0,phi); // phi rotates about x-axis
 
-            // ensure we rotated the soda machine properly to align the y-axis
+            // ensure we rotated the crate properly to align the y-axis
             y = anglesToRight(self.carryObj.angles);
             beta = scripts\players\_turrets::angleBetweenTwoVectors(y, jPrime);
             if (beta > phi) {
@@ -2484,23 +2407,6 @@ devSaveWaypoints()
         // .type isn't used by RotU, but we will endeavor to preserve that info
         if (isDefined(level.Wp[i].type)) {
             logPrint("    level.waypoints["+i+"].type = \""+level.Wp[i].type+"\";\n");
-        }
-
-        // .upAngles and .downAngles are used for ladders in new AI
-        if (isDefined(level.Wp[i].upAngles)) {
-            rho = devExponentialGuard(level.Wp[i].upAngles[0]);
-            theta = devExponentialGuard(level.Wp[i].upAngles[1]);
-            phi = devExponentialGuard(level.Wp[i].upAngles[2]);
-
-            logPrint("    level.waypoints["+i+"].upAngles = ("+rho+","+theta+","+phi+");\n");
-        }
-
-        if (isDefined(level.Wp[i].downAngles)) {
-            rho = devExponentialGuard(level.Wp[i].downAngles[0]);
-            theta = devExponentialGuard(level.Wp[i].downAngles[1]);
-            phi = devExponentialGuard(level.Wp[i].downAngles[2]);
-
-            logPrint("    level.waypoints["+i+"].downAngles = ("+rho+","+theta+","+phi+");\n");
         }
 
         if (level.Wp[i].linkedCount == 0) {

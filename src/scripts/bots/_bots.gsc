@@ -1,7 +1,7 @@
 /******************************************************************************
     Reign of the Undead, v2.x
 
-    Copyright (c) 2010-2014 Reign of the Undead Team.
+    Copyright (c) 2010-2013 Reign of the Undead Team.
     See AUTHORS.txt for a listing.
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -35,8 +35,6 @@
 #include scripts\include\entities;
 #include scripts\include\physics;
 #include scripts\include\hud;
-
-#include scripts\bots\_bot;
 #include scripts\include\utility;
 
 init()
@@ -45,29 +43,14 @@ init()
 
     precache();
 
-    scripts\include\waypoints::loadWaypoints();
-
-    if (getDvarInt("use_flexible_slots") != 1) {level.useFlexibleSlots = false;}
-    else {level.useFlexibleSlots = true;}
-
-    // temp disable flexible slot system until we get it working as well as possible.
-    // There are unresolvable issues where we can't reconnect a bot that was kicked
-    // unless there has been a full server restart.  This means we can remove bots
-    // at will, but we are severely limited in adding them back in.
-    level.useFlexibleSlots = false;
+    loadWaypoints();
 
     level.bots = [];
-    level.availableBots = [];           // stack
-
-    level.botSpawnpointsQueue = [];     // filled circular queue
-    level.nextBotSpawnpointPointer = 0; // pointer to the 'next' position in botSpawnpointsQueue
-    level.botSpawnpoints = [];          // bot spawnpoints. data in botSpawnpointsQueue is index of spawnpoint in this array
-
     level.botsAlive = 0;
     level.zomInterval = .2;
     level.zomSpeedScale = .2/level.zomInterval;
     level.zomPreference = 64 * 64;
-    level.zombieSightDistance = 2048;
+    level.zombieSight = 2048;
     level.zomIdleBehavior = "";
     level.zomTarget = "player_closest";
     level.loadBots = 1;
@@ -78,19 +61,13 @@ init()
 
 
     wait 1;
-    if (level.loadBots) {
-        // this is a server restart, so create bots
-        instantiateBots(level.dvar["bot_count"]);
-    } else {
-        // this is a map restart, so existing bots will reconnect
-        if (level.useFlexibleSlots) {resetFlexibleSlots();}
-    }
+    if (level.loadBots) {loadBots(level.dvar["bot_count"]);}
 
     scripts\bots\_types::initZomTypes();
+
     scripts\bots\_types::initZomModels();
 
     level.botsLoaded = true;
-    thread monitorBotSlots();
 }
 
 
@@ -98,238 +75,127 @@ precache()
 {
     debugPrint("in _bots::precache()", "fn", level.nonVerbose);
 
-    // precache the weapons used for animations
-    precacheItem("bot_zombie_walk_mp");
-    precacheItem("bot_zombie_stand_mp");
-    precacheItem("bot_zombie_run_mp");
-    precacheItem("bot_zombie_melee_mp");
-    precacheItem("bot_dog_idle_mp");
-    precacheItem("bot_dog_run_mp");
-    precacheItem("defaultweapon_mp");
+    // weapons used for animations
+    precacheitem("bot_zombie_walk_mp");
+    precacheitem("bot_zombie_stand_mp");
+    precacheitem("bot_zombie_run_mp");
+    precacheitem("bot_zombie_melee_mp");
+    precacheitem("bot_dog_idle_mp");
+    precacheitem("bot_dog_run_mp");
+    precacheitem("defaultweapon_mp");
 
-    // precache the xmodels we use for zombies
-    precacheModel("tag_origin");
-    precacheModel("izmb_zombie1_body");
-    precacheModel("izmb_zombie2_body");
-    precacheModel("izmb_zombie2_head");
-    precacheModel("izmb_zombie3");
-    precacheModel("body_complete_sp_zakhaevs_son");
-    precacheModel("bo_quad");
-    precacheModel("cyclops");
-    precacheModel("body_complete_sp_vip");
-    precacheModel("body_complete_sp_russian_farmer");
-    precacheModel("german_sheperd_dog");
-    precacheModel("body_hellknight");
-    precacheModel("cyclops");
+    /*precachemodel("body_sp_russian_loyalist_a_dead");
+    precachemodel("body_sp_russian_loyalist_b_dead");
+    precachemodel("body_sp_russian_loyalist_c_dead");
+    precachemodel("body_sp_russian_loyalist_d_dead");*/
 
-    // precache the shellshocks we use
-    precacheShellShock("boss");
-    precacheShellShock("toxic_gas_mp");
+    precachemodel("izmb_zombie1_body");
+    precachemodel("izmb_zombie2_body");
+    precachemodel("izmb_zombie2_head");
+    precachemodel("izmb_zombie3");
+    precachemodel("body_complete_sp_zakhaevs_son");
 
-    // load the fx we use for zombies into memory
-    level.explodeFX     = loadFx("explosions/pyromaniac");
-    level.burningFX     = loadFx("fire/firelp_med_pm");
-    level.burningDogFX  = loadFx("fire/firelp_small_pm_rotu");
-    level.toxicFX       = loadFx("misc/toxic_gas");
-    level.soulFX        = loadFx("misc/soul");
-    level.goundSpawnFX  = loadFx("misc/ground_rising");
-    level.soulspawnFX   = loadFx("misc/soulspawn");
+    precachemodel("bo_quad");
+
+    precachemodel("cyclops");
+    //precachemodel("zombie_wolf");
+
+    precachemodel("body_complete_sp_vip");
+    precachemodel("body_complete_sp_russian_farmer");
+
+    precachemodel("tag_origin");
+
+    precachemodel("german_sheperd_dog");
+    precachemodel("body_hellknight");
+    precachemodel("cyclops");
+
+    //PreCacheShellShock("zombiedamage");
+    preCacheShellShock("boss");
+    precacheshellshock("toxic_gas_mp");
+
+    level.burningFX = loadfx("fire/firelp_med_pm");
+    level.burningDogFX = loadfx("fire/firelp_small_pm_rotu");
+    level.toxicFX = loadfx("misc/toxic_gas");
+    level.explodeFX = Loadfx("explosions/pyromaniac");
+    level.soulFX = loadfx("misc/soul");
+    level.goundSpawnFX = loadfx("misc/ground_rising");
+    level.soulspawnFX = loadfx("misc/soulspawn");
 }
 
-/**
- * @brief Instantiates the requested number of bots
- *
- * @param botCount integer The number of bots to create
- *
- * @returns nothing
- */
-instantiateBots(botCount)
+loadBots(amount)
 {
-    debugPrint("in _bots::instantiateBots()", "fn", level.nonVerbose);
+    debugPrint("in _bots::loadBots()", "fn", level.nonVerbose);
 
-    failedCount = 0;    // The number of bots we ultimately failed to create
-    attemptCount = 0;
-    attemptLimit = 3;   // The maximum number of times to try to create a single bot
+    for (i=0; i<amount; i++) {
 
-    for (i=0; i<botCount; i++) {
-        if (!instantiate()) {
-            attemptCount++;
-            if (attemptCount <= attemptLimit) {
-                i--;
-                continue;
-            } else {
-                failedCount++;
-                attemptCount = 0;
-            }
-        } else {attemptCount = 0;}
+        bot = addtestclient();
+
+        if (!isdefined(bot)) {
+            println("Could not add bot");
+            i = i - 1;
+            wait 1;
+            continue;
+        }
+
+        bot loadBot(); // No thread
     }
-
-    if (failedCount != 0) {
-        errorPrint("Failed to load " + failedCount + " of " + botCount + " bots.");
-    }
-
     level notify("bots_loaded");
 }
 
-/**
- * @brief Finds available bots, then deletes them to free up slots for human players
- *
- * @param botCount integer The number of bots to delete
- *
- * @returns nothing
- */
-deleteBots(botCount)
+loadBot()
 {
-    debugPrint("in _bots::deleteBots()", "fn", level.fullVerbosity);
+    debugPrint("in _bots::loadBot()", "fn", level.nonVerbose);
 
-    botsToRemove = [];
+    level.bots[level.bots.size] = self;
 
-    // pop the bots we want to remove off the available stack
-    while (botsToRemove.size - 1 < botCount) {
-        bot = undefined;
-        while (!isDefined(bot)) {
-            wait 0.1;
-            bot = availableBot();
-            noticePrint("trying to pop a bot off the stack so we can delete it.");
-        }
-        botsToRemove[botsToRemove.size] = bot.index;
-    }
+    self.isBot = true;
+    self.hasSpawned = false;
+    self.spawnPoint  = undefined;
 
-    remove(botsToRemove);
+    // Wait till properly connected
+    while(!isdefined(self.pers["team"])) {wait .05;}
+
+    self botJoinAxis();
+
+    wait .1;
+    self setStat(512, 100); // Yes we are indeed a bot
+    self setrank(255, 0);
+    self.linkObj = spawn("script_model", (0,0,0));
 }
 
-/**
- * @brief Add/Removes bot slots to optimize use of server slots
- *
- * @returns nothing
- */
-monitorBotSlots()
+botJoinAxis()
 {
-    debugPrint("in _bots::monitorBotSlots()", "fn", level.fullVerbosity);
+    debugPrint("in _bots::botJoinAxis()", "fn", level.nonVerbose);
 
-    level endon("game_ended");
-
-    if (!level.useFlexibleSlots) {return;}
-
-    totalSlots = getDvarInt("ui_maxclients");
-    maxBots = getDvarInt("max_bots");                           // never have more bots than this
-    maxPlayers = getDvarInt("max_players");                     // never have more than this many slots for players
-    minOpenPlayerSlots = getDvarInt("min_open_player_slots");   // try to keep this many open slots for players
-    tolerance = getDvarInt("slot_tolerance");                   // Do nothing if botDelta is +/- tolerance
-
-    while (1) {
-        level waittill("wave_finished");
-        wait 3;
-
-        playersCount = level.players.size;
-        botCount = level.bots.size;
-
-        playersGoal = (playersCount + minOpenPlayerSlots);
-        // never more player slots than spec'd
-        if (playersGoal > maxPlayers) {playersGoal = maxPlayers;}
-
-        botCountGoal = totalSlots - playersGoal;
-        // never more bots than spec'd
-        if (botCountGoal > maxBots) {botCountGoal = maxBots;}
-
-        botDelta = botCountGoal - botCount;
-
-        if (botDelta >= tolerance) {
-            // add bots
-            noticePrint("Flexible Slot System: Adding " + botDelta + " bots.");
-            instantiateBots(botDelta);
-        } else if (botDelta <= (-1 * tolerance)) {
-            // remove bots
-            noticePrint("Flexible Slot System: Removing " + (-1 * botDelta) + " bots.");
-            deleteBots(botDelta);
-        }
-    }
+    self.sessionteam = "axis";
+    self.pers["team"] = "axis";
 }
-/**
- * @brief Resets bot count to bot_count dvar when a map is reloaded without a server restart
- *
- * @returns nothing
- */
-resetFlexibleSlots()
+
+//SPAWNING BOTS
+getAvailableBot()
 {
-    debugPrint("in _bots::resetFlexibleSlots()", "fn", level.fullVerbosity);
+    debugPrint("in _bots::getAvailableBot()", "fn", level.fullVerbosity);
 
-    botCount = getDvarInt("bot_count");
-
-    botDelta = botCount - level.bots.size;
-    if (botDelta < 0) {
-        // remove bots
-        noticePrint("Flexible Slot System: Removing " + (botDelta * -1) + " bots.");
-        deleteBots(botDelta * -1);
-    } else if (botDelta > 0) {
-        // add bots
-        noticePrint("Flexible Slot System: Adding " + botDelta + " bots.");
-        instantiateBots(botDelta);
+    for (i=0; i< level.bots.size; i++) {
+        bot = level.bots[i];
+        if (bot.hasSpawned == false) {return bot;}
     }
 }
 
-/**
- * @brief Finds a bot that is available for spawning
- *
- * @returns struct The bot, or undefined if no bot is available for spawning
- */
-availableBot()
-{
-    debugPrint("in _bots::availableBot()", "fn", level.fullVerbosity);
-
-    if (level.availableBots.size == 0) {
-        if (false) {
-            // for debugging.  this usually only happens when we all of our bot slots are
-            // already zombies, but the game would make more zombies if we had more slots
-            spawnedBots = 0;
-            for (i=0; i<level.bots.size; i++) {
-                if (level.bots[i].hasSpawned) {spawnedBots++;}
-            }
-            errorPrint("No available bots!");
-            noticePrint("Already " + spawnedBots + " alive");
-        }
-        return undefined;
-    } else {
-        // pop a bot off the stack and return it
-        bot = level.bots[level.availableBots[level.availableBots.size - 1]];
-        level.availableBots[level.availableBots.size - 1] = undefined;
-        bot.hasSpawned = true;
-        return bot;
-    }
-}
-
-/**
- * @brief Spawns a zombie into the game
- *
- * @param zombieType string The type of zombie to spawn
- * @param spawnpoint struct A struct containing the position and angles for spawning the zombie
- * @param bot struct The bot to use for this zombie
- *
- * @returns bot The spawned zombie
- */
-spawnZombie(zombieType, spawnpoint, bot)
+spawnZombie(type, spawnpoint, bot)
 {
     debugPrint("in _bots::spawnZombie()", "fn", level.fullVerbosity);
 
-    if (!isDefined(bot)) {
-//         noticePrint("asking for a bot so we can spawn a zombie");
-        bot = availableBot();
-        if (!isDefined(bot)) {return undefined;}
+    if (!isdefined(bot)) {
+        bot = getAvailableBot();
+        if (!isdefined(bot)) {return undefined;}
     }
 
     bot.readyToBeKilled = false;
     bot.hasSpawned = true;
     bot.currentTarget = undefined;
     bot.targetPosition = undefined;
-    bot.type = zombieType;
-    bot.pathNodes = [];
-    bot.myWaypoint = undefined;
-    bot.goalWp = undefined;
-    bot.nextWp = undefined;
-    if (level.zombieAiDevelopment) {
-        bot.movement.first = 0;
-        bot.movement.last = 0;
-    }
+    bot.type = type;
 
     bot.team = bot.pers["team"];
     bot.sessionteam = bot.team;
@@ -340,7 +206,13 @@ spawnZombie(zombieType, spawnpoint, bot)
     bot.psoffsettime = 0;
     bot.statusicon = "";
 
-    bot scripts\bots\_types::loadZomStats(bot.type);
+    bot scripts\bots\_types::loadZomStats(type);
+    if (!isdefined(bot.meleeSpeed)) {
+        iprintlnbold("ERROR");
+        setdvar("error_0", type);
+        setdvar("error_1", bot.name);
+        wait 5;
+    }
 
     bot.maxHealth = int(bot.maxHealth * level.dif_zomHPMod);
     bot.health = bot.maxHealth;
@@ -353,7 +225,7 @@ spawnZombie(zombieType, spawnpoint, bot)
     bot.canTeleport = true;
     bot.quake = false;
 
-    bot scripts\bots\_types::loadAnimTree(bot.type);
+    bot scripts\bots\_types::loadAnimTree(type);
 
     bot.animWeapon = bot.animation["stand"];
     bot TakeAllWeapons();
@@ -363,7 +235,7 @@ spawnZombie(zombieType, spawnpoint, bot)
     bot setspawnweapon(bot.pers["weapon"]);
     bot switchtoweapon(bot.pers["weapon"]);
 
-    if (isDefined(spawnpoint.angles)) {
+    if (isdefined(spawnpoint.angles)) {
         bot spawn(spawnpoint.origin, spawnpoint.angles);
     } else {
         bot spawn(spawnpoint.origin, (0,0,0));
@@ -372,11 +244,11 @@ spawnZombie(zombieType, spawnpoint, bot)
     level.botsAlive++;
     wait 0.05;
 
-    bot scripts\bots\_types::loadZomModel(bot.type);
+    bot scripts\bots\_types::loadZomModel(type);
     bot freezeControls(true);
 
-    bot.mover.origin = bot.origin;
-    bot.mover.angles = bot.angles;
+    bot.linkObj.origin = bot.origin;
+    bot.linkObj.angles = bot.angles;
 
     bot.incdammod = 1;
     if ((bot.type != "tank" && bot.type != "boss") ||
@@ -384,24 +256,31 @@ spawnZombie(zombieType, spawnpoint, bot)
     {
         if (level.dvar["zom_spawnprot"]) {
             bot.incdammod = 0;
-            bot thread endZombieSpawnProtection(level.dvar["zom_spawnprot_time"], level.dvar["zom_spawnprot_decrease"]);
+            bot thread endSpawnProt(level.dvar["zom_spawnprot_time"], level.dvar["zom_spawnprot_decrease"]);
         }
     }
 
     wait 0.05;
-    bot scripts\bots\_types::onSpawn(bot.type);
-    bot linkto(bot.mover);
-    bot thread fixStuck();
-    bot idle();
-    if (level.zombieAiDevelopment) {
-        bot.runSpeed = bot.runSpeed * 5;    // scale to seconds
-        bot.walkSpeed = bot.walkSpeed * 5;  // scale to seconds
-        bot thread main();
-    } else {
-        bot thread zomMain();
-    }
-    bot thread groan();
+    bot scripts\bots\_types::onSpawn(type);
+    bot linkto(bot.linkObj);
+    bot zomGoIdle();
+    bot thread zomMain();
+    bot thread zomGroan();
     bot.readyToBeKilled = true;
+
+    /*if (level.zomTarget != "")
+    {
+        if (level.zomTarget == "player_closest")
+        {
+            ent = bot getClosestPlayer();
+            if (isdefined(ent))
+            bot zomSetTarget(ent.origin);
+        }
+        else
+        bot zomSetTarget(bot getClosestEntity(level.zomTarget).origin);
+    }*/
+    //if (isdefined(spawnpoint.target))
+    //bot zomSetTarget(bot getRandomEntity(spawnpoint.target).origin);
 
     return bot;
 }
@@ -414,9 +293,9 @@ spawnZombie(zombieType, spawnpoint, bot)
  *
  * @returns nothing
  */
-endZombieSpawnProtection(time, decrease)
+endSpawnProt(time, decrease)
 {
-    debugPrint("in _bots::endZombieSpawnProtection()", "fn", level.highVerbosity);
+    debugPrint("in _bots::endSpawnProt()", "fn", level.highVerbosity);
 
     self endon("death");
 
@@ -430,6 +309,9 @@ endZombieSpawnProtection(time, decrease)
         self.incdammod = 1;
     }
 }
+
+
+
 
 // BOTS MAIN
 
@@ -494,14 +376,6 @@ Callback_BotDamage(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeap
     }
 }
 
-/**
- * @brief Keeps track of damage done to zombie so we can give assist credit when zombie is finally killed
- *
- * @param player entity The player doing the damage
- * @param damage integer The amount of damage this player just did to this zombie
- *
- * @returns nothing
- */
 addToAssist(player, damage)
 {
     debugPrint("in _bots::addToAssist()", "fn", level.fullVerbosity);
@@ -518,13 +392,152 @@ addToAssist(player, damage)
     struct.damage = damage;
 }
 
+Callback_BotKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, psOffsetTime, deathAnimDuration)
+{
+    debugPrint("in _bots::Callback_BotKilled()", "fn", level.veryHighVerbosity);
+
+    self unlink();
+
+    if(self.sessionteam == "spectator") {return;}
+
+    if(sHitLoc == "head" && sMeansOfDeath != "MOD_MELEE") {
+        sMeansOfDeath = "MOD_HEAD_SHOT";
+    }
+
+    if (level.dvar["zom_orbituary"]) {
+        obituary(self, attacker, sWeapon, sMeansOfDeath);
+    }
+
+    self.sessionstate = "dead";
+
+    isBadKill = false;
+
+    if (isplayer(attacker) && attacker != self) {
+        if ((self.type == "burning") ||
+            (self.type == "burning_dog") ||
+            (self.type == "burning_tank"))
+        {
+            // No demerits if weapon is claymore or defense turrets, since player
+            // has no control over when it detonates/fires
+            switch (sWeapon) {
+                case "claymore_mp":     // Fall through
+                case "turret_mp":
+                case "none":            // minigun and grenade turrets are "none"
+                    // Do nothing
+                    break;
+                default:
+                    players = level.players;
+                    for (i=0; i<players.size; i++) {
+                        if (!isDefined(players[i])) {continue;}
+                        if (attacker != players[i]) {
+                            if ((!players[i].isDown) &&
+                                (distance(self.origin, players[i].origin) < 150)) {
+                                attacker thread scripts\players\_rank::increaseDemerits(level.burningZombieDemeritSize, "burning");
+                                isBadKill = true;
+                            }
+                        }
+                    }
+                    break;
+            }
+        }
+        if (!isBadKill) {
+            // No credit for kills that hurt teammates
+            attacker.kills++;
+
+            attacker thread scripts\players\_rank::giveRankXP("kill");
+            attacker thread scripts\players\_spree::checkSpree();
+
+            if (attacker.curClass=="stealth") {
+                attacker scripts\players\_abilities::rechargeSpecial(10);
+            }
+            attacker scripts\players\_players::incUpgradePoints(10*level.rewardScale);
+            giveAssists(attacker);
+        }
+    }
+
+    corpse = self scripts\bots\_types::onCorpse(self.type);
+    if (self.soundType == "zombie") {
+        self zomSound(0, "zom_death", randomint(6));
+    }
+
+    if (corpse > 0) {
+        if (self.type=="toxic") {
+            deathAnimDuration = 20;
+        }
+
+        body = self clonePlayer( deathAnimDuration );
+
+        if (corpse > 1) {
+            thread delayStartRagdoll( body, sHitLoc, vDir, sWeapon, eInflictor, sMeansOfDeath );
+        }
+    } else {
+        self setorigin((0,0,-10000));
+    }
+
+    level.dif_killedLast5Sec++;
+
+    wait 1;
+    self.hasSpawned = false;
+    level.botsAlive -= 1;
+
+    //level.zom_deaths ++;
+    level notify("bot_killed");
+}
+
+giveAssists(killer)
+{
+    debugPrint("in _bots::giveAssists()", "fn", level.highVerbosity);
+
+    for (i=0; i<self.damagedBy.size; i++)
+    {
+        struct = self.damagedBy[i];
+        if (isdefined(struct.player))
+        {
+            if (struct.player.isActive && struct.player != killer)
+            {
+                struct.player.assists ++;
+                if (struct.damage > 400)
+                {
+                    struct.player thread scripts\players\_rank::giveRankXP("assist5");
+                    struct.player thread scripts\players\_players::incUpgradePoints(10*level.rewardScale);
+                }
+                else if (struct.damage > 200)
+                {
+                    struct.player thread scripts\players\_rank::giveRankXP("assist4");
+                    struct.player thread scripts\players\_players::incUpgradePoints(7*level.rewardScale);
+                }
+                else if (struct.damage > 100)
+                {
+                    struct.player thread scripts\players\_rank::giveRankXP("assist3");
+                    struct.player thread scripts\players\_players::incUpgradePoints(5*level.rewardScale);
+                }
+                else if (struct.damage > 50)
+                {
+                    struct.player thread scripts\players\_rank::giveRankXP("assist2");
+                    struct.player thread scripts\players\_players::incUpgradePoints(3*level.rewardScale);
+                }
+                else if (struct.damage > 25)
+                {
+                    struct.player thread scripts\players\_rank::giveRankXP("assist1");
+                    struct.player thread scripts\players\_players::incUpgradePoints(3*level.rewardScale);
+                }
+                else if (struct.damage > 0)
+                {
+                    struct.player thread scripts\players\_rank::giveRankXP("assist0");
+                    struct.player thread scripts\players\_players::incUpgradePoints(2*level.rewardScale);
+                }
+            }
+        }
+    }
+    self.damagedBy = undefined;
+}
+
 zomMain()
 {
     debugPrint("in _bots::zomMain()", "fn", level.veryHighVerbosity);
 
     self endon("disconnect");
     self endon("death");
-    level endon("game_ended");
 
     self.lastTargetWp = -2;
     self.nextWp = -2;
@@ -534,76 +547,83 @@ zomMain()
     while (1) {
         switch (self.status) {
             case "idle":
-                // loops through player array once, it calls zomGoTriggered if it
-                // can see the player. If it can't see any players, it does nothing
-                zomWaitToBeTriggered();
-                switch(level.zomIdleBehavior) {
-                    case "magic":
-                        if (update==5) {
-                            if (level.zomTarget != "") {
-                                if (level.zomTarget == "player_closest") {
-                                    ent = self closestTarget();
-                                    if (isDefined(ent)) {
-                                        self zomSetTarget(ent.origin);
-                                    }
-                                } else {
-                                    self zomSetTarget(getRandomEntity(level.zomTarget).origin);
+            zomWaitToBeTriggered();
+
+            switch(level.zomIdleBehavior) {
+                case "magic":
+                    if (update==5) {
+                        if (level.zomTarget != "") {
+                            if (level.zomTarget == "player_closest") {
+                                ent = self getClosestTarget();
+                                if (isDefined(ent)) {
+                                    self zomSetTarget(ent.origin);
                                 }
                             } else {
-                                ent = self closestTarget();
-                                if (isdefined(ent)) {self zomSetTarget(ent.origin);}
+                                self zomSetTarget(getRandomEntity(level.zomTarget).origin);
                             }
-                            update = 0;
                         } else {
-                            update++;
+                            ent = self getClosestTarget();
+                            if (isdefined(ent)) {self zomSetTarget(ent.origin);}
                         }
-                        break;
-                } // end switch(level.zomIdleBehavior)
-                break;
-            case "triggered":
-                if ((isDefined(self.bestTarget)) && ((update==10) || (self.bestTarget.isDown))) {  // find new target when current target goes down
-                    self.bestTarget = zomGetBestTarget();
-                    update = 0;
-                } else {update++;}
-                if (isdefined(self.bestTarget)) {
-                    self.lastMemorizedPos = self.bestTarget.origin;
-                    if (!checkForBarricade(self.bestTarget.origin)) {
-                        if (distance(self.bestTarget.origin, self.origin) < self.meleeRange) {
-                            self thread zomMoveLockon(self.bestTarget, self.meleeTime, self.meleeSpeed);
-                            self melee();
-                            //doWait = false;
-                        } else {
-                            zomMovement();
-                            self zomMoveTowards(self.bestTarget.origin);
-                            //doWait = false;
-                        }
+                        update = 0;
                     } else {
-                        self melee();
+                        update++;
+                    }
+                break;
+            }
+
+            break;
+
+            case "triggered":
+
+                if ((isDefined(self.bestTarget)) && ((update==10) || (self.bestTarget.isDown))) {  // find new target when current target goes down
+                self.bestTarget = zomGetBestTarget();
+                update = 0;
+            } else {update++;}
+            if (isdefined(self.bestTarget)) {
+                self.lastMemorizedPos = self.bestTarget.origin;
+                if (!checkForBarricade(self.bestTarget.origin)) {
+                    if (distance(self.bestTarget.origin, self.origin) < self.meleeRange) {
+                        self thread zomMoveLockon(self.bestTarget, self.meleeTime, self.meleeSpeed);
+                        self zomMelee();
+                        //doWait = false;
+                    } else {
+                        zomMovement();
+                        self zomMoveTowards(self.bestTarget.origin);
+                        //doWait = false;
                     }
                 } else {
-                    self search();
+                    self zomMelee();
                 }
-                break;
+            } else {
+                self zomGoSearch();
+            }
+
+            break;
+
             case "searching":
-                zomWaitToBeTriggered();
-                if (isdefined(self.lastMemorizedPos)) {
-                    if (!checkForBarricade(self.lastMemorizedPos)) {
-                        if (distance(self.lastMemorizedPos, self.origin) > 48) {
-                            zomMovement();
-                            self zomMoveTowards(self.lastMemorizedPos);
-                            //doWait = false;
-                        } else {
-                            self.lastMemorizedPos = undefined;
-                        }
+
+            zomWaitToBeTriggered();
+            if (isdefined(self.lastMemorizedPos)) {
+                if (!checkForBarricade(self.lastMemorizedPos)) {
+                    if (distance(self.lastMemorizedPos, self.origin) > 48) {
+                        zomMovement();
+                        self zomMoveTowards(self.lastMemorizedPos);
+                        //doWait = false;
                     } else {
-                        self melee();
+                        self.lastMemorizedPos = undefined;
                     }
+                } else {
+                    self zomMelee();
                 }
-                else {idle();}
-                break;
+            }
+            else {zomGoIdle();}
+
+            break;
+
             case "stunned":
                 wait 1.25;
-                idle();
+                zomGoIdle();
             break;
         }
 
@@ -619,20 +639,20 @@ zomGetBestTarget()
     if (!isDefined(self.currentTarget)) {
         for (i=0; i<level.players.size; i++) {
             player = level.players[i];
-            if (canSeeTarget(player)) {
+            if (zomSpot(player)) {
                 self.currentTarget = player;
                 return player;
             }
             wait 0.05;
         }
         // if zombie can't see any players, just grab the closest player
-        ent = self closestTarget();
+        ent = self getClosestTarget();
         if (isDefined(ent)) {
             self zomSetTarget(ent.origin);
             return ent;
         }
     } else {
-        if (!canSeeTarget(self.currentTarget)) {
+        if (!zomSpot(self.currentTarget)) {
             self.currentTarget = undefined;
             return undefined;
         }
@@ -642,7 +662,7 @@ zomGetBestTarget()
             player = level.players[i];
             if (!isDefined(player)) {continue;}
             if (distancesquared(self.origin, player.origin) < targetdis) {
-                if (canSeeTarget(player)) {
+                if (zomSpot(player)) {
                     self.currentTarget = player;
                     return player;
                 }
@@ -660,12 +680,48 @@ zomMovement()
     self.cur_speed = 0;
 
     if ((self.alertLevel >= 200 && (!self.walkOnly || self.quake)) || self.sprintOnly ) {
-        self run();
+        self setanim("sprint");
+        self.cur_speed = self.runSpeed;
+        if (self.quake) {
+            Earthquake( 0.25, .3, self.origin, 380);
+        }
 
         if (level.dvar["zom_dominoeffect"]) {
             thread alertZombies(self.origin, 480, 5, self);
         }
-    } else {self walk();}
+    } else {
+        self setanim("walk");
+        self.cur_speed = self.walkSpeed;
+        if (self.quake) {
+            Earthquake( 0.17, .3, self.origin, 320);
+        }
+    }
+}
+
+
+zomGoIdle()
+{
+    debugPrint("in _bots::zomGoIdle()", "fn", level.fullVerbosity);
+
+    self setanim("stand");
+    self.cur_speed = 0;
+    self.alertLevel = 0;
+    self.status = "idle";
+    //iprintlnbold("IDLE!");
+}
+
+zomGoStunned()
+{
+    debugPrint("in _bots::zomGoStunned()", "fn", level.fullVerbosity);
+
+    // no stunning in final wave!
+    if (level.currentWave < level.totalWaves) {
+        self setanim("stand");
+        self.cur_speed = 0;
+        self.alertLevel = 0;
+        self.status = "stunned";
+        //iprintlnbold("STUNNED!");
+    }
 }
 
 zomGoTriggered()
@@ -678,38 +734,155 @@ zomGoTriggered()
     //iprintlnbold("TRIGGERED!");
 }
 
+zomGoSearch()
+{
+    debugPrint("in _bots::zomGoSearch()", "fn", level.fullVerbosity);
+
+    self.status = "searching";
+    //iprintlnbold("SEARCHING!");
+}
+
 zomWaitToBeTriggered()
 {
     // 17th most-called function (1% of all function calls).
     // Do *not* put a function entrance debugPrint statement here!
 
-    for (i=0; i<level.players.size; i++) {
+    for (i=0; i<level.players.size; i++)
+    {
         player = level.players[i];
-        if (self canSeeTarget(player)) {
+        if(self zomSpot(player))
+        {
             self zomGoTriggered();
             break;
         }
     }
 }
 
-/**
- * @brief Gets the position of the top of the player based on their stance
- *
- * @returns tuple The origin of the top of the player
- */
+zomSpot(target)
+{
+    // 4th most-called function (6% of all function calls).
+    // Do *not* put a function entrance debugPrint statement here!
+
+    if (!isDefined(target)) {return false;}
+    if (!target.isObj) {
+        if (!target.isAlive)
+        return false;
+
+        if (!target.isTargetable)
+        return false;
+    }
+
+    if (!target.visible)
+    return false;
+
+    distance = distance(self.origin, target.origin);
+
+    if (distance > level.zombieSight)
+    return false;
+
+  /*switch (target getStance())
+  {
+    case "stand":
+    if (distance < 256)
+    return 1;
+    break;
+    case "crouch":
+    if (distance < 148)
+    return 1;
+    break;
+    case "prone":
+    if (distance < 96)
+    return 1;
+    break;
+  }*/
+
+  /*speed = Length(target GetVelocity());
+
+  if (speed > 80 && distance < 256)
+  return 1;
+  if (speed > 160 && distance < 416)
+  return 1;
+  if (speed > 240 && distance < 672)
+  return 1;*/
+
+  dot = 1.0;
+
+  //if nearest target hasn't attacked me, check to see if it's in front of me
+   fwdDir = anglestoforward(self getplayerangles());
+   dirToTarget = vectorNormalize(target.origin-self.origin);
+   dot = vectorDot(fwdDir, dirToTarget);
+
+
+  //try see through smoke
+  /*if(!SmokeTrace(self GetEyePos(), self.bestTarget GetEyePos()))
+  {
+    return false;
+  }*/
+
+  //in front of us and is being obvious
+  if(dot > -0.2)
+  {
+    //do a ray to see if we can see the target
+    if (!target.isObj)
+    {
+        visTrace = bullettrace(self.origin + (0,0,68), target getPlayerHeight(), false, self);
+    }
+    else
+    {
+     visTrace = bullettrace(self.origin + (0,0,68), target.origin +(0,0,20), false, self);
+    }
+    if(visTrace["fraction"] == 1)
+    {
+           //line(self.origin + (0,0,68), visTrace["position"], (0,1.0,0));
+        return true;
+    }
+    else
+    {
+        if (isdefined(visTrace["entity"]))
+        if (visTrace["entity"] == target)
+        return true;
+        //line(self.origin + (0,0,68), visTrace["position"], (1,0,0));
+        return false;
+    }
+
+  }
+
+  return false;
+}
+
+setAnim(animation)
+{
+    // 6th most-called function (2% of all function calls).
+    // Do *not* put a function entrance debugPrint statement here!
+
+    if (isdefined(self.animation[animation]))
+    {
+        self.animWeapon = self.animation[animation];
+        self TakeAllWeapons();
+        self.pers["weapon"] = self.animWeapon;
+        self giveweapon(self.pers["weapon"]);
+        self givemaxammo(self.pers["weapon"]);
+        //self SetWeaponAmmoClip(self.pers["weapon"], 30);
+        //self SetWeaponAmmoStock(self.pers["weapon"], 0);
+        self setspawnweapon(self.pers["weapon"]);
+        self switchtoweapon(self.pers["weapon"]);
+    }
+}
+
 getPlayerHeight()
 {
     // 16th most-called function (1% of all function calls).
     // Do *not* put a function entrance debugPrint statement here!
 
-    switch (self getStance()) {
-    case "stand":
+      switch (self getStance())
+      {
+        case "stand":
         return self.origin + (0,0,68);
-    case "crouch":
+        case "crouch":
         return self.origin + (0,0,40);
-    case "prone":
+        case "prone":
         return self.origin + (0,0,22);
-    }
+      }
 }
 
 zomMoveTowards(target_position)
@@ -719,123 +892,128 @@ zomMoveTowards(target_position)
 
     self endon("disconnect");
     self endon("death");
-    self endon("dying");
 
-    if (level.waypointsInvalid) {
-        // this map either has no waypoints, or they are bad so we aren't using them
-        moveToPoint(target_position, self.cur_speed);
-    } else {
-        if (!isDefined(self.lastAStarTargetWp)) {self.lastAStarTargetWp = -1;}
-        if (!isDefined(self.lastAStarWp)) {self.lastAStarWp = -1;}
+    //self thread pushOutOfPlayers();
 
-        if (!isDefined(self.myWaypoint)) {
-//             self.myWaypoint = nearestWaypoint(self.origin, true, self);
-            self.myWaypoint = nearestWaypoint(self.origin, false, self);
-        }
+    if (!isdefined(self.myWaypoint))
+    {
+        self.myWaypoint = getNearestWp(self.origin);
+    }
 
-//         targetWp = nearestWaypoint(target_position, true, self.bestTarget);
-        targetWp = nearestWaypoint(target_position, false, self.bestTarget);
+    targetWp = getNearestWp(target_position);
 
-        if (self.myWaypoint < 0) {
-            if ((self.myWaypoint == -1) ||  // we never got past this init value
-                (self.myWaypoint == -2) ||  // we hit our own corpse
-                (self.myWaypoint == -4))    // returned waypoint index exceeds array bounds
-            {
-                value = self.myWaypoint;
-                self.myWaypoint = undefined;
-                errorPrint("self.myWaypoint: " + value + " targetWp: " + targetWp);
-                return;
-            } else if (self.myWaypoint == -3) { // no visible waypoints from our position
-                // this can happen if we are inside an object we shouldn't be in,
-                // like a shipping container
-                self.myWaypoint = nearestWaypoint(self.origin, false, self);
-                if (self.myWaypoint < 0) {
-                    value = self.myWaypoint;
-                    self.myWaypoint = undefined;
-                    errorPrint("self.myWaypoint: " + value + " targetWp: " + targetWp);
-                    return;
-                }
-            }
-        } else if (targetWp < 0) {
-            if ((targetWp == -1) ||  // we never got past this init value
-                (targetWp == -2) ||  // we hit our own corpse
-                (targetWp == -4))    // returned waypoint index exceeds array bounds
-            {
-                value = targetWp;
-                targetWp = undefined;
-                errorPrint("self.myWaypoint: " + self.myWaypoint + " targetWp: " + value);
-                return;
-            } else if (targetWp == -3) { // no visible waypoints from our position
-                // this can happen if the target is inside an object we shouldn't be in,
-                // like a shipping container, or with insufficient waypoints
-                targetWp = nearestWaypoint(self.origin, false, self);
-                if (targetWp < 0) {
-                    value = targetWp;
-                    targetWp = undefined;
-                    errorPrint("self.myWaypoint: " + self.myWaypoint + " targetWp: " + value);
-                    return;
-                }
-            }
-        }
+    nextWp = self.nextWp;
 
-        if (targetWp == self.myWaypoint) {
-            // we are already at the closest waypoint, just move to target
-            moveToPoint(target_position, self.cur_speed);
+    direct = false;
+    //
+    //if (distancesquared(target_position, self.origin) <= distancesquared(level.Wp[targetWp].origin, self.origin) || targetWp == self.myWaypoint)
+    if (self.underway)
+    {
+
+    //if (targetWp == self.myWaypoint)
+    //
+        //if (distancesquared(target_position, self.origin) >= distancesquared(level.Wp[nextWp].origin, self.origin))
+        //direct = true;
+
+        if (targetWp == self.myWaypoint) //|| distancesquared(target_position, self.origin) <= distancesquared(level.Wp[nextWp].origin, self.origin)
+        {
+            direct = true;
             self.underway = false;
             self.myWaypoint = undefined;
-        } else {
-            if ((self.lastAStarTargetWp != targetWp) ||     // our target wp has changed since our last A* call
-//                 (self.myWaypoint != self.lastAStarWp) ||    // our current wp is not the waypoint we were supposed to go to
-                (self.pathNodes.size == 0))                 // we are out of path nodes
+        }
+        else
+        {
+            if (!isdefined(nextWp))
+            return ;
+            if (targetWp == nextWp)
             {
-                // invalidate the pathNodes stack and get a fresh stack from A*
-                if (self.lastAStarTargetWp != targetWp) {noticePrint(self.name + ": self.lastAStarTargetWp != targetWp");}
-                if (self.myWaypoint != self.lastAStarWp) {noticePrint(self.name + ": self.myWaypoint != self.lastAStarWp");}
-                if (self.pathNodes.size == 0) {noticePrint(self.name + ": self.pathNodes.size == 0");}
-                noticePrint("A* call (bot, myWaypoint, targetWp): (" + self.name + ", " + self.myWaypoint + ", " + targetWp + ")");
-                self.pathNodes = AStarNew(self.myWaypoint, targetWp);
-                self.lastAStarTargetWp = targetWp;
-            } else {
-                level.savedAStarCalls++;
-            }
-            // pop the next wp to head towards off the stack
-            nextWp = self.pathNodes[self.pathNodes.size - 1];
-            self.pathNodes[self.pathNodes.size - 1] = undefined;
-            self.lastAStarWp = nextWp;
 
-            self.nextWp = nextWp;
-            self.underway = true;
-
-            if ((targetWp == nextWp) &&
-                (distanceSquared(target_position, self.origin) <= distanceSquared(level.Wp[nextWp].origin, self.origin)))
-            {
-                // we are close enough to target_position to go directly there, ignoring waypoints
-                moveToPoint(target_position, self.cur_speed);
-                self.isFollowingWaypoints = false;
-                self.underway = false;
-                self.myWaypoint = undefined;
-            } else {
-                moveToPoint(level.Wp[nextWp].origin, self.cur_speed);
-                self.isFollowingWaypoints = true;
-                if (distance(level.Wp[nextWp].origin, self.origin) <  64) {
+                if (distancesquared(target_position, self.origin) <= distancesquared(level.Wp[nextWp].origin, self.origin))
+                {
+                    direct = true;
                     self.underway = false;
-                    self.myWaypoint = nextWp;
+                    self.myWaypoint = undefined;
                 }
             }
         }
     }
+    else
+    {
+        //if (self.lastTargetWp != targetWp || self.myWaypoint == nextWp )
+        if (targetWp == self.myWaypoint)
+        {
+            //iprintln(level.wp[getNearestWp(self.origin)].origin+":"+level.wp[getNearestWp(target_position)].origin);
+            direct = true;
+            self.underway = false;
+            self.myWaypoint = undefined;
+        }
+        else
+        {
+            //time = GetTime();
+            nextWp = AStarSearch(self.myWaypoint, targetWp);
+            //newtime = GetTime()-time;
+            //iprintlnbold("MILISEC:" + newtime);
+            self.nextWp = nextWp;
+            self.underway = true;
+        }
+    }
+
+    //self.lastTargetWp = targetWp;
+
+    //TARGET SET! MOVING!
+    //line(self.origin, target_position, (0,0,1));
+    if (direct)
+    {
+        moveToPoint(target_position, self.cur_speed);
+        /*lineCol = (1,0,0);
+        line(level.Wp[self.myWaypoint].origin, target_position, lineCol);*/
+    }
+    else
+    {
+        /*lineCol = (1,0,0);
+        line(level.Wp[self.myWaypoint].origin, level.Wp[nextWp].origin, lineCol);*/
+        if (isdefined(nextWp))
+        {
+            /// @todo BUG: massive runtime errors if not defined, try this hack as a temp fix. map specific?
+            /// for some maps, level.wp.size == 0.  Legacy maps do not use the waypoints system
+            if (!isDefined(level.Wp[nextWp])) {
+                errorPrint("level.Wp[nextWp] is undefined on map: " + getdvar("mapname"));
+                //self zomGoIdle();
+                //return;
+            }
+            moveToPoint(level.Wp[nextWp].origin, self.cur_speed);
+            if (distance(level.Wp[nextWp].origin, self.origin) <  64)
+            {
+                self.underway = false;
+                self.myWaypoint = nextWp;
+                //if (self.myWaypoint != nextWp)
+                //nextWp = AStarSearch(self.myWaypoint, targetWp);
+                //else
+                //break;
+            }
+        }
+        /*else
+
+            self zomGoIdle();
+        */
+
+    }
 }
+
+
 
 zomMoveLockon(player, time, speed)
 {
     debugPrint("in _bots::zomMoveLockon()", "fn", level.veryHighVerbosity);
 
     intervals = int(time / level.zomInterval);
-    for (i=0; i<intervals; i++) {
+    for (i=0; i<intervals; i++)
+    {
         if (!isDefined(player)) {continue;}
         if (!isDefined(self)) {continue;}
         dis = distance(self.origin, player.origin);
-        if (dis > 48) {
+        if (dis > 48)
+        {
             pushOutDir = VectorNormalize((self.origin[0], self.origin[1], 0)-(player.origin[0], player.origin[1], 0));
             self moveToPoint(player.origin + pushOutDir * 32, speed);
             self pushOutOfPlayers();
@@ -850,21 +1028,34 @@ pushOutOfPlayers() // ON SELF
 {
     debugPrint("in _bots::pushOutOfPlayers()", "fn", level.absurdVerbosity);
 
-    //push out of other players
-    //players = level.players;
-    players = getentarray("player", "classname");
-    for (i=0; i<players.size; i++) {
-        player = players[i];
-        if (player == self || !isalive(player)) {continue;}
-        self thread pushout(player.origin);
+  //push out of other players
+  //players = level.players;
+  players = getentarray("player", "classname");
+  for(i = 0; i < players.size; i++)
+  {
+    player = players[i];
+
+    if(player == self || !isalive(player))
+      continue;
+    self thread pushout(player.origin);
+
+  }
+  for (i=0; i <level.dynamic_barricades.size; i++)
+  {
+    if (isdefined(level.dynamic_barricades[i]))
+    {
+        if (level.dynamic_barricades[i].hp > 0)
+        self thread pushout(level.dynamic_barricades[i].origin);
     }
-    for (i=0; i <level.dynamic_barricades.size; i++) {
-        if (isdefined(level.dynamic_barricades[i])) {
-            if (level.dynamic_barricades[i].hp > 0) {
-                self thread pushout(level.dynamic_barricades[i].origin);
-            }
-        }
+  }
+   /*for (i=0; i <level.barricades.size; i++)
+  {
+    if (isdefined(level.barricades[i]))
+    {
+        if (level.barricades[i].hp > 0)
+        self thread pushout(level.barricades[i].parts[0].startPosition);
     }
+  }*/
 }
 
 pushout(org)
@@ -872,14 +1063,77 @@ pushout(org)
     // 18th most-called function (1% of all function calls).
     // Do *not* put a function entrance debugPrint statement here!
 
-    linkObj = self.mover;
+    linkObj = self.linkObj;
     distance = distance(org, linkObj.origin);
     minDistance = 28;
-    if (distance < minDistance) {
-        pushOutDir = VectorNormalize((linkObj.origin[0], linkObj.origin[1], 0)-(org[0], org[1], 0));
-        pushoutPos = linkObj.origin + (pushOutDir * (minDistance-distance));
-        linkObj.origin = (pushoutPos[0], pushoutPos[1], self.origin[2]);
+    if(distance < minDistance) //push out
+    {
+      pushOutDir = VectorNormalize((linkObj.origin[0], linkObj.origin[1], 0)-(org[0], org[1], 0));
+      pushoutPos = linkObj.origin + (pushOutDir * (minDistance-distance));
+      linkObj.origin = (pushoutPos[0], pushoutPos[1], self.origin[2]);
     }
+}
+
+zomMelee()
+{
+    debugPrint("in _bots::zomMelee()", "fn", level.veryHighVerbosity);
+
+    self endon("disconnect");
+    self endon("death");
+    self.movementType = "melee";
+    /*if (self hasAnim("run"))
+    {
+        self setAnim("run2melee");
+        wait .4;
+    }
+    else
+    {
+        self setAnim("stand2melee");
+        wait .6;
+    }*/
+    self setAnim("melee");
+    wait .6;
+    if (self.quake)
+    Earthquake( 0.25, .2, self.origin, 380);
+    if (isalive(self))
+    {
+        self zomDoDamage(70);
+        self zomSound(0, "zom_attack", randomint(8));
+    }
+    wait .6;
+    /*wait .5;
+    if (isalive(self))
+    {
+        self zombieDoDamage(90, 30);
+        self zombieSound(0, "zom_attack", randomint(10));
+    }
+    wait .5;
+    if (isalive(self))
+    {
+        self zombieDoDamage(90, 30);
+        self zombieSound(0, "zom_attack", randomint(10));
+    }
+    wait .7;*/
+    self setAnim("stand");
+    //self.movementType = "walk";
+
+    //self setAnim("run");
+    //self thread zombieMelee();
+}
+
+infection(chance)
+{
+    debugPrint("in _bots::infection()", "fn", level.medVerbosity);
+
+    if (self.infected)
+    return;
+
+    chance = self.infectionMP * chance;
+    if (randomfloat(1)<chance)
+    {
+        self thread scripts\players\_infection::goInfected();
+    }
+
 }
 
 /**
@@ -895,25 +1149,25 @@ moveToPoint(goalPosition, speed)
     // 8th most-called function (2% of all function calls).
     // Do *not* put a function entrance debugPrint statement here!
 
-    dis = distance(self.mover.origin, goalPosition);
+    dis = distance(self.linkObj.origin, goalPosition);
 
     if (dis < speed) {speed = dis;}
     else {speed = speed * level.zomSpeedScale;}
 
-    targetDirection = vectorToAngles(VectorNormalize(goalPosition - self.mover.origin));
+    targetDirection = vectorToAngles(VectorNormalize(goalPosition - self.linkObj.origin));
     step = anglesToForward(targetDirection) * speed ;
 
     self SetPlayerAngles(targetDirection);
 
     // tentative new position for zombie
-    newPos = self.mover.origin + step + (0,0,40);
+    newPos = self.linkObj.origin + step + (0,0,40);
     // find ground level below tentative new position
     dropNewPos = dropPlayer(newPos, 200);
     if (isDefined(dropNewPos)) {
         newPos = (dropNewPos[0], dropNewPos[1], self compareZ(goalPosition[2], dropNewPos[2]));
     }
     // now actually move the zombie to the new position
-    self.mover moveto(newPos, level.zomInterval, 0, 0);
+    self.linkObj moveto(newPos, level.zomInterval, 0, 0);
 }
 
 compareZ(goalPositionZ, dropNewZ)
@@ -968,6 +1222,132 @@ zomAreaDamage(range)
     }
 }
 
+zomDoDamage(range)
+{
+    debugPrint("in _bots::zomDoDamage()", "fn", level.highVerbosity);
+
+    meleeRange = range;
+    closest = getClosestPlayerArray();
+    for (i=0; i<=closest.size; i++)
+    {
+                    target = closest[i];
+                    if (isdefined(target))
+                    {
+                        distance = distance(self.origin, target.origin);
+                        if (distance <meleeRange )
+                        {
+                            fwdDir = anglestoforward(self getplayerangles());
+                            dirToTarget = vectorNormalize(target.origin-self.origin);
+                            dot = vectorDot(fwdDir, dirToTarget);
+                            if (dot > .5)
+                            {
+                            target.isPlayer = true;
+                            //target.damageCenter = self.Mover.origin;
+                            target.entity = target;
+                            target damageEnt(
+                                    self, // eInflictor = the entity that causes the damage (e.g. a claymore)
+                                    self, // eAttacker = the player that is attacking
+                                    int(self.damage*level.dif_zomDamMod), // iDamage = the amount of damage to do
+                                    "MOD_MELEE", // sMeansOfDeath = string specifying the method of death (e.g. "MOD_PROJECTILE_SPLASH")
+                                    self.pers["weapon"], // sWeapon = string specifying the weapon used (e.g. "claymore_mp")
+                                    self.origin, // damagepos = the position damage is coming from
+                                    //(0,self GetPlayerAngles()[1],0) // damagedir = the direction damage is moving in
+                                    vectorNormalize(target.origin-self.origin)
+                                );
+                            self scripts\bots\_types::onAttack(self.type, target);
+                            if (level.dvar["zom_infection"])
+                            target infection(self.infectionChance);
+                            //target shellshock("zombiedamage", 1);
+                            break;
+                            }
+                        }
+                    }
+    }
+    /*for (i=0; i<level.attackable_obj.size; i++)
+    {
+        obj = level.attackable_obj[i];
+        distance = distance2d(self.origin, obj.origin);
+        if (distance <meleeRange )
+        {
+            fwdDir = anglestoforward(self getplayerangles());
+            dirToTarget = vectorNormalize(obj.origin-self.origin);
+            dot = vectorDot(fwdDir, dirToTarget);
+            if (dot > .5)
+            {
+                obj notify("damage", self.damage);
+            }
+        }
+
+
+    }*/
+    for (i=0; i<level.barricades.size; i++)
+    {
+        ent = level.barricades[i];
+        distance = distance2d(self.origin, ent.origin);
+        if (distance <meleeRange*2 )
+        {
+            ent thread scripts\players\_barricades::doBarricadeDamage(self.damage*level.dif_zomDamMod);
+            break;
+        }
+    }
+    for (i=0; i<level.dynamic_barricades.size; i++)
+    {
+        ent = level.dynamic_barricades[i];
+        distance = distance2d(self.origin, ent.origin);
+        if (distance <meleeRange )
+        {
+            ent thread scripts\players\_barricades::doBarricadeDamage(self.damage*level.dif_zomDamMod);
+            break;
+        }
+    }
+
+
+}
+
+zomGroan()
+{
+    debugPrint("in _bots::zomGroan()", "fn", level.veryHighVerbosity);
+
+    self endon("death");
+    self endon("disconnect");
+
+    if (self.soundType == "dog")
+    return ;
+
+    for (;;)
+    {
+        //self zombieSound(randomfloat(.5), "zom_run", 0);
+        if (self.isDoingMelee == false)
+        {
+            if (self.alertLevel == 0)
+            {
+            }
+            else if (self.alertLevel < 200)
+            {
+                self zomSound(randomfloat(.5), "zom_walk", randomint(7));
+            }
+            else
+            {
+                self zomSound(randomfloat(.5), "zom_run", randomint(6));
+            }
+        }
+        wait 3 + randomfloat(3);
+    }
+}
+
+zomSound(delay, sound, random)
+{
+    debugPrint("in _bots::zomSound()", "fn", level.fullVerbosity);
+
+    if (delay > 0) {
+        self endon("death");
+        wait delay;
+    }
+    sound = sound + random;
+    if (isalive(self))
+    self playSound( sound );
+}
+
 zomSetTarget(target)
 {
     debugPrint("in _bots::zomSetTarget()", "fn", level.highVerbosity);
@@ -975,9 +1355,10 @@ zomSetTarget(target)
     //wait .5;
     //self.targetPosition = getentarray(target, "targetname")[0].origin;
     //self.alertLevel = 1;
-    self search();
+    self zomGoSearch();
     self.lastMemorizedPos = target;
 }
+
 
 checkForBarricade(targetposition)
 {
@@ -985,22 +1366,32 @@ checkForBarricade(targetposition)
     // Do *not* put a function entrance debugPrint statement here!
     debugPrint("in _bots::checkForBarricade()", "fn", level.lowVerbosity);
 
-    for (i=0; i<level.barricades.size; i++) {
+    for (i=0; i<level.barricades.size; i++)
+    {
         ent = level.barricades[i];
-        if (self isTouching(ent) && ent.hp > 0) {
+        if (self istouching(ent) && ent.hp > 0)
+        {
             fwdDir = vectorNormalize(targetposition-self.origin);
             dirToTarget = vectorNormalize(ent.origin-self.origin);
             dot = vectorDot(fwdDir, dirToTarget);
-            if (dot > 0 && dot < 1) {return 1;}
+            if (dot > 0 && dot < 1)
+            {
+                return 1;
+            }
         }
     }
-    for (i=0; i<level.dynamic_barricades.size; i++) {
+    for (i=0; i<level.dynamic_barricades.size; i++)
+    {
         ent = level.dynamic_barricades[i];
-        if ((distance(self.origin, ent.origin) < 48) && (ent.hp > 0)) {
+        if (distance(self.origin, ent.origin) < 48 && ent.hp > 0)
+        {
             fwdDir = vectorNormalize(targetposition-self.origin);
             dirToTarget = vectorNormalize(ent.origin-self.origin);
             dot = vectorDot(fwdDir, dirToTarget);
-            if (dot > 0 && dot < 1) {return 1;}
+            if (dot > 0 && dot < 1)
+            {
+                return 1;
+            }
         }
     }
     return 0;
@@ -1011,16 +1402,24 @@ alertZombies(origin, distance, alertPower, ignoreEnt)
     // 14th most-called function (1.5% of all function calls).
     // Do *not* put a function entrance debugPrint statement here!
 
-    for (i=0; i < level.bots.size; i++) {
-        if (isDefined(ignoreEnt)) {
-            if (level.bots[i] == ignoreEnt) {continue;}
+    for (i=0; i < level.bots.size; i++)
+    {
+        if (isdefined(ignoreEnt))
+        {
+            if (level.bots[i] == ignoreEnt)
+            continue;
         }
         dist = distance(origin, level.bots[i].origin);
-        if (dist < distance) {
+        if (dist < distance)
+        {
             zombie = level.bots[i];
-            if (isalive(zombie) && isdefined(zombie.status)) {
+            if (isalive(zombie) && isdefined(zombie.status))
+            {
                 zombie.alertLevel += alertPower;
-                if (zombie.status == "idle") {zombie search();}
+                //if (!isdefined(zombie.
+                //zombie.lastMemorizedPos = origin;
+                if (zombie.status == "idle")
+                zombie zomGoSearch();
             }
         }
     }

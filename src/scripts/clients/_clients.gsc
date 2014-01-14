@@ -1,7 +1,7 @@
 /******************************************************************************
     Reign of the Undead, v2.x
 
-    Copyright (c) 2010-2014 Reign of the Undead Team.
+    Copyright (c) 2010-2013 Reign of the Undead Team.
     See AUTHORS.txt for a listing.
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -67,12 +67,11 @@ catchBot()
 {
     debugPrint("in _clients::catchBot()", "fn", level.nonVerbose);
 
-    // Reconnecting bot
-    if (self getStat(512) == 100) {
+    //RELOADING ZOMBIE :]
+    if(self getStat(512) == 100) {
         level.loadBots = 0;
         self.isBot = true;
-        // This happens when the map is restarted without the server being restarted
-        self thread scripts\bots\_bot::reconnect();
+        self thread scripts\bots\_bots::loadBot();
 
         return 1;
     }
@@ -113,7 +112,7 @@ Callback_PlayerConnect()
                              "ui_uav_client", 1 ,
                              "ui_hintstring", "",
                              "ui_infostring", "",
-                             "cg_enemynamefadein", level.MAX_INT,
+                             "cg_enemynamefadein", 999999999,
                              "cg_enemynamefadeout", 0,
                              "ui_clientcmd", "empty",
                              "r_filmusetweaks", 0,
@@ -134,8 +133,6 @@ Callback_PlayerConnect()
 
         level.players[level.players.size] =  self;
         level notify("connected", self);
-
-        self setclientdvar("canleavegame", 1);
 
         self thread scripts\players\_players::onPlayerConnect();
         self thread scripts\gamemodes\_hud::onPlayerConnect();
@@ -181,7 +178,7 @@ Callback_PlayerKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDi
     debugPrint("in _clients::Callback_PlayerKilled()", "fn", level.veryHighVerbosity);
 
     if (self.isBot) {
-        self thread scripts\bots\_bot::killed(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, psOffsetTime, deathAnimDuration);
+        self thread scripts\bots\_bots::Callback_BotKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, psOffsetTime, deathAnimDuration);
     } else {
         self thread scripts\players\_players::onPlayerKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, psOffsetTime, deathAnimDuration);
     }

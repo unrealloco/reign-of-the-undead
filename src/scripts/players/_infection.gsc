@@ -1,7 +1,7 @@
 /******************************************************************************
     Reign of the Undead, v2.x
 
-    Copyright (c) 2010-2014 Reign of the Undead Team.
+    Copyright (c) 2010-2013 Reign of the Undead Team.
     See AUTHORS.txt for a listing.
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -256,20 +256,20 @@ playerGoZombie()
 
     self FreezeControls(true);
 
-    self.mover = spawn("script_origin", self.origin);
-    self.mover.origin = self.origin;
-    self.mover.angles = self.angles;
+    self.linkObj = spawn("script_origin", self.origin);
+    self.linkObj.origin = self.origin;
+    self.linkObj.angles = self.angles;
 
     self updateHealthHud(1);
 
     wait 0.05;
 
     self thread createKillZombieObjective();
-    self linkto(self.mover);
-    self scripts\bots\_bot::idle();
+    self linkto(self.linkObj);
+    self scripts\bots\_bots::zomGoIdle();
     self thread scripts\bots\_bots::zomMain();
 
-    ent = self scripts\bots\_bot::closestTarget();
+    ent = self getClosestTarget();
     if (isdefined(ent)) {
         self scripts\bots\_bots::zomSetTarget(ent.origin);
     }

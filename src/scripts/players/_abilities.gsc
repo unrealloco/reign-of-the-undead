@@ -1,7 +1,7 @@
 /******************************************************************************
     Reign of the Undead, v2.x
 
-    Copyright (c) 2010-2014 Reign of the Undead Team.
+    Copyright (c) 2010-2013 Reign of the Undead Team.
     See AUTHORS.txt for a listing.
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -191,7 +191,7 @@ getDamageModifier(weapon, means, target, damage)
         if (!WeaponIsBoltAction(weapon) && !WeaponIsSemiAuto(weapon) && means == "MOD_HEAD_SHOT") {
             MP += .45;
         }
-        if (!target scripts\bots\_bot::canSeeTarget(self)) {
+        if (!target scripts\bots\_bots::zomSpot(self)) {
             MP += .15;
         }
     }

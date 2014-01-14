@@ -1,7 +1,7 @@
 /******************************************************************************
     Reign of the Undead, v2.x
 
-    Copyright (c) 2010-2014 Reign of the Undead Team.
+    Copyright (c) 2010-2013 Reign of the Undead Team.
     See AUTHORS.txt for a listing.
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -199,7 +199,7 @@ logPlayersAtGameEnd()
     level endon("starting_map_change");
 
     flag = true;
-    while (flag) {
+    while(flag) {
         level waittill("game_ended");
         noticePrint("Players in the game when the game ended:");
         for (i=0; i<level.players.size; i++) {
@@ -309,7 +309,6 @@ changeMap(mapname)
         }
     }
 } // End function changeMap()
-
 
 /**
  * @brief Continuouly animates a script_brushmodel animation spec'd in a map
@@ -514,4 +513,3 @@ hurtPlayer()
         wait interval;
     }
 }
-

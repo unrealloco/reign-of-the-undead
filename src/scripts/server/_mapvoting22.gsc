@@ -1,7 +1,7 @@
 /******************************************************************************
     Reign of the Undead, v2.x
 
-    Copyright (c) 2010-2014 Reign of the Undead Team.
+    Copyright (c) 2010-2013 Reign of the Undead Team.
     See AUTHORS.txt for a listing.
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -643,6 +643,7 @@ playerVisuals()
     self.playerVoteFeedbackIconHud setText(""); // init
     self.playerVoteFeedbackIconHud.parent = self;
     self.playerVoteFeedbackIconHud.hideWhenInMenu = true;
+
 }
 
 
@@ -704,6 +705,7 @@ updateVotingResults()
         } else {
             // Do nothing if the vote totals aren't dirty
         }
+        /// @bug Temp make this 0.2 instaed of 0.1 to limit max number of strings created
         wait 0.2;
     }
 }
