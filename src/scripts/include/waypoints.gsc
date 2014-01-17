@@ -63,6 +63,7 @@ initializeWaypoints()
 
     // level thread printAStarData();
     // kdNearestVisibleWpTest(5000, true);
+    nearestKWaypointsTest(5, true);
 }
 
 /**
@@ -1135,6 +1136,193 @@ nearestVisibleWaypoint(origin, ignoreEntity)
     }
 
     return nearestWp;
+}
+
+/// returns the k nearest waypoints
+nearestKWaypoints(origin, k)
+{
+    if (!isDefined(k)) {k = 3;}
+
+    closest = [];
+    // ensure the initial array is sorted
+    for (i=0; i<k; i++) {
+        waypoint = spawnStruct();
+        waypoint.id = -1;
+        waypoint.distanceSquared = (-1 * (k - i)) + level.MAX_INT;   // 2147483647, 32-bit ints
+        closest[closest.size] = waypoint;
+    }
+
+    // brute-force method, used for comparison and validation
+    for (i=0; i<level.WpCount; i++) {
+        distance = distanceSquared(origin, level.Wp[i].origin);
+        if (distance >= closest[k-1].distanceSquared) {continue;}
+
+        j = k - 1;
+        // Starting at the right end of the array, shift elements larger than
+        // newValue to the right until we are where newValue belongs, then put newValue
+        // there.
+        while ((j > 0) && (distance < closest[j-1].distanceSquared)) {
+            closest[j].distanceSquared = closest[j-1].distanceSquared;
+            closest[j].id = closest[j-1].id;
+            j--;
+        }
+        closest[j].distanceSquared = distance;
+        closest[j].id = i;
+        closest[k] = undefined;
+    }
+
+    return closest;
+}
+
+nearestKWaypointsTest(n, useMapExtents)
+{
+    for (i=0; i<n; i++) {
+        origin = random3dPoint(useMapExtents);   // if true, generate points within 3D volume covered by waypoints
+
+        // nearest waypoint
+        nearestWp = -1;
+        nearestDistance = level.MAX_INT; // 2147483647, 32-bit ints
+        for (j=0; j<level.WpCount; j++) {
+            distance = distanceSquared(origin, level.Wp[j].origin);
+            if(distance < nearestDistance) {
+                nearestDistance = distance;
+                nearestWp = j;
+            }
+        }
+        noticePrint("nearestWp: " + nearestWp + " nearestDistance: " + nearestDistance);
+
+        // nearest k waypoints
+        waypoints = nearestKWaypoints(origin, 3);
+        for (j=0; j<waypoints.size; j++) {
+            noticePrint("j: " + j + ", " + waypoints[j].id + ", " + waypoints[j].distanceSquared);
+        }
+
+        // kd-tree method
+        // get an available static member
+        k = 3;
+        index = availableStatic();
+        level.static[index] = [];
+        for (j=0; j<k; j++) {
+            best = spawnStruct();
+            best.node = 0;
+            best.distanceSquared = (-1 * (k - j)) + level.MAX_INT;   // 2147483647, 32-bit ints
+            level.static[index][level.static[index].size] = best;
+        }
+//         level.static[index] = level.MAX_INT; // 2147483647, 32-bit ints
+
+        kdWaypointNearestKNeighbor(level.kdWpTree, origin, index);
+        for (j=0; j<level.static[index].size; j++) {
+            best = level.static[index][j];
+            noticePrint("Best nodes: j: " + j + ", " + best.node.id + ", " + best.distanceSquared);
+        }
+
+        // recycle the static member
+        level.static[index] = 0;
+        level.staticStack[level.staticStack.size] = index;
+    }
+}
+
+/**
+ * @brief Performs a Nearest Neighbor search on the k-dimensional waypoint tree
+ *
+ * ***Recursive***
+ *
+ * @param root node The node to begin the search at
+ * @param origin the point we want to find the closest waypoint to
+ * @param staticIndex integer the index in level.static that will hold the bestDistance
+ * @param parent node the parent of the current node
+ * @param depth integer the current depth of the tree
+ * @param bestNode node the node that corresponds to the bestDistance
+ *
+ * @returns node the node representing the nearest waypoint
+ */
+kdWaypointNearestKNeighbor(root, origin, staticIndex, parent, depth)
+{
+    // 10th most-called function (2% of all function calls).
+    // Do *not* put a function entrance debugPrint statement here!
+
+    if (!isDefined(root)) {
+        return;
+    }
+
+    if (!isDefined(depth)) {depth = 0;}
+
+    k = 3;              // find k closest waypoints
+    r = 3;              // our waypoints are in R^3
+    axis = depth % r;   // cycle the axis each recursion
+
+    // instrumentation
+    dim = "";
+    if (axis == 0) {dim = "x";}
+    else if (axis == 1) {dim = "y";}
+    else if (axis == 2) {dim = "z";}
+    id = root.id;
+    originDim = origin[axis];
+    nodeDim = level.Wp[root.id].origin[axis];
+    dimDelta = nodeDim - originDim;
+
+    // distance from current node to the search point
+    distance = distanceSquared(level.Wp[root.id].origin, origin);
+//     noticePrint("computing distanceSquared for node: " + root.id);
+    level.kdTreeDistanceCount++;
+
+    // level.static[staticIndex] holds best distances and best nodes
+
+    // Starting at the right end of the array, shift elements larger than
+    // newValue to the right until we are where newValue belongs, then put newValue
+    // there.
+    j = k - 1;
+    while ((j > 0) && (distance < level.static[staticIndex][j-1].distanceSquared)) {
+        level.static[staticIndex][j].distanceSquared = level.static[staticIndex][j-1].distanceSquared;
+        level.static[staticIndex][j].node = level.static[staticIndex][j-1].node;
+        j--;
+    }
+    level.static[staticIndex][j].distanceSquared = distance;
+    level.static[staticIndex][j].node = root;
+    level.static[staticIndex][k] = undefined;
+
+
+    // walk the tree until we get to the correct leaf node. If the dimensional coordinate
+    // of the search point is less than the dimensional coordinate of the current node,
+    // corresponding to a positive dimDelta, then we proceed to the left child,
+    // otherwise we proceed to the right child.
+    if (dimDelta > 0) {
+        kdWaypointNearestKNeighbor(root.leftChild, origin, staticIndex, root, depth+1);
+    } else {
+        kdWaypointNearestKNeighbor(root.rightChild, origin, staticIndex, root, depth+1);
+    }
+    // At this point, we have the closest waypoint to the search point that we found
+    // in our walk to the leaf node
+
+    // Make sure dimDistance is positive, as distances must be, but preserve sign
+    // of dimDelta so we can decide which child to visit if the hypersphere intersects
+    // the hyperplane.
+    if (dimDelta < 0) {dimDistance = dimDelta * -1;}
+    else {dimDistance = dimDelta;}
+    dimDistance = dimDistance * dimDistance;    // squared, as we compare with a distanceSquared()
+
+    // level.static[staticIndex] holds bestDistance
+    if (dimDistance >= level.static[staticIndex][k-1].distanceSquared) {return;}
+
+    // As we unwind the recursion back to the root node, we need to examine each node
+    // to see if the actual closest waypoint may be in the current node's other branch,
+    // i.e. does the hypersphere of bestDistance radius cross the node's splitting plane?
+    // If it doesn't cross it, then we can rule out this node's other child as potentially
+    // containing a closer waypoint--otherwise we need to check the other branch
+    if (level.static[staticIndex][0].distanceSquared > dimDistance) { // level.static[staticIndex] holds bestDistance
+        // hypersphere crosses hyperplane, so recurse into other branch to search for
+        // a potentially closer node
+        if (dimDelta > 0) {
+            kdWaypointNearestKNeighbor(root.rightChild, origin, staticIndex, root, depth+1);
+        } else {
+            kdWaypointNearestKNeighbor(root.leftChild, origin, staticIndex, root, depth+1);
+        }
+    } else {
+        // hypersphere doesn't intersect hyperplane, so we can rule out this node's
+        // other branch as potentially containing a closer waypoint
+        return;
+    }
+    return;
 }
 
 /**
