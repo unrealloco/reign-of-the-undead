@@ -58,4 +58,5 @@ init()
     level.PATH_CLAMPED = 3;
     level.PATH_FALL = 4;
     level.PATH_TELEPORT = 5;
+    level.PATH_JUMP = 6;
 }

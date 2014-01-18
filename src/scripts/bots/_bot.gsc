@@ -316,14 +316,14 @@ wander()
         self.status = level.BOT_WANDERING;
         noticePrint("self.origin: " + self.origin + " self.mover.origin: " + self.mover.origin);
         self.myWaypoint = nearestWaypoints(self.origin, 1)[0];
-//         self.myWaypoint = 67; /// temp HACK
+        self.myWaypoint = 186; /// temp HACK
         /// temp HACK, jump bot to its first waypoint
         wait 3;
         self enqueueMovement(level.Wp[self.myWaypoint].origin, 0.05, self.angles);
         self setSpeed();
         self move();
         self.goalWp = self.myWaypoint;
-//         self.goalWp = 114; /// temp HACK
+        self.goalWp = 282; /// temp HACK
 
         while (count < 300) {
             count++;
@@ -371,6 +371,8 @@ wander()
                 self.myWaypoint = self.nextWp;
             } else if (self.pathType == level.PATH_FALL) {
                 self fall();
+            } else if (self.pathType == level.PATH_JUMP) {
+                self jump();
             }
         }
         iPrintLnBold("Done Wandering!");
@@ -657,7 +659,30 @@ devDrawLocalCoordinateSystem(direction)
 
 jump()
 {
+    iPrintLnBold("Jump!");
 
+    // compute initial velocity, v_0, for our fall
+    direction = level.Wp[self.nextWp].origin - level.Wp[self.myWaypoint].origin;
+    direction = direction * (1,1,0);
+    direction = vectorNormalize(direction);
+    direction = direction + (0,0,1); // jump at 45 degree angle
+    v_0 = self.speed * direction;
+    v_0 = v_0 * 1.10; // a bit faster initial veleocity to help bots make the jump
+    r_0 = level.Wp[self.myWaypoint].origin;
+    thread drawVelocity(v_0, r_0);
+
+    /// TEMP: comment out so comitted code doesn't crash
+//     if (self ballistic(v_0, r_0) == (0,0,0)) {
+//         // motion is done and we are on the ground.  get us back on track to our goal
+//         // we are off waypoints here, so we need to get back on them, preferably
+//         // without backtracking
+//         self postFall();
+//     } else {
+//         // motion is done but we are not on the ground.  we may have hit a wall or
+//         // other obstacle and be floating in mid-air right now!
+//         /// @todo implement fall() after initial ballistic motion hits a wall or ceiling
+//         iPrintLnBold("Motion done, not on ground!");
+//     }
 }
 
 fall()
@@ -967,6 +992,8 @@ ballistic(v_0, r_0)
     noticePrint("g: " + g);
     thread drawVelocity(v_0, r_0);
 
+    /// @todo jump() fails because we do move to edge for fall() here.  move that motion into fall().
+    /// also, make ballistic() recursive until bot is on the ground.
     // move to edge, r_0
     self setPlayerAngles(facing);
     self.mover moveTo(r_0, 0.05, 0, 0);
@@ -1039,6 +1066,8 @@ pathType(fromWp, toWp)
             /// For now, just treat it as a clamped path.
             return level.PATH_CLAMPED;
         }
+    } else if ((level.Wp[fromWp].type == "jump") && (level.Wp[toWp].type == "jump")) {
+        return level.PATH_JUMP;
     }
 
     return level.PATH_NORMAL;
