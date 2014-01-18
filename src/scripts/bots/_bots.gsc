@@ -730,11 +730,11 @@ zomMoveTowards(target_position)
 
         if (!isDefined(self.myWaypoint)) {
 //             self.myWaypoint = nearestWaypoint(self.origin, true, self);
-            self.myWaypoint = nearestWaypoint(self.origin, false, self);
+            self.myWaypoint = nearestWaypoints(self.origin, 1)[0];
         }
 
 //         targetWp = nearestWaypoint(target_position, true, self.bestTarget);
-        targetWp = nearestWaypoint(target_position, false, self.bestTarget);
+        targetWp = nearestWaypoints(target_position, 1)[0];
 
         if (self.myWaypoint < 0) {
             if ((self.myWaypoint == -1) ||  // we never got past this init value
@@ -748,7 +748,7 @@ zomMoveTowards(target_position)
             } else if (self.myWaypoint == -3) { // no visible waypoints from our position
                 // this can happen if we are inside an object we shouldn't be in,
                 // like a shipping container
-                self.myWaypoint = nearestWaypoint(self.origin, false, self);
+                self.myWaypoint = nearestWaypoints(self.origin, 1)[0];
                 if (self.myWaypoint < 0) {
                     value = self.myWaypoint;
                     self.myWaypoint = undefined;
@@ -768,7 +768,7 @@ zomMoveTowards(target_position)
             } else if (targetWp == -3) { // no visible waypoints from our position
                 // this can happen if the target is inside an object we shouldn't be in,
                 // like a shipping container, or with insufficient waypoints
-                targetWp = nearestWaypoint(self.origin, false, self);
+                targetWp = nearestWaypoints(self.origin, 1)[0];
                 if (targetWp < 0) {
                     value = targetWp;
                     targetWp = undefined;

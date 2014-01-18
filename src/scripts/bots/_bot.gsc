@@ -315,7 +315,7 @@ wander()
         self.isFollowingWaypoints = true;
         self.status = level.BOT_WANDERING;
         noticePrint("self.origin: " + self.origin + " self.mover.origin: " + self.mover.origin);
-        self.myWaypoint = nearestWaypoint(self.origin, true, self);
+        self.myWaypoint = nearestWaypoints(self.origin, 1)[0];
 //         self.myWaypoint = 67; /// temp HACK
         /// temp HACK, jump bot to its first waypoint
         wait 3;
@@ -709,7 +709,7 @@ fall()
 
 postFall()
 {
-    nearestWp = nearestWaypoint(self.origin, true, self);
+    nearestWp = nearestWaypoints(self.origin, 1)[0];
     if (nearestWp == self.goalWp) {
         // just move to goalWp, and invalidate pathNodes
 //         iPrintLnBold("post-fall: moving to goalWp");
