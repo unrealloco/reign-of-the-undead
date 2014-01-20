@@ -373,6 +373,7 @@ wander()
                 self fall();
             } else if (self.pathType == level.PATH_JUMP) {
                 self jump();
+                self.myWaypoint = self.nextWp;
             }
         }
         iPrintLnBold("Done Wandering!");
@@ -660,29 +661,56 @@ devDrawLocalCoordinateSystem(direction)
 jump()
 {
     iPrintLnBold("Jump!");
+    noticePrint("Jump!");
 
     // compute initial velocity, v_0, for our fall
     direction = level.Wp[self.nextWp].origin - level.Wp[self.myWaypoint].origin;
     direction = direction * (1,1,0);
     direction = vectorNormalize(direction);
     direction = direction + (0,0,1); // jump at 45 degree angle
-    v_0 = self.speed * direction;
-    v_0 = v_0 * 1.10; // a bit faster initial veleocity to help bots make the jump
+
+    // treat as a 2-d problem in the plane of the jump
+    // assume: point mass, constant g, no resistive forces
+    // given: r, r_0, g, and v_0_hat
+    // req'd: s_0, t
     r_0 = level.Wp[self.myWaypoint].origin;
+    r = level.Wp[self.nextWp].origin;
+    v_0_hat = vectorNormalize(direction);
+    g = getDvarInt("g_gravity");     // acceleration due to gravity
+
+    // x, y are in the plane of the jump, *not* world coordinates
+    x_displacement = distance((r[0],r[1],0), (r_0[0],r_0[1],0));
+    y_displacement = r[2] - r_0[2];
+    t = sqrt((2 * (x_displacement - y_displacement)) / g);
+    s_0 = x_displacement / (0.707107 * t);
+    v_0 = s_0 * v_0_hat;
+
+    t_0 = int(t / 0.05) * 0.05;
+    finalStepTime = t - t_0;
+    if (finalStepTime <=0) {
+        errorPrint("finalStepTime is <= 0!");
+        errorPrint("finalStepTime: " + finalStepTime + " t_0: " + t_0 + " t: " + t);
+    }
+
+    noticePrint("r_0: " + r_0);
+    noticePrint("r: " + r);
+    noticePrint("x_displacement: " + x_displacement);
+    noticePrint("y_displacement: " + y_displacement);
+    noticePrint("g: " + g);
+    noticePrint("t: " + t);
+    noticePrint("s_0: " + s_0);
+    noticePrint("v_0: " + v_0);
     thread drawVelocity(v_0, r_0);
 
-    /// TEMP: comment out so comitted code doesn't crash
-//     if (self ballistic(v_0, r_0) == (0,0,0)) {
-//         // motion is done and we are on the ground.  get us back on track to our goal
-//         // we are off waypoints here, so we need to get back on them, preferably
-//         // without backtracking
-//         self postFall();
-//     } else {
-//         // motion is done but we are not on the ground.  we may have hit a wall or
-//         // other obstacle and be floating in mid-air right now!
-//         /// @todo implement fall() after initial ballistic motion hits a wall or ceiling
-//         iPrintLnBold("Motion done, not on ground!");
-//     }
+    facing = vectorToAngles(v_0);
+    self setPlayerAngles(facing);
+
+    self.mover moveGravity(v_0, t);
+    self.mover waittill("movedone");
+
+    self.mover moveTo(r, finalStepTime, 0, 0);
+    self.mover waittill("movedone");
+    noticePrint("actual final position: " + self.mover.origin);
 }
 
 fall()
@@ -717,6 +745,12 @@ fall()
     } else {
         position = trace["position"] + (0,0,5);
     }
+    facing = vectorToAngles(direction);
+    self setPlayerAngles(facing);
+    distance = distance(position, self.origin);
+    time = distance / self.speed;
+    self.mover moveTo(position, time, 0, 0);
+    self.mover waittill("movedone");
 
     self pathPrint("pre-fall path: ");
 
@@ -950,14 +984,20 @@ ballistic(v_0, r_0)
     v_last = v_0;
     s_last = s_0;
     trace = undefined;
+    i = 0;
     while (1) {
         t = t + 0.05;
         r = r_0 + (v_0 * t) + (0.5 * g * t * t);
+        noticePrint("(t, r): (" + t + ", " + r + ")");
+        /// @todo these traces may hit other bots or entities, so we need to pre-compute
+        /// and cache these falls for every possible bot speed before the game starts
+        /// and stuff gets in our way.
         trace = bulletTrace(r_last, r, false, self);
-        if (trace["fraction"] != 1) {
+        if ((trace["fraction"] != 1) && (i>2)) {
             break; // we would hit the ground if we did this
         }
         r_last = r;
+        i++;
     }
     t = t - 0.05 - 0.005;
     // repeat the last segment with time resolution of +/- 0.005s
@@ -992,12 +1032,7 @@ ballistic(v_0, r_0)
     noticePrint("g: " + g);
     thread drawVelocity(v_0, r_0);
 
-    /// @todo jump() fails because we do move to edge for fall() here.  move that motion into fall().
-    /// also, make ballistic() recursive until bot is on the ground.
-    // move to edge, r_0
-    self setPlayerAngles(facing);
-    self.mover moveTo(r_0, 0.05, 0, 0);
-    self.mover waittill("movedone");
+    /// @todo make ballistic() recursive until bot is on the ground.
 
     // moveGravity() only works in 0.05s increments, so we need to do the last
     // step manually to ensure we don't wind up in the ground!
@@ -1012,7 +1047,7 @@ ballistic(v_0, r_0)
     }
 
     // move to final position
-    self.mover moveTo(position, finalStepTime, 0, 0);  /// @bug finalStepTime is sometimes not positive
+    self.mover moveTo(position, finalStepTime, 0, 0);
     self.mover waittill("movedone");
     noticePrint("actual final position: " + self.mover.origin);
 
