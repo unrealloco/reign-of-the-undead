@@ -108,7 +108,7 @@ main()
         buildShopsByTradespawns("1 3 5");
     }
 
-//     maps\mp\_umiEditor::initMapEditor();
+    maps\mp\_umiEditor::initMapEditor();
     buildZombieSpawnsByClassname("mp_dm_spawn");
 
     if (umiEditorMode) {

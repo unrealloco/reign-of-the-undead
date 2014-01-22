@@ -91,6 +91,7 @@ init()
 
     level.botsLoaded = true;
     thread monitorBotSlots();
+    computeFalls();
 }
 
 
