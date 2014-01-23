@@ -1266,7 +1266,7 @@ load_waypoints()
     level.waypoints[163].children[1] = 164;
     level.waypoints[163].children[2] = 167;
     level.waypoints[164] = spawnstruct();
-    level.waypoints[164].origin = (18.475,934.977,27.5193);
+    level.waypoints[164].origin = (15.9354,933.389,27.7747);
     level.waypoints[164].type = "mantle";
     level.waypoints[164].childCount = 2;
     level.waypoints[164].children[0] = 163;
@@ -1556,7 +1556,7 @@ load_waypoints()
     level.waypoints[204].children[1] = 211;
     level.waypoints[204].children[2] = 212;
     level.waypoints[205] = spawnstruct();
-    level.waypoints[205].origin = (-630.922,691.357,29.8453);
+    level.waypoints[205].origin = (-627.511,694.386,29.4743);
     level.waypoints[205].type = "mantle";
     level.waypoints[205].childCount = 2;
     level.waypoints[205].children[0] = 204;
@@ -2122,7 +2122,7 @@ load_waypoints()
     level.waypoints[276].children[0] = 241;
     level.waypoints[276].children[1] = 275;
     level.waypoints[277] = spawnstruct();
-    level.waypoints[277].origin = (-381.203,1235.15,239.424);
+    level.waypoints[277].origin = (-399.862,1234.56,249.901);
     level.waypoints[277].type = "fall";
     level.waypoints[277].childCount = 2;
     level.waypoints[277].children[0] = 50;
