@@ -720,52 +720,76 @@ fall()
     iPrintLnBold("Fall!");
     noticePrint("Fall!");
 
-    // compute initial velocity, v_0, for our fall
-    lastDirection = vectorNormalize(self.origin - self.lastPosition);
-    position = (self.origin[0], self.origin[1], self.lastPosition[2]);
-    lastLevelDirection = vectorNormalize(position - self.lastPosition);
-    noticePrint("directions: " + lastDirection + lastLevelDirection);
-    noticePrint("positions: " + position + self.lastPosition);
-    declination = scripts\players\_turrets::angleBetweenTwoVectors(lastDirection, lastLevelDirection);
-
-    newDirection = vectorNormalize(level.Wp[self.nextWp].origin - level.Wp[self.myWaypoint].origin);
-    position = (level.Wp[self.nextWp].origin[0], level.Wp[self.nextWp].origin[1], level.Wp[self.myWaypoint].origin[2]);
-    newLevelDirection = vectorNormalize(position - level.Wp[self.myWaypoint].origin);
-    deltaZ = tan(declination);
-    position = position + (0,0,-1 * deltaZ);
-    direction = vectorNormalize(position - level.Wp[self.myWaypoint].origin);
-    v_0 = direction * self.speed;
-
-    // now we need to find and move to the actual edge of the object we are falling off of
-    from = self.origin + (direction * 30);
-    from = (position[0], position[1], position[2] - 5);
-    to = (self.origin[0], self.origin[1], self.origin[2] - 5);
-    trace = bulletTrace(from, to, false, self);
-    if (trace["fraction"] == 1) {
-        // we couldn't find the edge!
-        /// This is probably very bad!
-        noticePrint("could not find edge!");
-        position = self.origin;
+    if (self.speed <= 150) {speed = 100;}
+    else if (self.speed <= 250) {speed = 200;}
+    else {speed = 300;}
+    movement = cachedMovement(self.myWaypoint, self.nextWp, speed);
+    if (isDefined(movement)) {
+        // execute!
+        for (i=0; i<movement.motions.size; i++) {
+            if (movement.motions[i].type == "to") {
+                self setPlayerAngles(movement.motions[i].facing);
+                self.mover moveTo(movement.motions[i].position, movement.motions[i].time, 0, 0);
+                self.mover waittill("movedone");
+            } else if (movement.motions[i].type == "gravity") {
+                self setPlayerAngles(movement.motions[i].facing);
+                self.mover moveGravity(movement.motions[i].velocity, movement.motions[i].time);
+                self.mover waittill("movedone");
+            }
+        }
+        self postFall();
+        return;
     } else {
-        position = trace["position"] + (0,0,5);
-        position = position + (direction * 10); //add one extra unit
+        // cache miss!
+        errorPrint("Cache Miss!");
     }
-    // move to edge
-    facing = vectorToAngles(direction);
-    self setPlayerAngles(facing);
-    distance = distance(position, self.origin);
-    time = distance / self.speed;
-    if (time <=0) {
-        errorPrint("moving to edge: time is <= 0!");
-        errorPrint("time: " + time);
-    }
-    self.mover moveTo(position, time, 0, 0);
-    self.mover waittill("movedone");
 
-    self pathPrint("pre-fall path: ");
-
-    self ballistic(v_0, position);
-    self postFall();
+//     // compute initial velocity, v_0, for our fall
+//     lastDirection = vectorNormalize(self.origin - self.lastPosition);
+//     position = (self.origin[0], self.origin[1], self.lastPosition[2]);
+//     lastLevelDirection = vectorNormalize(position - self.lastPosition);
+//     noticePrint("directions: " + lastDirection + lastLevelDirection);
+//     noticePrint("positions: " + position + self.lastPosition);
+//     declination = scripts\players\_turrets::angleBetweenTwoVectors(lastDirection, lastLevelDirection);
+//
+//     newDirection = vectorNormalize(level.Wp[self.nextWp].origin - level.Wp[self.myWaypoint].origin);
+//     position = (level.Wp[self.nextWp].origin[0], level.Wp[self.nextWp].origin[1], level.Wp[self.myWaypoint].origin[2]);
+//     newLevelDirection = vectorNormalize(position - level.Wp[self.myWaypoint].origin);
+//     deltaZ = tan(declination);
+//     position = position + (0,0,-1 * deltaZ);
+//     direction = vectorNormalize(position - level.Wp[self.myWaypoint].origin);
+//     v_0 = direction * self.speed;
+//
+//     // now we need to find and move to the actual edge of the object we are falling off of
+//     from = self.origin + (direction * 30);
+//     from = (position[0], position[1], position[2] - 5);
+//     to = (self.origin[0], self.origin[1], self.origin[2] - 5);
+//     trace = bulletTrace(from, to, false, self);
+//     if (trace["fraction"] == 1) {
+//         // we couldn't find the edge!
+//         /// This is probably very bad!
+//         noticePrint("could not find edge!");
+//         position = self.origin;
+//     } else {
+//         position = trace["position"] + (0,0,5);
+//         position = position + (direction * 10); //add one extra unit
+//     }
+//     // move to edge
+//     facing = vectorToAngles(direction);
+//     self setPlayerAngles(facing);
+//     distance = distance(position, self.origin);
+//     time = distance / self.speed;
+//     if (time <=0) {
+//         errorPrint("moving to edge: time is <= 0!");
+//         errorPrint("time: " + time);
+//     }
+//     self.mover moveTo(position, time, 0, 0);
+//     self.mover waittill("movedone");
+//
+//     self pathPrint("pre-fall path: ");
+//
+//     self ballistic(v_0, position);
+//     self postFall();
 //     if (self ballistic(v_0, position) == (0,0,0)) {
 //         // motion is done and we are on the ground.  get us back on track to our goal
 //         // we are off waypoints here, so we need to get back on them, preferably
@@ -1283,6 +1307,7 @@ computeFalls()
                             movement.to = linkedID;
                             movement.speed = speed;
                             movement.motions = [];
+//                             movementCacheHash(movement.from, movement.to, movement.speed);
                             t = distance / speed;
 //                             noticePrint("moveTo(): " + edge.position + ", " + t);
                             motion = spawnStruct();
@@ -1295,7 +1320,8 @@ computeFalls()
 //                             printMovement(movement);
                             movement = computeBallistic(edge.direction, edge.position, speed, mover, movement, 0, true);
 //                             thread devDrawLocalCoordinateSystem(edge.direction, edge.position);
-                            printMovement(movement);
+//                             printMovement(movement);
+                            cacheMovement(movement);
                             speed = speed + 100;
                         }
                     }
@@ -1333,7 +1359,8 @@ computeFalls()
                             } else {
                                 movement = computeBallistic(edge.direction, edge.position, speed, mover, movement, 0, false);
                             }
-                            printMovement(movement);
+                            cacheMovement(movement);
+//                             printMovement(movement);
                             speed = speed + 100;
                         }
                     }
@@ -1341,6 +1368,91 @@ computeFalls()
             }
         }
     }
+}
+
+initMovementCache()
+{
+    // see http://planetmath.org/goodhashtableprimes for primes
+    n = 193;    // cache size, prime.  good primes: 53, 97, 193, 389
+    level.movementCache = [];
+    for (i=0; i<n; i++) {
+        level.movementCache[i] = [];
+    }
+}
+
+cacheMovement(movement)
+{
+    debugPrint("in _bots::cacheMovement()", "fn", level.nonVerbose);
+
+    hash = movementCacheHash(movement.from, movement.to, movement.speed);
+    level.movementCache[hash][level.movementCache[hash].size] = movement;
+}
+
+printMovementCacheDistribution()
+{
+    for (i=0; i<level.movementCache.size; i++) {
+        count = level.movementCache[i].size;
+        noticePrint(i + ":" + count);
+//         if (i == 9) {
+//             for (j=0; j<level.movementCache[i].size; j++) {
+//                 movement = level.movementCache[i][j];
+//                 noticePrint("Movement (from, to, speed): (" + movement.from + ", " + movement.to + ", " + movement.speed + ")");
+//                 movementCacheHash(movement.from, movement.to, movement.speed);
+//             }
+//         }
+    }
+}
+
+cachedMovement(from, to, speed)
+{
+    hash = movementCacheHash(from, to, speed);
+
+    for (i=0; i<level.movementCache[hash].size; i++) {
+        if ((level.movementCache[hash][i].from == from) &&
+            (level.movementCache[hash][i].to == to) &&
+            (level.movementCache[hash][i].speed == speed))
+        {
+            return level.movementCache[hash][i];
+        }
+    }
+    return undefined;
+}
+
+movementCacheHash(from, to, speed)
+{
+    debugPrint("in _bots::movementCacheHash()", "fn", level.nonVerbose);
+
+    // see http://planetmath.org/goodhashtableprimes for primes
+    n = 193;    // cache size, prime.  good primes: 53, 97, 193, 389
+
+    // large-ish prime numbers
+    p1 = 196613;
+    p2 = 393241;
+    p3 = 786433;
+
+//     temp = xor(xor((from * p1), (to * p2)), (speed * p3));
+//     noticePrint("pre-modulo hash: " + temp);
+    hash = xor(xor((from * p1), (to * p2)), (speed * p3)) % n;
+    if (hash < 0) {hash = hash * -1;}
+//     noticePrint("hash: " + hash);
+    return hash;
+}
+
+xor(a, b)
+{
+    a = int(a);
+    b = int(b);
+    n = 1;
+    result = 0;
+    while (a != 0 || b != 0) {
+        mod = ((a - b) % 2);
+        if (mod < 0) {mod = mod * -1;}
+        result += n * mod;
+        a = int(a / 2);
+        b = int(b / 2);
+        n = int(n * 2);
+    }
+    return result;
 }
 
 printMovement(movement)

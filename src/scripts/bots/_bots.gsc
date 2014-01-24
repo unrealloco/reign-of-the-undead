@@ -91,7 +91,9 @@ init()
 
     level.botsLoaded = true;
     thread monitorBotSlots();
+    initMovementCache();
     computeFalls();
+    printMovementCacheDistribution();
 }
 
 
