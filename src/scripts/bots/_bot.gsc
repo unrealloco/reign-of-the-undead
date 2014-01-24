@@ -316,14 +316,14 @@ wander()
         self.status = level.BOT_WANDERING;
         noticePrint("self.origin: " + self.origin + " self.mover.origin: " + self.mover.origin);
         self.myWaypoint = nearestWaypoints(self.origin, 1)[0];
-        self.myWaypoint = 202; /// temp HACK
+        self.myWaypoint = 186; /// temp HACK
         /// temp HACK, jump bot to its first waypoint
         wait 3;
         self enqueueMovement(level.Wp[self.myWaypoint].origin, 0.05, self.angles);
         self setSpeed();
         self move();
         self.goalWp = self.myWaypoint;
-        self.goalWp = 192; /// temp HACK
+        self.goalWp = 283; /// temp HACK
 
         while (count < 300) {
             count++;
@@ -665,54 +665,30 @@ jump()
     iPrintLnBold("Jump!");
     noticePrint("Jump!");
 
-    // compute initial velocity, v_0, for our fall
-    direction = level.Wp[self.nextWp].origin - level.Wp[self.myWaypoint].origin;
-    direction = direction * (1,1,0);
-    direction = vectorNormalize(direction);
-    direction = direction + (0,0,1); // jump at 45 degree angle
-
-    // treat as a 2-d problem in the plane of the jump
-    // assume: point mass, constant g, no resistive forces
-    // given: r, r_0, g, and v_0_hat
-    // req'd: s_0, t
-    r_0 = level.Wp[self.myWaypoint].origin;
-    r = level.Wp[self.nextWp].origin;
-    v_0_hat = vectorNormalize(direction);
-    g = getDvarInt("g_gravity");     // acceleration due to gravity
-
-    // x, y are in the plane of the jump, *not* world coordinates
-    x_displacement = distance((r[0],r[1],0), (r_0[0],r_0[1],0));
-    y_displacement = r[2] - r_0[2];
-    t = sqrt((2 * (x_displacement - y_displacement)) / g);
-    s_0 = x_displacement / (0.707107 * t);
-    v_0 = s_0 * v_0_hat;
-
-    t_0 = int(t / 0.05) * 0.05;
-    finalStepTime = t - t_0;
-    if (finalStepTime <=0) {
-        errorPrint("finalStepTime is <= 0!");
-        errorPrint("finalStepTime: " + finalStepTime + " t_0: " + t_0 + " t: " + t);
+    speed = 10; // in jump() case, an arbitrary number we used in calculating hash
+    movement = cachedMovement(self.myWaypoint, self.nextWp, speed);
+    if (isDefined(movement)) {
+        // execute!
+        for (i=0; i<movement.motions.size; i++) {
+            if (movement.motions[i].type == "to") {
+                self setPlayerAngles(movement.motions[i].facing);
+                self.mover moveTo(movement.motions[i].position, movement.motions[i].time, 0, 0);
+                self.mover waittill("movedone");
+            } else if (movement.motions[i].type == "gravity") {
+                self setPlayerAngles(movement.motions[i].facing);
+                self.mover moveGravity(movement.motions[i].velocity, movement.motions[i].time);
+                self.mover waittill("movedone");
+            }
+        }
+        return;
+    } else {
+        // cache miss!
+        noticePrint("Motion cache miss (from, to, speed): (" + self.myWaypoint + ", " + self.nextWp + ", " + speed + ")");
+        // treat it as a clamped path as a fail-safe
+        self clamped();
+        self move();
+        self.myWaypoint = self.nextWp;
     }
-
-    noticePrint("r_0: " + r_0);
-    noticePrint("r: " + r);
-    noticePrint("x_displacement: " + x_displacement);
-    noticePrint("y_displacement: " + y_displacement);
-    noticePrint("g: " + g);
-    noticePrint("t: " + t);
-    noticePrint("s_0: " + s_0);
-    noticePrint("v_0: " + v_0);
-    thread drawVelocity(v_0, r_0);
-
-    facing = vectorToAngles(v_0);
-    self setPlayerAngles(facing);
-
-    self.mover moveGravity(v_0, t);
-    self.mover waittill("movedone");
-
-    self.mover moveTo(r, finalStepTime, 0, 0);
-    self.mover waittill("movedone");
-    noticePrint("actual final position: " + self.mover.origin);
 }
 
 fall()
@@ -741,65 +717,12 @@ fall()
         return;
     } else {
         // cache miss!
-        errorPrint("Cache Miss!");
+        noticePrint("Motion cache miss (from, to, speed): (" + self.myWaypoint + ", " + self.nextWp + ", " + speed + ")");
+        // treat it as a clamped path as a fail-safe
+        self clamped();
+        self move();
+        self.myWaypoint = self.nextWp;
     }
-
-//     // compute initial velocity, v_0, for our fall
-//     lastDirection = vectorNormalize(self.origin - self.lastPosition);
-//     position = (self.origin[0], self.origin[1], self.lastPosition[2]);
-//     lastLevelDirection = vectorNormalize(position - self.lastPosition);
-//     noticePrint("directions: " + lastDirection + lastLevelDirection);
-//     noticePrint("positions: " + position + self.lastPosition);
-//     declination = scripts\players\_turrets::angleBetweenTwoVectors(lastDirection, lastLevelDirection);
-//
-//     newDirection = vectorNormalize(level.Wp[self.nextWp].origin - level.Wp[self.myWaypoint].origin);
-//     position = (level.Wp[self.nextWp].origin[0], level.Wp[self.nextWp].origin[1], level.Wp[self.myWaypoint].origin[2]);
-//     newLevelDirection = vectorNormalize(position - level.Wp[self.myWaypoint].origin);
-//     deltaZ = tan(declination);
-//     position = position + (0,0,-1 * deltaZ);
-//     direction = vectorNormalize(position - level.Wp[self.myWaypoint].origin);
-//     v_0 = direction * self.speed;
-//
-//     // now we need to find and move to the actual edge of the object we are falling off of
-//     from = self.origin + (direction * 30);
-//     from = (position[0], position[1], position[2] - 5);
-//     to = (self.origin[0], self.origin[1], self.origin[2] - 5);
-//     trace = bulletTrace(from, to, false, self);
-//     if (trace["fraction"] == 1) {
-//         // we couldn't find the edge!
-//         /// This is probably very bad!
-//         noticePrint("could not find edge!");
-//         position = self.origin;
-//     } else {
-//         position = trace["position"] + (0,0,5);
-//         position = position + (direction * 10); //add one extra unit
-//     }
-//     // move to edge
-//     facing = vectorToAngles(direction);
-//     self setPlayerAngles(facing);
-//     distance = distance(position, self.origin);
-//     time = distance / self.speed;
-//     if (time <=0) {
-//         errorPrint("moving to edge: time is <= 0!");
-//         errorPrint("time: " + time);
-//     }
-//     self.mover moveTo(position, time, 0, 0);
-//     self.mover waittill("movedone");
-//
-//     self pathPrint("pre-fall path: ");
-//
-//     self ballistic(v_0, position);
-//     self postFall();
-//     if (self ballistic(v_0, position) == (0,0,0)) {
-//         // motion is done and we are on the ground.  get us back on track to our goal
-//         // we are off waypoints here, so we need to get back on them, preferably
-//         // without backtracking
-//         self postFall();
-//     } else {
-//         // motion is done but we are not on the ground.  we may have hit a wall or
-//         // other obstacle and be floating in mid-air right now!
-//         /// @todo implement fall() after initial ballistic motion hits a wall or ceiling
-//     }
 }
 
 postFall()
@@ -941,27 +864,6 @@ getOnPath()
         facing = vectorToAngles(level.Wp[self.myWaypoint].origin - self.origin);
         enqueueMovement(level.Wp[self.myWaypoint].origin, time, facing);
     }
-
-//     forward = anglesToForward(self getPlayerAngles);
-//     directVector = vectorNormalize(level.Wp[self.nextWp].origin - self.origin);
-//     testWp = self.pathNodes[self.pathNodes.size - 1];
-//     nextVector = vectorNormalize(level.Wp[testWp].origin - level.Wp[self.nextWp].origin);
-//     dot = vectorDot(directVector, nextVector);
-//
-//     if (dot > 0.5) {
-//         // the first full leg of the path is generally in front of us, so move to
-//         // the first pathNode
-//     } else {
-//         // the first full leg of the path is left/right or behind us, so we need to
-//         // determine if it better to go to another waypoint first
-//     }
-//     cumulativeDistance = distance(self.origin, level.Wp[self.pathNodes[self.pathNodes.size - 1]].origin);
-//     for (i=self.pathNodes.size - 1; i>=0; i--) {
-//         fromWp = self.pathNodes[i];
-//         toWp = self.pathNodes[i - 1];
-//         cumulativeDistance += distance(level.Wp[fromWp].origin, level.Wp[toWp].origin);
-//         directDistance = distance(self.origin, level.Wp[testWp].origin);
-//     }
 }
 
 /// draws a scaled unit vector in the direction of the velocity vector
@@ -983,141 +885,6 @@ drawLine(from, to)
     }
 }
 
-/**
- * @brief Performs ballistic motion in R^3
- *
- * We assume a point mass, located at self.mover.origin, no resistive forces, and
- * a constant acceleration due to gravity.
- *
- * With a game-standard acceleration due to gravity of (0,0,-800) units * s^(-2),
- * one unit equals 0.4829 inches or 1.227 cm.
- *
- * @param v_0 vector The initial velocity vector
- * @param r_0 vector The inital position vector.  r_0 *must* be at the actual edge
- *              of a surface, or ballistic motion will hit the very spot we are
- *              standing at.
- *
- * @returns vector The final velocity vector. (0,0,0) is we are on the ground
- */
-ballistic(v_0, r_0)
-{
-    noticePrint("Ballistic!");
-//     iPrintLnBold("Ballistic!");
-
-    onGround = false;
-
-    r = (0,0,0);                                // position at time t
-    v = (0,0,0);                                // velocity at time t
-    s = 0;                                      // speed at time t
-    g = (0,0,getDvarInt("g_gravity") * -1);     // acceleration due to gravity, assume constant
-
-    if (!isDefined(v_0)) {
-        direction = vectorNormalize(self.origin - self.lastPosition); // the direction of the last movement
-        v_0 = self.speed * direction;           // initial velocity vector at t == 0
-        s_0 = self.speed;
-    } else {
-        direction = vectorNormalize(v_0);
-        s_0 = distance((0,0,0), v_0);           // initial speed
-    }
-
-    facing = vectorToAngles(direction);
-
-    // for this motion, find impact time with resolution of +/- 0.05s
-    t = 0;
-    r_last = r_0;
-    v_last = v_0;
-    s_last = s_0;
-    trace = undefined;
-    while (1) {
-        t = t + 0.05;
-        r = r_0 + (v_0 * t) + (0.5 * g * t * t);
-        noticePrint("(t, r): (" + t + ", " + r + ")");
-        /// @todo these traces may hit other bots or entities, or even ourself,
-        /// so we need to pre-compute and cache these falls for every possible
-        ///bot speed before the game starts and stuff gets in our way.
-        trace = bulletTrace(r_last, r, false, self);
-        thread drawLine(r_last, r);
-        if (trace["fraction"] != 1) {
-            noticePrint("hit position: " + trace["position"]);
-            break; // we would hit the ground if we did this
-        }
-        r_last = r;
-    }
-    t = t - 0.05 - 0.005;
-    // repeat the last segment with time resolution of +/- 0.005s
-    while (1) {
-        t = t + 0.005;
-        r = r_0 + (v_0 * t) + (0.5 * g * (t * t));
-        trace = bulletTrace(r_last, r, false, self);
-        if (trace["fraction"] != 1) {
-            // we would hit the ground if we did this, so save final speed for last step
-            noticePrint("hit position: " + trace["position"]);
-            v = v_0 + (g * (t - 0.005));
-            s = distance((0,0,0), v);
-            s_last = s;
-            break;
-        }
-        r_last = r;
-    }
-    position = trace["position"];
-    distance =  distance(r_last, position);
-    t_epsilon = distance / s_last;
-    t_0 = t - 0.005 + t_epsilon;
-    t = int(t_0 / 0.05) * 0.05;
-    finalStepTime = t_0 - t;
-    if (finalStepTime <=0) {
-        errorPrint("finalStepTime is <= 0!");
-        errorPrint("finalStepTime: " + finalStepTime + " t_0: " + t_0 + " t: " + t);
-    }
-
-    noticePrint("r_0, v_0: " + r_0 + ", " + v_0);
-    noticePrint("distance: " + distance + " t_epsilon: " + t_epsilon + " t: " + t);
-    noticePrint("computed final position: " + position);
-    noticePrint("final speed: " + s_last);
-    noticePrint("g: " + g);
-    thread devDrawLocalCoordinateSystem(vectorNormalize(v_0), r_0);
-//     thread drawVelocity(v_0, r_0);
-
-    /// @todo make ballistic() recursive until bot is on the ground.
-
-    // moveGravity() only works in 0.05s increments, so we need to do the last
-    // step manually to ensure we don't wind up in the ground!
-    self setPlayerAngles(facing);
-    self.mover moveGravity(v_0, t);
-    self.mover waittill("movedone");
-
-    ground = findGround(position);
-    deltaZ = abs(position[2] - ground[2]);
-    if (deltaZ <= 0.5) { // close enough!
-        position = ground;
-        onGround = true;
-    }
-
-    // move to final position
-    self.mover moveTo(position, finalStepTime, 0, 0);
-    self.mover waittill("movedone");
-    noticePrint("actual final position: " + self.mover.origin);
-
-    // At this point, we have impacted a solid object, hopefully the ground, but
-    // perhaps also a wall, in which case we are now hanging in mid-air partially
-    // in the wall!
-    noticePrint("mover: " + self.mover.origin);
-    noticePrint("self: " + self.origin);
-    noticePrint("ground: " + ground);
-    if (onGround) {
-        noticePrint("On ground!");
-        return (0,0,0);
-    } else {
-        noticePrint("NOT on ground!");
-        r = reflect(v, trace["normal"]);
-        s_1 = s_last * .25; // hitting the wall/ceiling takes 75% of our velocity
-        v_1 = s_1 * r;
-        noticePrint("recursing!");
-        wait 3;
-        self ballistic(v_1, self.origin);
-    }
-}
-
 reflect(v, n)
 {
     d = vectorNormalize(v);
@@ -1125,10 +892,83 @@ reflect(v, n)
     return r;
 }
 
+computeJump(from, to, mover, movement)
+{
+    // compute initial velocity, v_0, for our fall
+    direction = level.Wp[to].origin - level.Wp[from].origin;
+    direction = direction * (1,1,0);
+    direction = vectorNormalize(direction);
+    direction = direction + (0,0,1); // jump at 45 degree angle
+
+    // treat as a 2-d problem in the plane of the jump
+    // assume: point mass, constant g, no resistive forces
+    // given: r, r_0, g, and v_0_hat
+    // req'd: s_0, t
+    r_0 = level.Wp[from].origin;
+    r = level.Wp[to].origin;
+    v_0_hat = vectorNormalize(direction);
+    g = getDvarInt("g_gravity");     // acceleration due to gravity
+
+    // x, y are in the plane of the jump, *not* world coordinates
+    x_displacement = distance((r[0],r[1],0), (r_0[0],r_0[1],0));
+    y_displacement = r[2] - r_0[2];
+    D = (2 * (x_displacement - y_displacement)) / g;
+    if (D < 0) {
+        // no real solutions
+        errorPrint("No real solution(s).  Solution(s) are imaginary!");
+        // hack to ensure a cache miss, so the impossible jump will be treated as
+        // a clamped path
+        movement.speed = 100;
+        return movement;
+    }
+    t = sqrt(D);
+    s_0 = x_displacement / (0.707107 * t); // 0.707107 is sin(45 degrees)
+    v_0 = s_0 * v_0_hat;
+
+    t_0 = int(t / 0.05) * 0.05;
+    finalStepTime = t - t_0;
+    facing = vectorToAngles(v_0);
+    motion = spawnStruct();
+    motion.type = "gravity";
+    motion.velocity = v_0;
+    motion.time = t;
+    motion.facing = facing;
+    movement.motions[movement.motions.size] = motion;
+
+    if (finalStepTime > 0) {
+        motion = spawnStruct();
+        motion.type = "to";
+        motion.position = r;
+        motion.time = finalStepTime;
+        motion.facing = facing;
+        movement.motions[movement.motions.size] = motion;
+    }
+    return movement;
+}
+
+/**
+ * @brief Pre-computes ballistic motion in R^3
+ *
+ * We assume a point mass, located at r_0, no resistive forces, and
+ * a constant acceleration due to gravity.
+ *
+ * With a game-standard acceleration due to gravity of (0,0,-800) units * s^(-2),
+ * one distance unit equals 0.4829 inches or 1.227 cm.
+ *
+ * @param v_0_hat vector The initial velocity unit vector
+ * @param r_0 vector The inital position vector.  r_0 *must* be at the actual edge
+ *              of a surface, or ballistic motion will hit the very spot we are
+ *              standing at.
+ * @param s_0 integer The inital speed
+ * @param mover entity Unneeded?
+ * @param movement struct The movement struct we will cache
+ * @param recurseCount integer The number of recursions thus far
+ * @param drawPath boolean draw the parabolic path?
+ *
+ * @returns struct The movement to cache
+ */
 computeBallistic(v_0_hat, r_0, s_0, mover, movement, recurseCount, drawPath)
 {
-//     noticePrint("Ballistic!");
-
 //     noticePrint("(v_0_hat, r_0, s_0): " + v_0_hat + ", " + r_0 + ", " + s_0);
     onGround = false;
     if (!isDefined(recurseCount)) {recurseCount = 0;}
@@ -1141,8 +981,6 @@ computeBallistic(v_0_hat, r_0, s_0, mover, movement, recurseCount, drawPath)
 
     v_0 = s_0 * v_0_hat;
     facing = vectorToAngles(v_0_hat);
-//     thread drawVelocity(v_0_hat, r_0);
-//     thread devDrawLocalCoordinateSystem(v_0_hat, r_0);
 
     // for this motion, find impact time with resolution of +/- 0.05s
     t = 0;
@@ -1153,14 +991,11 @@ computeBallistic(v_0_hat, r_0, s_0, mover, movement, recurseCount, drawPath)
     while (1) {
         t = t + 0.05;
         r = r_0 + (v_0 * t) + (0.5 * g * t * t);
-//         noticePrint("(t, r): (" + t + ", " + r + ")");
         if (drawPath) {thread drawLine(r_last, r);}
         trace = bulletTrace(r_last, r, false, mover);
         if (trace["fraction"] != 1) {
-//             noticePrint("hit position: " + trace["position"]);
             break; // we would hit the ground if we did this
         }
-//         thread drawLine(r_last, r);
         r_last = r;
     }
     t = t - 0.05 - 0.005;
@@ -1171,7 +1006,6 @@ computeBallistic(v_0_hat, r_0, s_0, mover, movement, recurseCount, drawPath)
         trace = bulletTrace(r_last, r, false, mover);
         if (trace["fraction"] != 1) {
             // we would hit the ground if we did this, so save final speed for last step
-//             noticePrint("hit position: " + trace["position"]);
             v = v_0 + (g * (t - 0.005));
             s = distance((0,0,0), v);
             s_last = s;
@@ -1187,25 +1021,7 @@ computeBallistic(v_0_hat, r_0, s_0, mover, movement, recurseCount, drawPath)
     t_0 = t - 0.005 + t_epsilon;
     t = int(t_0 / 0.05) * 0.05;
     finalStepTime = t_0 - t;
-//     if (finalStepTime <=0) {
-//         errorPrint("finalStepTime is <= 0!");
-//         errorPrint("finalStepTime: " + finalStepTime + " t_0: " + t_0 + " t: " + t);
-//     }
-
-//     noticePrint("r_0, v_0: " + r_0 + ", " + v_0);
-//     noticePrint("distance: " + distance + " t_epsilon: " + t_epsilon + " t: " + t);
-//     noticePrint("computed final position: " + position);
-//     noticePrint("final speed: " + s_last);
-//     noticePrint("g: " + g);
-    //     thread drawVelocity(v_0, r_0);
-
-    // moveGravity() only works in 0.05s increments, so we need to do the last
-    // step manually to ensure we don't wind up in the ground!
-//     self setPlayerAngles(facing);
-//     mover moveGravity(v_0, t);
-//     mover waittill("movedone");
     mover.origin = position;
-//     noticePrint("moveGravity(): " + v_0 + ", " + t + ", " + facing);
     motion = spawnStruct();
     motion.type = "gravity";
     motion.velocity = v_0;
@@ -1221,20 +1037,13 @@ computeBallistic(v_0_hat, r_0, s_0, mover, movement, recurseCount, drawPath)
         testPosition = position;
     }
     ground = findGround(testPosition);
-//     ground = findGround(position);
     deltaZ = abs(position[2] - ground[2]);
     if (deltaZ <= 0.5) { // close enough!
         position = ground;
         onGround = true;
-    } else {
-//         position = testPosition;
     }
 
-    // move to final position
-//     mover moveTo(position, finalStepTime, 0, 0);
-//     mover waittill("movedone");
     mover.origin = position;
-//     noticePrint("moveTo(): " + position + ", " + finalStepTime);
     if (finalStepTime > 0) {
         motion = spawnStruct();
         motion.type = "to";
@@ -1243,29 +1052,10 @@ computeBallistic(v_0_hat, r_0, s_0, mover, movement, recurseCount, drawPath)
         motion.facing = vectorToAngles(facing);
         movement.motions[movement.motions.size] = motion;
     }
-//     noticePrint(movement.motions.size);
-//     noticePrint("actual final position: " + self.mover.origin);
-
-    // At this point, we have impacted a solid object, hopefully the ground, but
-    // perhaps also a wall, in which case we are now hanging in mid-air partially
-    // in the wall!
-//     noticePrint("mover: " + mover.origin);
-//     noticePrint("self: " + self.origin);
-//     noticePrint("testPosition: " + testPosition);
-//     noticePrint("ground: " + ground);
-    if (onGround) {
-//         noticePrint("On ground!");
-//         return (0,0,0);
-    } else {
-//         noticePrint("NOT on ground!");
+    if (!onGround) {
         // approximation in lieu of momemtum calculations
         v_0_hat = reflect(v, trace["normal"]);
         s_1 = s_last * .25; // hitting the wall/ceiling takes 75% of our velocity
-//         v_1 = s_1 * r;
-//         noticePrint("recursing!");
-//         self ballistic(v_1, mover.origin);
-//         computeBallistic(v_0_hat, r_0, s_0, mover);
-//         printMovement(movement);
         if (recurseCount < 3) {
             recurseCount++;
             movement = computeBallistic(v_0_hat, position, s_1, mover, movement, recurseCount, drawPath);
@@ -1284,7 +1074,7 @@ computeBallistic(v_0_hat, r_0, s_0, mover, movement, recurseCount, drawPath)
     return movement;
 }
 
-computeFalls()
+computeMotions()
 {
     mover = spawn("script_model", (0,0,0));
 
@@ -1294,10 +1084,9 @@ computeFalls()
                 linkedID = level.Wp[i].linked[j].ID;
                 if (pathType(i, linkedID) == level.PATH_FALL) {
                     // a falling path
-                    noticePrint("found fall path from " + i + " to " + linkedID);
+//                     noticePrint("found fall path from " + i + " to " + linkedID);
                     edge = findFallEdge(i, linkedID);
                     if (isDefined(edge.position)) {
-//                         noticePrint("found edge at " + edge.position);
                         distance = distance(level.Wp[i].origin, edge.position);
                         speed = 100;
                         for (k=0; k<3; k++) {
@@ -1307,9 +1096,7 @@ computeFalls()
                             movement.to = linkedID;
                             movement.speed = speed;
                             movement.motions = [];
-//                             movementCacheHash(movement.from, movement.to, movement.speed);
                             t = distance / speed;
-//                             noticePrint("moveTo(): " + edge.position + ", " + t);
                             motion = spawnStruct();
                             motion.type = "to";
                             motion.position = edge.position;
@@ -1317,10 +1104,7 @@ computeFalls()
                             motion.facing = vectorToAngles(edge.direction);
                             /// @todo save n closets clear path waypoints to landing position
                             movement.motions[movement.motions.size] = motion;
-//                             printMovement(movement);
-                            movement = computeBallistic(edge.direction, edge.position, speed, mover, movement, 0, true);
-//                             thread devDrawLocalCoordinateSystem(edge.direction, edge.position);
-//                             printMovement(movement);
+                            movement = computeBallistic(edge.direction, edge.position, speed, mover, movement, 0, false);
                             cacheMovement(movement);
                             speed = speed + 100;
                         }
@@ -1332,10 +1116,9 @@ computeFalls()
                 linkedID = level.Wp[i].linked[j].ID;
                 if (pathType(i, linkedID) == level.PATH_MANTLE) {
                     // the reversed path is a level.PATH_FALL
-                    noticePrint("found fall (mantle down) path from " + linkedID + " to " + i);
+//                     noticePrint("found fall (mantle down) path from " + linkedID + " to " + i);
                     edge = findFallEdge(linkedID, i);
                     if (isDefined(edge.position)) {
-//                         noticePrint("found edge at " + edge.position);
                         distance = distance(level.Wp[i].origin, edge.position);
                         speed = 100;
                         for (k=0; k<3; k++) {
@@ -1346,24 +1129,33 @@ computeFalls()
                             movement.speed = speed;
                             movement.motions = [];
                             t = distance / speed;
-//                             noticePrint("moveTo(): " + edge.position + ", " + t);
                             motion = spawnStruct();
                             motion.type = "to";
                             motion.position = edge.position;
                             motion.time = t;
                             motion.facing = vectorToAngles(edge.direction);
                             movement.motions[movement.motions.size] = motion;
-                            if ((i == 204) && (linkedID == 205)){
-                                movement = computeBallistic(edge.direction, edge.position, speed, mover, movement, 0, true);
-                                thread devDrawLocalCoordinateSystem(edge.direction, edge.position);
-                            } else {
-                                movement = computeBallistic(edge.direction, edge.position, speed, mover, movement, 0, false);
-                            }
+                            movement = computeBallistic(edge.direction, edge.position, speed, mover, movement, 0, false);
                             cacheMovement(movement);
-//                             printMovement(movement);
                             speed = speed + 100;
                         }
                     }
+                }
+            }
+        } else if (level.Wp[i].type == "jump") {
+            for (j=0; j<level.Wp[i].linkedCount; j++) {
+                linkedID = level.Wp[i].linked[j].ID;
+                if (pathType(i, linkedID) == level.PATH_JUMP) {
+//                     noticePrint("found jump path from " + i + " to " + linkedID);
+                    speed = 10;
+                    movement = spawnStruct();
+                    movement.type = level.PATH_JUMP;
+                    movement.from = i;
+                    movement.to = linkedID;
+                    movement.speed = speed;
+                    movement.motions = [];
+                    movement = computeJump(i, linkedID, mover, movement);
+                    cacheMovement(movement);
                 }
             }
         }
@@ -1393,13 +1185,6 @@ printMovementCacheDistribution()
     for (i=0; i<level.movementCache.size; i++) {
         count = level.movementCache[i].size;
         noticePrint(i + ":" + count);
-//         if (i == 9) {
-//             for (j=0; j<level.movementCache[i].size; j++) {
-//                 movement = level.movementCache[i][j];
-//                 noticePrint("Movement (from, to, speed): (" + movement.from + ", " + movement.to + ", " + movement.speed + ")");
-//                 movementCacheHash(movement.from, movement.to, movement.speed);
-//             }
-//         }
     }
 }
 
@@ -1430,11 +1215,8 @@ movementCacheHash(from, to, speed)
     p2 = 393241;
     p3 = 786433;
 
-//     temp = xor(xor((from * p1), (to * p2)), (speed * p3));
-//     noticePrint("pre-modulo hash: " + temp);
     hash = xor(xor((from * p1), (to * p2)), (speed * p3)) % n;
     if (hash < 0) {hash = hash * -1;}
-//     noticePrint("hash: " + hash);
     return hash;
 }
 
@@ -1460,9 +1242,8 @@ printMovement(movement)
     if (!isDefined(movement)) {
         errorPrint("movement is undefined!");
         return;
-    } else {
-//         warnPrint("movement: " + movement);
     }
+
     if (movement.type == level.PATH_FALL) {
         noticePrint("movement.type: " + movement.type);
         noticePrint("Movement (from, to, speed): (" + movement.from + ", " + movement.to + ", " + movement.speed + ")");
@@ -1503,12 +1284,8 @@ findFallEdge(fromWp, toWp)
     iPrimeM = matrixCross(v, w);
     iPrime = vectorNormalize((value(iPrimeM,1,1), value(iPrimeM,2,1), value(iPrimeM,3,1)));
 
-//     direction = vectorNormalize(level.Wp[toWp].origin - level.Wp[fromWp].origin);
     direction = iPrime;
 
-//     position = level.Wp[fromWp].origin + (2 * direction);
-//     position = findGround(position);
-//     direction = vectorNormalize(position - level.Wp[fromWp].origin);
     to = level.Wp[fromWp].origin - (0,0,1);
     from = to + (30 * direction);
     trace = bulletTrace(from, to, false, self);
