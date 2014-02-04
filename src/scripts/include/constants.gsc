@@ -59,4 +59,9 @@ init()
     level.PATH_FALL = 4;
     level.PATH_TELEPORT = 5;
     level.PATH_JUMP = 6;
+    level.PATH_MANTLE_OVER = 7;
+
+    /// special speeds
+    level.MANTLE_SPEED = 120;
+    level.LADDER_SPEED = 120;
 }

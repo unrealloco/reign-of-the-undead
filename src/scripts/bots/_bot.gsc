@@ -316,14 +316,14 @@ wander()
         self.status = level.BOT_WANDERING;
         noticePrint("self.origin: " + self.origin + " self.mover.origin: " + self.mover.origin);
         self.myWaypoint = nearestWaypoints(self.origin, 1)[0];
-        self.myWaypoint = 186; /// temp HACK
+        self.myWaypoint = 67; /// temp HACK
         /// temp HACK, jump bot to its first waypoint
         wait 3;
         self enqueueMovement(level.Wp[self.myWaypoint].origin, 0.05, self.angles);
         self setSpeed();
         self move();
         self.goalWp = self.myWaypoint;
-        self.goalWp = 283; /// temp HACK
+//         self.goalWp = 108; /// temp HACK
 
         while (count < 300) {
             count++;
@@ -356,9 +356,16 @@ wander()
                 self teleport();
                 self.myWaypoint = self.nextWp;
             } else if (self.pathType == level.PATH_MANTLE) {
-                self mantle();
-                self move();
-                self.myWaypoint = self.nextWp;
+                if ((self.pathNodes.size >= 1) &&
+                    (pathType(self.nextWp, self.pathNodes[self.pathNodes.size - 1]) == level.PATH_FALL))
+                {
+                    self.pathType = level.PATH_MANTLE_OVER;
+                    self mantleOver();
+                } else {
+                    self mantle();
+                    self move();
+                    self.myWaypoint = self.nextWp;
+                }
             } else if ((self.pathType == level.PATH_LADDER) && (self.isBipedal)) {
                 // if path type is ladder, but not a biped, we need to do something creative
                 // so the bots don't congregate at the bottom of the ladder
@@ -487,6 +494,67 @@ ladder()
     }
 }
 
+/// climbing up a wall and falling down the other side of the wall
+mantleOver()
+{
+    self endon("dying");
+    self endon("disconnect");
+    self endon("death");
+    level endon("game_ended");
+
+    if (self.isFollowingWaypoints) {
+        noticePrint("Mantle Over!");
+        iPrintLnBold("Mantle Over!");
+        // since we are following waypoints, we assume no solid objects or obstructions
+
+        if (self.speed <= 150) {speed = 100;}
+        else if (self.speed <= 250) {speed = 200;}
+        else {speed = 300;}
+        mantleMovement = cachedMovement(self.myWaypoint, self.nextWp, level.MANTLE_SPEED);
+        lastWp = self.pathNodes[self.pathNodes.size - 1];
+        fallMovement = cachedMovement(self.nextWp, lastWp, speed);
+        if ((isDefined(mantleMovement)) && (isDefined(fallMovement))) {
+            // use the first motion from mantle
+            self setPlayerAngles(mantleMovement.motions[0].facing);
+            self.mover moveTo(mantleMovement.motions[0].position, mantleMovement.motions[0].time, 0, 0);
+            self.mover waittill("movedone");
+
+            // combine second mantle motion and first fall motion
+            from = mantleMovement.motions[0].position;
+            to = fallMovement.motions[0].position;
+            distance = distance(from, to);
+            time = distance / speed;
+            self.mover moveTo(to, time, 0, 0);
+            self.mover waittill("movedone");
+
+            // do all remaining fall motions
+            for (i=1; i<fallMovement.motions.size; i++) {
+                if (fallMovement.motions[i].type == "to") {
+                    self setPlayerAngles(fallMovement.motions[i].facing);
+                    self.mover moveTo(fallMovement.motions[i].position, fallMovement.motions[i].time, 0, 0);
+                    self.mover waittill("movedone");
+                } else if (fallMovement.motions[i].type == "gravity") {
+                    self setPlayerAngles(fallMovement.motions[i].facing);
+                    self.mover moveGravity(fallMovement.motions[i].velocity, fallMovement.motions[i].time);
+                    self.mover waittill("movedone");
+                }
+            }
+            self.myWaypoint = self.nextWp;
+            self.nextWp = lastWp;
+            self.pathNodes[self.pathNodes.size - 1] = undefined;
+            self postFall(fallMovement.closest);
+            return;
+        } else {
+            // cache miss!
+            noticePrint("Motion cache miss (from, to, speed): (" + self.myWaypoint + ", " + self.nextWp + ", " + speed + ")");
+            // treat it as a mantle path as a fail-safe
+            self mantle();
+            self move();
+            self.myWaypoint = self.nextWp;
+        }
+    }
+}
+
 /// climbing up a short wall or crate.
 mantle()
 {
@@ -497,34 +565,25 @@ mantle()
     self endon("death");
     level endon("game_ended");
 
-    if (self.isFollowingWaypoints) {
-        noticePrint("Mantle!");
-        iPrintLnBold("Mantle!");
-        // since we are following waypoints, we assume no solid objects or obstructions
-
-        direction = vectorNormalize(level.Wp[self.nextWp].origin - level.Wp[self.myWaypoint].origin);
-        facing = vectorToAngles(direction); // see note about direction bug in clamped() function
-
-        // enqueue the vertical displacement
-        deltaZ = level.Wp[self.nextWp].origin[2] - level.Wp[self.myWaypoint].origin[2];
-        position = self.origin + (0,0,deltaZ);
-        time = deltaZ / self.speed;
-        if (time <= 0) {
-            errorPrint("mantle vertical(time, deltaZ, self.speed): (" + time + ", " + deltaZ + ", " + self.speed + ")");
-            errorPrint(level.Wp[self.nextWp].origin[2] + ", "+ level.Wp[self.myWaypoint].origin[2]);
+    speed = level.MANTLE_SPEED;
+    movement = cachedMovement(self.myWaypoint, self.nextWp, speed);
+    if (isDefined(movement)) {
+        // execute!
+        for (i=0; i<movement.motions.size; i++) {
+            if (movement.motions[i].type == "to") {
+                self setPlayerAngles(movement.motions[i].facing);
+                self.mover moveTo(movement.motions[i].position, movement.motions[i].time, 0, 0);
+                self.mover waittill("movedone");
+            }
         }
-        self enqueueMovement(position, time, facing);
-
-        // enqueue the horizontal displacement
-        distance = distance(position, level.Wp[self.nextWp].origin);
-        time = distance / self.speed;
-        // put us at the actual waypoint, in case there were any round-off errors
-        if (time <= 0) {
-            errorPrint("mantle horizontal(time, distance, self.speed): (" + time + ", " + distance + ", " + self.speed + ")");
-        }
-        self enqueueMovement(level.Wp[self.nextWp].origin, time, facing);
+        return;
     } else {
-        noticePrint("In Mantle(), but .isFollowingWaypoints is false!");
+        // cache miss!
+        noticePrint("Motion cache miss (from, to, speed): (" + self.myWaypoint + ", " + self.nextWp + ", " + speed + ")");
+        // treat it as a clamped path as a fail-safe
+        self clamped();
+        self move();
+        self.myWaypoint = self.nextWp;
     }
 }
 
@@ -549,16 +608,6 @@ clamped()
         noticePrint("Clamped!");
         // since we are following waypoints, we assume no solid objects or obstructions
 
-        // make animation frame such that frame distance is about 18 inches.
-        frameCount = int(18 / self.speed / 0.05);
-        if (frameCount == 0) {frameCount = 1;}
-        deltaA = abs(18 - (self.speed * (0.05 * frameCount)));
-        deltaB = abs(18 - (self.speed * (0.05 * (frameCount + 1))));
-        if (deltaB < deltaA) {
-            frameCount++; // this is closer to 18 units than frameCount
-        }
-        frameDistance = self.speed * (0.05 * frameCount);
-
         /** This is the code we would like to apply to the bots, but Activision's
          * bug thwarts us.  Internally, setPlayerAngles() treats all players as if
          * they were bipedal and zeros out the z-coordinate of the direction vector.
@@ -582,18 +631,7 @@ clamped()
          */
         direction = vectorNormalize(level.Wp[self.nextWp].origin - level.Wp[self.myWaypoint].origin);
         facing = vectorToAngles(direction);
-
-        position = level.Wp[self.myWaypoint].origin;
-//         noticePrint("clamped from wp " + self.myWaypoint + " at " + level.Wp[self.myWaypoint].origin);
-//         noticePrint("clamped to wp " + self.nextWp + " at " + level.Wp[self.nextWp].origin);
-        /// @todo for clamped, we can do this in one movement, but we will need this code later, so keep it here for now
         distance = distance(level.Wp[self.myWaypoint].origin, level.Wp[self.nextWp].origin);
-        while (distance > frameDistance) {
-            distance = distance - frameDistance;
-            position = position + (frameDistance * direction);
-            time = frameCount * 0.05;
-            self enqueueMovement(position, time, facing);
-        }
         time = distance / self.speed;
         self enqueueMovement(level.Wp[self.nextWp].origin, time, facing);
     } else {
@@ -713,7 +751,7 @@ fall()
                 self.mover waittill("movedone");
             }
         }
-        self postFall();
+        self postFall(movement.closest);
         return;
     } else {
         // cache miss!
@@ -725,8 +763,21 @@ fall()
     }
 }
 
-postFall()
+postFall(closest)
 {
+    potentialNodes = self.pathNodes;
+    potentialNodes[potentialNodes.size] = self.nextWp;
+    for(i=0; i<closest.size; i++) {
+        noticePrint("Closest: " + i +":"+ closest[i]);
+        for (j=0; j<potentialNodes.size; j++) {
+            if (closest[i] == potentialNodes[j]) {
+                noticePrint(closest[i] + " found in potentialNodes");
+            }
+        }
+    }
+    self pathPrint("postFall() initial path: ");
+    noticePrint("self.origin: " + self.origin);
+
     nearestWp = nearestWaypoints(self.origin, 1)[0];
     if (nearestWp == self.goalWp) {
         // just move to goalWp, and invalidate pathNodes
@@ -892,6 +943,32 @@ reflect(v, n)
     return r;
 }
 
+computeMantle(from, to, mover, movement)
+{
+    direction = vectorNormalize(level.Wp[to].origin - level.Wp[from].origin);
+    facing = vectorToAngles(direction);
+    deltaZ = level.Wp[to].origin[2] - level.Wp[from].origin[2];
+    position = level.Wp[from].origin + (0,0,deltaZ);
+    time = deltaZ / level.MANTLE_SPEED;
+    motion = spawnStruct();
+    motion.type = "to";
+    motion.position = position;
+    motion.time = time;
+    motion.facing = facing;
+    movement.motions[movement.motions.size] = motion;
+
+    distance = distance(position, level.Wp[to].origin);
+    time = distance / level.MANTLE_SPEED;
+    motion = spawnStruct();
+    motion.type = "to";
+    motion.position = level.Wp[to].origin;
+    motion.time = time;
+    motion.facing = facing;
+    movement.motions[movement.motions.size] = motion;
+
+    return movement;
+}
+
 computeJump(from, to, mover, movement)
 {
     // compute initial velocity, v_0, for our fall
@@ -1027,6 +1104,7 @@ computeBallistic(v_0_hat, r_0, s_0, mover, movement, recurseCount, drawPath)
     motion.velocity = v_0;
     motion.time = t;
     motion.facing = facing;
+    motion.position = position;
     movement.motions[movement.motions.size] = motion;
 
     normal = trace["normal"];
@@ -1102,9 +1180,11 @@ computeMotions()
                             motion.position = edge.position;
                             motion.time = t;
                             motion.facing = vectorToAngles(edge.direction);
-                            /// @todo save n closets clear path waypoints to landing position
                             movement.motions[movement.motions.size] = motion;
-                            movement = computeBallistic(edge.direction, edge.position, speed, mover, movement, 0, false);
+                            movement = computeBallistic(edge.direction, edge.position, speed, mover, movement, 0, true);
+                            movement.finalPosition = movement.motions[movement.motions.size - 1].position;
+                            /// @todo ensure the path is clear to these waypoints
+                            movement.closest = nearestWaypoints(movement.finalPosition, 4);
                             cacheMovement(movement);
                             speed = speed + 100;
                         }
@@ -1115,7 +1195,22 @@ computeMotions()
             for (j=0; j<level.Wp[i].linkedCount; j++) {
                 linkedID = level.Wp[i].linked[j].ID;
                 if (pathType(i, linkedID) == level.PATH_MANTLE) {
-                    // the reversed path is a level.PATH_FALL
+                    speed = level.MANTLE_SPEED; // HACK
+                    movement = spawnStruct();
+                    movement.type = level.PATH_MANTLE;
+                    movement.from = i;
+                    movement.to = linkedID;
+                    movement.speed = speed;
+                    movement.motions = [];
+                    movement = computeMantle(i, linkedID, mover, movement);
+                    cacheMovement(movement);
+
+                    /// @todo for every movement.type == level.PATH_MANTLE in cache,
+                    /// see if there is a movement.type == level.PATH_FALL where
+                    /// the mantle movement.to == the fall movement.from.
+                    /// these are the level.PATH_MANTLE_OVER we want to cache
+
+                    // also, the reversed path is a level.PATH_FALL
 //                     noticePrint("found fall (mantle down) path from " + linkedID + " to " + i);
                     edge = findFallEdge(linkedID, i);
                     if (isDefined(edge.position)) {
@@ -1136,6 +1231,9 @@ computeMotions()
                             motion.facing = vectorToAngles(edge.direction);
                             movement.motions[movement.motions.size] = motion;
                             movement = computeBallistic(edge.direction, edge.position, speed, mover, movement, 0, false);
+                            movement.finalPosition = movement.motions[movement.motions.size - 1].position;
+                            /// @todo ensure the path is clear to these waypoints
+                            movement.closest = nearestWaypoints(movement.finalPosition, 3);
                             cacheMovement(movement);
                             speed = speed + 100;
                         }
@@ -1347,7 +1445,6 @@ pathType(fromWp, toWp)
     } else if ((level.Wp[fromWp].type == "jump") && (level.Wp[toWp].type == "jump")) {
         return level.PATH_JUMP;
     }
-
     return level.PATH_NORMAL;
 }
 
@@ -1641,8 +1738,8 @@ enqueueMovement(origin, time, facing)
         }
     }
 
-    noticePrint("enqueueing movement: (" + origin + ", " + time + ", " + facing + ")");
-    noticePrint("size, first, last: (" + self.movement.orders.size + ", " + self.movement.first + ", " + self.movement.last + ")");
+//     noticePrint("enqueueing movement: (" + origin + ", " + time + ", " + facing + ")");
+//     noticePrint("size, first, last: (" + self.movement.orders.size + ", " + self.movement.first + ", " + self.movement.last + ")");
     self.movement.orders[self.movement.last].origin = origin;
     self.movement.orders[self.movement.last].time = time;
     self.movement.orders[self.movement.last].angles = facing;
@@ -1803,10 +1900,20 @@ move()
         position = self.movement.orders[self.movement.first].origin;
         time = self.movement.orders[self.movement.first].time;
         angles = self.movement.orders[self.movement.first].angles;
-        noticePrint("moving to:" + position + ", " + time);
+        /// it always takes one full frame after motion for self.mover.origin to be updated
+//         noticePrint("pre-move self.mover.origin: " + self.mover.origin);
+//         noticePrint("moving to:" + position + ", " + time);
         self setPlayerAngles(angles);
-        self.mover moveTo(position, time, 0, 0);
+//         now = getTime();
+//         noticePrint("pre-move now: " + now + "ms");
+        self.mover moveTo(position, time, 0, 0); // internally-threaded
+//         wait time;
+//         while (self.mover.origin != position) {wait 0.05;}// === self.mover waittill("movedone")
+//         noticePrint("waiting time: " + time + "s");
+//         noticePrint("post-move self.mover.origin: " + self.mover.origin);
         self.mover waittill("movedone");
+//         now = getTime();
+//         noticePrint("post-move now: " + now + "ms");
 
 //         wait time;
 //         wait 0.1;
