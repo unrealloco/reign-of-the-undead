@@ -939,12 +939,12 @@ correctPlayerCounts()
         if (level.activePlayers != activePlayers) {
             level.activePlayers = activePlayers;
             level.downPlayers = downPlayers;
-            debugPrint("level.activePlayers was incorrect; correcting.");
+            debugPrint("level.activePlayers was incorrect; correcting.", "val");
         }
         if (level.alivePlayers != alivePlayers) {
             level.alivePlayers = alivePlayers;
             level.downPlayers = downPlayers;
-            debugPrint("level.alivePlayers was incorrect; correcting.");
+            debugPrint("level.alivePlayers was incorrect; correcting.", "val");
         }
     }
 }
